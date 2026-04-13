@@ -40,6 +40,7 @@ export default function TasksPage() {
   const [showNewProject, setShowNewProject] = useState(false)
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const [editingProjectTitle, setEditingProjectTitle] = useState("")
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "someday">("all")
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
@@ -198,9 +199,33 @@ export default function TasksPage() {
     setEditingProjectId(null)
   }
 
-  const filteredTasks = activeProjectId
-    ? tasks.filter((t) => t.project?.id === activeProjectId)
-    : tasks
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const weekEnd = new Date(today)
+  weekEnd.setDate(today.getDate() + 7)
+
+  const filteredTasks = tasks.filter((t) => {
+    if (activeProjectId && t.project?.id !== activeProjectId) return false
+
+    if (dateFilter === "today") {
+      if (!t.dueDate) return false
+      const d = new Date(t.dueDate)
+      d.setHours(0, 0, 0, 0)
+      return d.getTime() === today.getTime()
+    }
+    if (dateFilter === "week") {
+      if (!t.dueDate) return false
+      const d = new Date(t.dueDate)
+      d.setHours(0, 0, 0, 0)
+      return d.getTime() > today.getTime() && d < weekEnd
+    }
+    if (dateFilter === "someday") {
+      if (!t.dueDate) return true
+      const d = new Date(t.dueDate)
+      return d >= weekEnd
+    }
+    return true
+  })
 
   if (status === "loading") return <p className="p-8">Загрузка...</p>
 
@@ -290,6 +315,23 @@ export default function TasksPage() {
             + проект
           </button>
         )}
+      </div>
+
+      {/* Фильтр по дате */}
+      <div className="flex gap-2 mb-6">
+        {(["all", "today", "week", "someday"] as const).map((filter) => (
+          <button
+            key={filter}
+            onClick={() => setDateFilter(filter)}
+            className={`text-sm px-3 py-1 rounded-full border ${
+              dateFilter === filter
+                ? "bg-gray-700 text-white border-gray-700"
+                : "text-gray-500 hover:border-gray-400"
+            }`}
+          >
+            {{ all: "Все", today: "Сегодня", week: "Неделя", someday: "Когда-нибудь" }[filter]}
+          </button>
+        ))}
       </div>
 
       {/* Форма добавления задачи */}
