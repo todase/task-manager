@@ -26,6 +26,27 @@ export async function GET(
   return NextResponse.json(project)
 }
 
+// Переименовать проект
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const { id } = await params
+  const { title } = await req.json()
+
+  const project = await prisma.project.update({
+    where: { id, userId: session.user.id },
+    data: { title },
+  })
+
+  return NextResponse.json(project)
+}
+
 // Удалить проект
 export async function DELETE(
   _req: Request,

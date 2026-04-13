@@ -20,6 +20,7 @@ model Task {
   id        String    @id @default(cuid())
   title     String
   done      Boolean   @default(false)
+  dueDate   DateTime?
   userId    String
   user      User      @relation(fields: [userId], references: [id])
   projectId String?

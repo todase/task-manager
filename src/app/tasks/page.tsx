@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
-import Link from "next/link"
 
 type Subtask = {
   id: string
@@ -15,27 +14,42 @@ type Task = {
   id: string
   title: string
   done: boolean
+  dueDate: string | null
   subtasks: Subtask[]
   project: { id: string; title: string } | null
 }
 
+type Project = {
+  id: string
+  title: string
+}
+
 export default function TasksPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const [tasks, setTasks] = useState<Task[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [title, setTitle] = useState("")
+  const [dueDate, setDueDate] = useState("")
   const [openTaskId, setOpenTaskId] = useState<string | null>(null)
   const [subtaskTitle, setSubtaskTitle] = useState("")
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState("")
-
+  const [newProjectTitle, setNewProjectTitle] = useState("")
+  const [showNewProject, setShowNewProject] = useState(false)
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
+  const [editingProjectTitle, setEditingProjectTitle] = useState("")
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
   }, [status, router])
 
   useEffect(() => {
-    if (status === "authenticated") fetchTasks()
+    if (status === "authenticated") {
+      fetchTasks()
+      fetchProjects()
+    }
   }, [status])
 
   async function fetchTasks() {
@@ -44,17 +58,28 @@ export default function TasksPage() {
     setTasks(data)
   }
 
+  async function fetchProjects() {
+    const res = await fetch("/api/projects")
+    const data = await res.json()
+    setProjects(data)
+  }
+
   async function addTask(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
     const res = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({
+        title,
+        ...(dueDate && { dueDate }),
+        ...(activeProjectId && { projectId: activeProjectId }),
+      }),
     })
     const task = await res.json()
-    setTasks([{ ...task, subtasks: [] }, ...tasks])
+    setTasks([{ ...task, subtasks: [], project: projects.find((p) => p.id === task.projectId) || null }, ...tasks])
     setTitle("")
+    setDueDate("")
   }
 
   async function toggleTask(task: Task) {
@@ -64,28 +89,38 @@ export default function TasksPage() {
       body: JSON.stringify({ done: !task.done }),
     })
     const updated = await res.json()
-    setTasks(tasks.map((t) => (t.id === updated.id ? { ...updated, subtasks: t.subtasks } : t)))
+    setTasks(tasks.map((t) => (t.id === updated.id ? { ...updated, subtasks: t.subtasks, project: t.project } : t)))
   }
 
   async function deleteTask(id: string) {
     await fetch(`/api/tasks/${id}`, { method: "DELETE" })
     setTasks(tasks.filter((t) => t.id !== id))
   }
-  
+
   async function renameTask(task: Task) {
-  if (!editingTitle.trim() || editingTitle === task.title) {
+    if (!editingTitle.trim() || editingTitle === task.title) {
+      setEditingTaskId(null)
+      return
+    }
+    const res = await fetch(`/api/tasks/${task.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: editingTitle }),
+    })
+    const updated = await res.json()
+    setTasks(tasks.map((t) => (t.id === updated.id ? { ...updated, subtasks: t.subtasks, project: t.project } : t)))
     setEditingTaskId(null)
-    return
   }
-  const res = await fetch(`/api/tasks/${task.id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title: editingTitle }),
-  })
-  const updated = await res.json()
-  setTasks(tasks.map((t) => (t.id === updated.id ? { ...updated, subtasks: t.subtasks } : t)))
-  setEditingTaskId(null)
-}
+
+  async function updateDueDate(taskId: string, value: string) {
+    const res = await fetch(`/api/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dueDate: value ? new Date(value).toISOString() : null }),
+    })
+    const updated = await res.json()
+    setTasks(tasks.map((t) => (t.id === updated.id ? { ...updated, subtasks: t.subtasks, project: t.project } : t)))
+  }
 
   async function addSubtask(e: React.FormEvent, taskId: string) {
     e.preventDefault()
@@ -123,80 +158,237 @@ export default function TasksPage() {
     ))
   }
 
+  async function addProject(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newProjectTitle.trim()) return
+    const res = await fetch("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: newProjectTitle }),
+    })
+    const project = await res.json()
+    setProjects([...projects, project])
+    setNewProjectTitle("")
+    setShowNewProject(false)
+    setActiveProjectId(project.id)
+  }
+
+  async function deleteProject(id: string) {
+    await fetch(`/api/projects/${id}`, { method: "DELETE" })
+    setProjects(projects.filter((p) => p.id !== id))
+    setTasks(tasks.filter((t) => t.project?.id !== id))
+    if (activeProjectId === id) setActiveProjectId(null)
+  }
+
+  async function renameProject(id: string) {
+    if (!editingProjectTitle.trim()) {
+      setEditingProjectId(null)
+      return
+    }
+    const res = await fetch(`/api/projects/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: editingProjectTitle }),
+    })
+    const updated = await res.json()
+    setProjects(projects.map((p) => (p.id === updated.id ? updated : p)))
+    setTasks(tasks.map((t) =>
+      t.project?.id === updated.id ? { ...t, project: updated } : t
+    ))
+    setEditingProjectId(null)
+  }
+
+  const filteredTasks = activeProjectId
+    ? tasks.filter((t) => t.project?.id === activeProjectId)
+    : tasks
+
   if (status === "loading") return <p className="p-8">Загрузка...</p>
 
   return (
-    <main className="max-w-xl mx-auto p-8">
+    <main className="max-w-2xl mx-auto p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Мои задачи</h1>
-        <div className="flex gap-4">
-          <Link href="/projects" className="text-sm text-blue-500 hover:text-blue-700">
-            Проекты
-          </Link>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="text-sm text-gray-500 hover:text-gray-700"
-          >
-            Выйти
-          </button>
-        </div>
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="text-sm text-gray-500 hover:text-gray-700"
+        >
+          Выйти
+        </button>
       </div>
 
-      <form onSubmit={addTask} className="flex gap-2 mb-6">
-        <input
-          type="text"
-          placeholder="Новая задача..."
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="border p-2 rounded flex-1"
-        />
-        <button type="submit" className="bg-blue-500 text-white px-4 rounded">
-          Добавить
+      {/* Фильтр по проектам */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <button
+          onClick={() => setActiveProjectId(null)}
+          className={`text-sm px-3 py-1 rounded-full border ${
+            activeProjectId === null
+              ? "bg-blue-500 text-white border-blue-500"
+              : "text-gray-500 hover:border-gray-400"
+          }`}
+        >
+          Все задачи
         </button>
+        {projects.map((project) => (
+          <div key={project.id} className="flex items-center gap-1">
+            {editingProjectId === project.id ? (
+              <input
+                type="text"
+                value={editingProjectTitle}
+                onChange={(e) => setEditingProjectTitle(e.target.value)}
+                onBlur={() => renameProject(project.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") renameProject(project.id)
+                  if (e.key === "Escape") setEditingProjectId(null)
+                }}
+                className="border p-1 rounded text-sm w-32"
+                autoFocus
+              />
+            ) : (
+              <button
+                onClick={() => setActiveProjectId(project.id)}
+                onDoubleClick={() => {
+                  setEditingProjectId(project.id)
+                  setEditingProjectTitle(project.title)
+                }}
+                className={`text-sm px-3 py-1 rounded-full border ${
+                  activeProjectId === project.id
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : "text-gray-500 hover:border-gray-400"
+                }`}
+              >
+                {project.title}
+              </button>
+            )}
+            {activeProjectId === project.id && editingProjectId !== project.id && (
+              <button
+                onClick={() => deleteProject(project.id)}
+                className="text-xs text-red-400 hover:text-red-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ))}
+        {showNewProject ? (
+          <form onSubmit={addProject} className="flex gap-1">
+            <input
+              type="text"
+              placeholder="Название проекта..."
+              value={newProjectTitle}
+              onChange={(e) => setNewProjectTitle(e.target.value)}
+              className="border p-1 rounded text-sm"
+              autoFocus
+              onBlur={() => { if (!newProjectTitle) setShowNewProject(false) }}
+            />
+            <button type="submit" className="text-sm bg-blue-500 text-white px-2 rounded">+</button>
+          </form>
+        ) : (
+          <button
+            onClick={() => setShowNewProject(true)}
+            className="text-sm px-3 py-1 rounded-full border border-dashed text-gray-400 hover:text-gray-600"
+          >
+            + проект
+          </button>
+        )}
+      </div>
+
+      {/* Форма добавления задачи */}
+      <form onSubmit={addTask} className="flex flex-col gap-2 mb-6">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder={activeProjectId ? `Задача в «${projects.find(p => p.id === activeProjectId)?.title}»...` : "Новая задача..."}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="border p-2 rounded flex-1"
+          />
+          <button type="submit" className="bg-blue-500 text-white px-4 rounded">
+            Добавить
+          </button>
+        </div>
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="border p-2 rounded text-sm text-gray-500"
+        />
       </form>
 
+      {/* Список задач */}
       <ul className="flex flex-col gap-3">
-        {tasks.map((task) => (
+        {filteredTasks.map((task) => (
           <li key={task.id} className="border rounded p-3">
             <div className="flex items-center justify-between">
-				<div className="flex items-center gap-3">
-				  <input
-					type="checkbox"
-					checked={task.done}
-					onChange={() => toggleTask(task)}
-				  />
-                  {task.project && (
-                    <span className="text-xs text-blue-400 bg-blue-50 px-2 py-0.5 rounded-full">
-                      {task.project.title}
-                    </span>
-                  )}
-				  {editingTaskId === task.id ? (
-					<input
-					  type="text"
-					  value={editingTitle}
-					  onChange={(e) => setEditingTitle(e.target.value)}
-					  onBlur={() => renameTask(task)}
-					  onKeyDown={(e) => {
-						if (e.key === "Enter") renameTask(task)
-						if (e.key === "Escape") setEditingTaskId(null)
-					  }}
-					  className="border p-1 rounded text-sm"
-					  autoFocus
-					/>
-				  ) : (
-					<span
-					  className={task.done ? "line-through text-gray-400" : ""}
-					  onDoubleClick={() => {
-						setEditingTaskId(task.id)
-						setEditingTitle(task.title)
-					  }}
-					>
-					  {task.title}
-					</span>
-				  )}
-				</div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={task.done}
+                  onChange={() => toggleTask(task)}
+                />
+                {!activeProjectId && task.project && (
+                  <span className="text-xs text-blue-400 bg-blue-50 px-2 py-0.5 rounded-full">
+                    {task.project.title}
+                  </span>
+                )}
+                {editingTaskId === task.id ? (
+                  <input
+                    type="text"
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onBlur={() => renameTask(task)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") renameTask(task)
+                      if (e.key === "Escape") setEditingTaskId(null)
+                    }}
+                    className="border p-1 rounded text-sm"
+                    autoFocus
+                  />
+                ) : (
+                  <span
+                    className={task.done ? "line-through text-gray-400" : ""}
+                    onDoubleClick={() => {
+                      setEditingTaskId(task.id)
+                      setEditingTitle(task.title)
+                    }}
+                  >
+                    {task.title}
+                  </span>
+                )}
+              </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
+                <input
+                  type="date"
+                  id={`date-${task.id}`}
+                  defaultValue={task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : ""}
+                  onChange={(e) => updateDueDate(task.id, e.target.value)}
+                  className="sr-only"
+                />
+                {task.dueDate ? (
+                  <span
+                    onClick={() => {
+                      const el = document.getElementById(`date-${task.id}`) as HTMLInputElement
+                      el?.showPicker()
+                    }}
+                    className={`text-xs px-2 py-0.5 rounded-full cursor-pointer ${
+                      new Date(task.dueDate) < new Date() && !task.done
+                        ? "text-red-500 bg-red-50"
+                        : "text-gray-400 bg-gray-100"
+                    }`}
+                  >
+                    {new Date(task.dueDate).toLocaleDateString("ru-RU")}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById(`date-${task.id}`) as HTMLInputElement
+                      el?.showPicker()
+                    }}
+                    className="text-xs text-gray-300 hover:text-gray-500"
+                  >
+                    + дата
+                  </button>
+                )}
                 <button
                   onClick={() => setOpenTaskId(openTaskId === task.id ? null : task.id)}
                   className="text-sm text-blue-400 hover:text-blue-600"
