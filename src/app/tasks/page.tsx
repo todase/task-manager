@@ -15,6 +15,7 @@ type Task = {
   title: string
   done: boolean
   dueDate: string | null
+  recurrence: string | null
   subtasks: Subtask[]
   project: { id: string; title: string } | null
 }
@@ -32,6 +33,7 @@ export default function TasksPage() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [title, setTitle] = useState("")
   const [dueDate, setDueDate] = useState("")
+  const [recurrence, setRecurrence] = useState("")
   const [openTaskId, setOpenTaskId] = useState<string | null>(null)
   const [subtaskTitle, setSubtaskTitle] = useState("")
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
@@ -74,6 +76,7 @@ export default function TasksPage() {
       body: JSON.stringify({
         title,
         ...(dueDate && { dueDate }),
+        ...(recurrence && { recurrence }),
         ...(activeProjectId && { projectId: activeProjectId }),
       }),
     })
@@ -81,6 +84,7 @@ export default function TasksPage() {
     setTasks([{ ...task, subtasks: [], project: projects.find((p) => p.id === task.projectId) || null }, ...tasks])
     setTitle("")
     setDueDate("")
+    setRecurrence("")
   }
 
   async function toggleTask(task: Task) {
@@ -348,12 +352,24 @@ export default function TasksPage() {
             Добавить
           </button>
         </div>
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          className="border p-2 rounded text-sm text-gray-500"
-        />
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="border p-2 rounded text-sm text-gray-500 flex-1"
+          />
+          <select
+            value={recurrence}
+            onChange={(e) => setRecurrence(e.target.value)}
+            className="border p-2 rounded text-sm text-gray-500"
+          >
+            <option value="">Не повторять</option>
+            <option value="daily">Каждый день</option>
+            <option value="weekly">Каждую неделю</option>
+            <option value="monthly">Каждый месяц</option>
+          </select>
+        </div>
       </form>
 
       {/* Список задач */}
@@ -406,6 +422,11 @@ export default function TasksPage() {
                   onChange={(e) => updateDueDate(task.id, e.target.value)}
                   className="sr-only"
                 />
+                {task.recurrence && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-400">
+                    {{ daily: "↻ день", weekly: "↻ неделя", monthly: "↻ месяц" }[task.recurrence]}
+                  </span>
+                )}
                 {task.dueDate ? (
                   <span
                     onClick={() => {

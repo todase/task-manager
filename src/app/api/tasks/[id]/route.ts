@@ -14,9 +14,28 @@ export async function PATCH(
   const { id } = await params
   const body = await req.json()
 
+  // Если повторяющаяся задача отмечается выполненной — сдвигаем дату вместо done=true
+  if (body.done === true) {
+    const existing = await prisma.task.findUnique({ where: { id } })
+    if (existing?.recurrence && existing.dueDate) {
+      const next = new Date(existing.dueDate)
+      if (existing.recurrence === "daily") next.setDate(next.getDate() + 1)
+      if (existing.recurrence === "weekly") next.setDate(next.getDate() + 7)
+      if (existing.recurrence === "monthly") next.setMonth(next.getMonth() + 1)
+
+      const task = await prisma.task.update({
+        where: { id, userId: session.user.id },
+        data: { dueDate: next, done: false },
+        include: { project: { select: { id: true, title: true } }, subtasks: true },
+      })
+      return NextResponse.json(task)
+    }
+  }
+
   const task = await prisma.task.update({
     where: { id, userId: session.user.id },
     data: body,
+    include: { project: { select: { id: true, title: true } }, subtasks: true },
   })
 
   return NextResponse.json(task)

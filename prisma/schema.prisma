@@ -20,8 +20,9 @@ model Task {
   id        String    @id @default(cuid())
   title     String
   done      Boolean   @default(false)
-  dueDate   DateTime?
-  userId    String
+  dueDate    DateTime?
+  recurrence String?
+  userId     String
   user      User      @relation(fields: [userId], references: [id])
   projectId String?
   project   Project?  @relation(fields: [projectId], references: [id])

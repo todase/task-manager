@@ -26,13 +26,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { title, projectId, dueDate } = await req.json()
+  const { title, projectId, dueDate, recurrence } = await req.json()
   const task = await prisma.task.create({
     data: {
       title,
       userId: session.user.id,
       ...(projectId && { projectId }),
       ...(dueDate && { dueDate: new Date(dueDate) }),
+      ...(recurrence && { recurrence }),
     },
   })
 
