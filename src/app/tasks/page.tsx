@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
+import Link from "next/link"
 
 type Subtask = {
   id: string
@@ -15,6 +16,7 @@ type Task = {
   title: string
   done: boolean
   subtasks: Subtask[]
+  project: { id: string; title: string } | null
 }
 
 export default function TasksPage() {
@@ -127,12 +129,17 @@ export default function TasksPage() {
     <main className="max-w-xl mx-auto p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Мои задачи</h1>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
-          Выйти
-        </button>
+        <div className="flex gap-4">
+          <Link href="/projects" className="text-sm text-blue-500 hover:text-blue-700">
+            Проекты
+          </Link>
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            Выйти
+          </button>
+        </div>
       </div>
 
       <form onSubmit={addTask} className="flex gap-2 mb-6">
@@ -158,6 +165,11 @@ export default function TasksPage() {
 					checked={task.done}
 					onChange={() => toggleTask(task)}
 				  />
+                  {task.project && (
+                    <span className="text-xs text-blue-400 bg-blue-50 px-2 py-0.5 rounded-full">
+                      {task.project.title}
+                    </span>
+                  )}
 				  {editingTaskId === task.id ? (
 					<input
 					  type="text"

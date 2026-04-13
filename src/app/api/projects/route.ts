@@ -2,39 +2,33 @@ import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 
-// Получить все задачи пользователя
+// Получить все проекты пользователя
 export async function GET() {
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const tasks = await prisma.task.findMany({
+  const projects = await prisma.project.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
-    include: { subtasks: true, project: { select: { id: true, title: true } } },
+    include: { tasks: true },
   })
 
-
-  return NextResponse.json(tasks)
+  return NextResponse.json(projects)
 }
 
-// Создать новую задачу
+// Создать проект
 export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { title, projectId } = await req.json()
-  const task = await prisma.task.create({
-    data: {
-      title,
-      userId: session.user.id,
-      ...(projectId && { projectId }),
-    },
+  const { title } = await req.json()
+  const project = await prisma.project.create({
+    data: { title, userId: session.user.id },
   })
 
-  return NextResponse.json(task)
+  return NextResponse.json(project)
 }
-
