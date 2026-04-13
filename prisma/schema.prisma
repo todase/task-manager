@@ -22,6 +22,7 @@ model Task {
   done      Boolean   @default(false)
   dueDate    DateTime?
   recurrence String?
+  order      Int       @default(0)
   userId     String
   user      User      @relation(fields: [userId], references: [id])
   projectId String?

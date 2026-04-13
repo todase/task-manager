@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
+import { DndContext, DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { SortableTask } from "@/components/SortableTask"
+import { DroppableProject } from "@/components/DroppableProject"
 
 type Subtask = {
   id: string
@@ -43,6 +47,11 @@ export default function TasksPage() {
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const [editingProjectTitle, setEditingProjectTitle] = useState("")
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "someday">("all")
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  )
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
@@ -203,6 +212,50 @@ export default function TasksPage() {
     setEditingProjectId(null)
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    setDraggingTaskId(event.active.id as string)
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    setDraggingTaskId(null)
+    const { active, over } = event
+    if (!over) return
+
+    const taskId = active.id as string
+    const projectTabIds = ["all", ...projects.map((p) => p.id)]
+
+    // Перетащили на вкладку проекта
+    if (projectTabIds.includes(over.id as string)) {
+      const projectId = over.id === "all" ? null : over.id as string
+      const task = tasks.find((t) => t.id === taskId)
+      if (!task || task.project?.id === projectId) return
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId }),
+      })
+      const updated = await res.json()
+      const newProject = projectId ? (projects.find((p) => p.id === projectId) || null) : null
+      setTasks(tasks.map((t) =>
+        t.id === taskId ? { ...t, ...updated, subtasks: t.subtasks, project: newProject } : t
+      ))
+      return
+    }
+
+    // Сортировка внутри списка
+    if (active.id !== over.id) {
+      const oldIndex = tasks.findIndex((t) => t.id === active.id)
+      const newIndex = tasks.findIndex((t) => t.id === over.id)
+      const newTasks = arrayMove(tasks, oldIndex, newIndex)
+      setTasks(newTasks)
+      await fetch("/api/tasks/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTasks.map((t, i) => ({ id: t.id, order: i }))),
+      })
+    }
+  }
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const weekEnd = new Date(today)
@@ -234,6 +287,7 @@ export default function TasksPage() {
   if (status === "loading") return <p className="p-8">Загрузка...</p>
 
   return (
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
     <main className="max-w-2xl mx-auto p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Мои задачи</h1>
@@ -247,18 +301,21 @@ export default function TasksPage() {
 
       {/* Фильтр по проектам */}
       <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          onClick={() => setActiveProjectId(null)}
-          className={`text-sm px-3 py-1 rounded-full border ${
-            activeProjectId === null
-              ? "bg-blue-500 text-white border-blue-500"
-              : "text-gray-500 hover:border-gray-400"
-          }`}
-        >
-          Все задачи
-        </button>
+        <DroppableProject id="all">
+          <button
+            onClick={() => setActiveProjectId(null)}
+            className={`text-sm px-3 py-1 rounded-full border ${
+              activeProjectId === null
+                ? "bg-blue-500 text-white border-blue-500"
+                : "text-gray-500 hover:border-gray-400"
+            }`}
+          >
+            Все задачи
+          </button>
+        </DroppableProject>
         {projects.map((project) => (
           <div key={project.id} className="flex items-center gap-1">
+            <DroppableProject id={project.id}>
             {editingProjectId === project.id ? (
               <input
                 type="text"
@@ -296,6 +353,7 @@ export default function TasksPage() {
                 ✕
               </button>
             )}
+            </DroppableProject>
           </div>
         ))}
         {showNewProject ? (
@@ -373,9 +431,11 @@ export default function TasksPage() {
       </form>
 
       {/* Список задач */}
+      <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
       <ul className="flex flex-col gap-3">
         {filteredTasks.map((task) => (
-          <li key={task.id} className="border rounded p-3">
+          <SortableTask key={task.id} id={task.id}>
+          <div className="border rounded p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <input
@@ -506,9 +566,12 @@ export default function TasksPage() {
                 </form>
               </div>
             )}
-          </li>
+          </div>
+          </SortableTask>
         ))}
       </ul>
+      </SortableContext>
     </main>
+    </DndContext>
   )
 }
