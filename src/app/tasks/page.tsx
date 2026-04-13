@@ -24,6 +24,9 @@ export default function TasksPage() {
   const [title, setTitle] = useState("")
   const [openTaskId, setOpenTaskId] = useState<string | null>(null)
   const [subtaskTitle, setSubtaskTitle] = useState("")
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState("")
+
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
@@ -66,6 +69,21 @@ export default function TasksPage() {
     await fetch(`/api/tasks/${id}`, { method: "DELETE" })
     setTasks(tasks.filter((t) => t.id !== id))
   }
+  
+  async function renameTask(task: Task) {
+  if (!editingTitle.trim() || editingTitle === task.title) {
+    setEditingTaskId(null)
+    return
+  }
+  const res = await fetch(`/api/tasks/${task.id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title: editingTitle }),
+  })
+  const updated = await res.json()
+  setTasks(tasks.map((t) => (t.id === updated.id ? { ...updated, subtasks: t.subtasks } : t)))
+  setEditingTaskId(null)
+}
 
   async function addSubtask(e: React.FormEvent, taskId: string) {
     e.preventDefault()
@@ -134,16 +152,38 @@ export default function TasksPage() {
         {tasks.map((task) => (
           <li key={task.id} className="border rounded p-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={task.done}
-                  onChange={() => toggleTask(task)}
-                />
-                <span className={task.done ? "line-through text-gray-400" : ""}>
-                  {task.title}
-                </span>
-              </div>
+				<div className="flex items-center gap-3">
+				  <input
+					type="checkbox"
+					checked={task.done}
+					onChange={() => toggleTask(task)}
+				  />
+				  {editingTaskId === task.id ? (
+					<input
+					  type="text"
+					  value={editingTitle}
+					  onChange={(e) => setEditingTitle(e.target.value)}
+					  onBlur={() => renameTask(task)}
+					  onKeyDown={(e) => {
+						if (e.key === "Enter") renameTask(task)
+						if (e.key === "Escape") setEditingTaskId(null)
+					  }}
+					  className="border p-1 rounded text-sm"
+					  autoFocus
+					/>
+				  ) : (
+					<span
+					  className={task.done ? "line-through text-gray-400" : ""}
+					  onDoubleClick={() => {
+						setEditingTaskId(task.id)
+						setEditingTitle(task.title)
+					  }}
+					>
+					  {task.title}
+					</span>
+				  )}
+				</div>
+
               <div className="flex gap-2">
                 <button
                   onClick={() => setOpenTaskId(openTaskId === task.id ? null : task.id)}

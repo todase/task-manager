@@ -12,14 +12,16 @@ export async function PATCH(
   }
 
   const { id } = await params
-  const { done } = await req.json()
+  const body = await req.json()
+
   const task = await prisma.task.update({
     where: { id, userId: session.user.id },
-    data: { done },
+    data: body,
   })
 
   return NextResponse.json(task)
 }
+
 
 export async function DELETE(
   _req: Request,
