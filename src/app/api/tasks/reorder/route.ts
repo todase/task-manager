@@ -8,12 +8,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const userId = session.user.id
   const items: { id: string; order: number }[] = await req.json()
 
   await prisma.$transaction(
     items.map(({ id, order }) =>
       prisma.task.update({
-        where: { id, userId: session.user.id },
+        where: { id, userId },
         data: { order },
       })
     )
