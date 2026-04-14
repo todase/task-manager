@@ -48,6 +48,8 @@ export default function TasksPage() {
   const [editingProjectTitle, setEditingProjectTitle] = useState("")
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "someday">("all")
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -78,22 +80,31 @@ export default function TasksPage() {
 
   async function addTask(e: React.FormEvent) {
     e.preventDefault()
-    if (!title.trim()) return
-    const res = await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        ...(dueDate && { dueDate }),
-        ...(recurrence && { recurrence }),
-        ...(activeProjectId && { projectId: activeProjectId }),
-      }),
-    })
-    const task = await res.json()
-    setTasks([{ ...task, subtasks: [], project: projects.find((p) => p.id === task.projectId) || null }, ...tasks])
-    setTitle("")
-    setDueDate("")
-    setRecurrence("")
+    if (!title.trim() || isSubmitting) return
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          ...(dueDate && { dueDate }),
+          ...(recurrence && { recurrence }),
+          ...(activeProjectId && { projectId: activeProjectId }),
+        }),
+      })
+      if (!res.ok) throw new Error("Не удалось создать задачу")
+      const task = await res.json()
+      setTasks([{ ...task, subtasks: [], project: projects.find((p) => p.id === task.projectId) || null }, ...tasks])
+      setTitle("")
+      setDueDate("")
+      setRecurrence("")
+    } catch {
+      setError("Не удалось создать задачу. Попробуйте ещё раз.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   async function toggleTask(task: Task) {
@@ -175,16 +186,22 @@ export default function TasksPage() {
   async function addProject(e: React.FormEvent) {
     e.preventDefault()
     if (!newProjectTitle.trim()) return
-    const res = await fetch("/api/projects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: newProjectTitle }),
-    })
-    const project = await res.json()
-    setProjects([...projects, project])
-    setNewProjectTitle("")
-    setShowNewProject(false)
-    setActiveProjectId(project.id)
+    setError(null)
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newProjectTitle }),
+      })
+      if (!res.ok) throw new Error()
+      const project = await res.json()
+      setProjects([...projects, project])
+      setNewProjectTitle("")
+      setShowNewProject(false)
+      setActiveProjectId(project.id)
+    } catch {
+      setError("Не удалось создать проект. Попробуйте ещё раз.")
+    }
   }
 
   async function deleteProject(id: string) {
@@ -324,7 +341,7 @@ export default function TasksPage() {
                 onBlur={() => renameProject(project.id)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") renameProject(project.id)
-                  if (e.key === "Escape") setEditingProjectId(null)
+                  if (e.key === "Escape") { setEditingProjectId(null); setEditingProjectTitle("") }
                 }}
                 className="border p-1 rounded text-sm w-32"
                 autoFocus
@@ -397,6 +414,9 @@ export default function TasksPage() {
       </div>
 
       {/* Форма добавления задачи */}
+      {error && (
+        <p className="text-sm text-red-500 mb-3">{error}</p>
+      )}
       <form onSubmit={addTask} className="flex flex-col gap-2 mb-6">
         <div className="flex gap-2">
           <input
@@ -406,8 +426,12 @@ export default function TasksPage() {
             onChange={(e) => setTitle(e.target.value)}
             className="border p-2 rounded flex-1"
           />
-          <button type="submit" className="bg-blue-500 text-white px-4 rounded">
-            Добавить
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-blue-500 text-white px-4 rounded disabled:opacity-50"
+          >
+            {isSubmitting ? "..." : "Добавить"}
           </button>
         </div>
         <div className="flex gap-2">
@@ -456,7 +480,7 @@ export default function TasksPage() {
                     onBlur={() => renameTask(task)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") renameTask(task)
-                      if (e.key === "Escape") setEditingTaskId(null)
+                      if (e.key === "Escape") { setEditingTaskId(null); setEditingTitle("") }
                     }}
                     className="border p-1 rounded text-sm"
                     autoFocus

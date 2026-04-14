@@ -14,6 +14,13 @@ export async function PATCH(
   const { id } = await params
   const body = await req.json()
 
+  if (body.recurrence !== undefined && body.recurrence !== null) {
+    const valid = ["daily", "weekly", "monthly"]
+    if (!valid.includes(body.recurrence)) {
+      return NextResponse.json({ error: "Invalid recurrence value" }, { status: 400 })
+    }
+  }
+
   // Если повторяющаяся задача отмечается выполненной — сдвигаем дату вместо done=true
   if (body.done === true) {
     const existing = await prisma.task.findUnique({ where: { id } })
