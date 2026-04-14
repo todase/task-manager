@@ -400,7 +400,7 @@ export default function TasksPage() {
       </div>
 
       {/* Фильтр по дате */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         {(["all", "today", "week", "someday"] as const).map((filter) => (
           <button
             key={filter}
@@ -438,7 +438,7 @@ export default function TasksPage() {
             {isSubmitting ? "..." : "Добавить"}
           </button>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="date"
             value={dueDate}
