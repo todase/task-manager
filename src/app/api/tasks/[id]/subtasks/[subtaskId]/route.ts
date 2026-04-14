@@ -12,8 +12,18 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const userId = session.user.id
   const { subtaskId } = await params
   const { done } = await req.json()
+
+  const existing = await prisma.subtask.findUnique({
+    where: { id: subtaskId },
+    include: { task: { select: { userId: true } } },
+  })
+
+  if (!existing || existing.task.userId !== userId) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 })
+  }
 
   const subtask = await prisma.subtask.update({
     where: { id: subtaskId },
@@ -33,7 +43,17 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const userId = session.user.id
   const { subtaskId } = await params
+
+  const existing = await prisma.subtask.findUnique({
+    where: { id: subtaskId },
+    include: { task: { select: { userId: true } } },
+  })
+
+  if (!existing || existing.task.userId !== userId) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 })
+  }
 
   await prisma.subtask.delete({ where: { id: subtaskId } })
 

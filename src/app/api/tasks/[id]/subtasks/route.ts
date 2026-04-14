@@ -12,8 +12,15 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const userId = session.user.id
   const { id: taskId } = await params
   const { title } = await req.json()
+
+  const task = await prisma.task.findUnique({ where: { id: taskId, userId } })
+
+  if (!task) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 })
+  }
 
   const subtask = await prisma.subtask.create({
     data: { title, taskId },

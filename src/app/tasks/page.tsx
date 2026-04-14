@@ -277,7 +277,7 @@ export default function TasksPage() {
       return d.getTime() > today.getTime() && d < weekEnd
     }
     if (dateFilter === "someday") {
-      if (!t.dueDate) return true
+      if (!t.dueDate) return false
       const d = new Date(t.dueDate)
       return d >= weekEnd
     }
