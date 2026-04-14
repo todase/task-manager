@@ -1,58 +1,35 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
-import { DndContext, DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
-import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import { SortableTask } from "@/components/SortableTask"
-import { DroppableProject } from "@/components/DroppableProject"
+import {
+  DndContext,
+  DragEndEvent,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import { arrayMove } from "@dnd-kit/sortable"
+import { useTasks, filterTasks } from "@/hooks/useTasks"
+import { useProjects } from "@/hooks/useProjects"
+import { TaskList } from "@/components/tasks/TaskList"
+import { AddTaskForm } from "@/components/tasks/AddTaskForm"
+import { ProjectTabs } from "@/components/projects/ProjectTabs"
+import { DateFilters } from "@/components/filters/DateFilters"
 import { BottomNav } from "@/components/BottomNav"
-import { SwipeableRow } from "@/components/SwipeableRow"
-
-type Subtask = {
-  id: string
-  title: string
-  done: boolean
-}
-
-type Task = {
-  id: string
-  title: string
-  done: boolean
-  dueDate: string | null
-  recurrence: string | null
-  subtasks: Subtask[]
-  project: { id: string; title: string } | null
-}
-
-type Project = {
-  id: string
-  title: string
-}
+import type { DateFilter } from "@/types"
 
 export default function TasksPage() {
   const { status } = useSession()
   const router = useRouter()
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [projects, setProjects] = useState<Project[]>([])
+  const titleInputRef = useRef<HTMLInputElement>(null!)
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
-  const [title, setTitle] = useState("")
-  const [dueDate, setDueDate] = useState("")
-  const [recurrence, setRecurrence] = useState("")
-  const [openTaskId, setOpenTaskId] = useState<string | null>(null)
-  const [subtaskTitle, setSubtaskTitle] = useState("")
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
-  const [editingTitle, setEditingTitle] = useState("")
-  const [newProjectTitle, setNewProjectTitle] = useState("")
-  const [showNewProject, setShowNewProject] = useState(false)
-  const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
-  const [editingProjectTitle, setEditingProjectTitle] = useState("")
-  const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "someday">("all")
-  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const titleInputRef = useRef<HTMLInputElement>(null)
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all")
+
+  const taskHook = useTasks()
+  const projectHook = useProjects()
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -64,558 +41,111 @@ export default function TasksPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      fetchTasks()
-      fetchProjects()
+      taskHook.fetchTasks()
+      projectHook.fetchProjects()
     }
-  }, [status])
+  }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function fetchTasks() {
-    const res = await fetch("/api/tasks")
-    const data = await res.json()
-    setTasks(data)
-  }
-
-  async function fetchProjects() {
-    const res = await fetch("/api/projects")
-    const data = await res.json()
-    setProjects(data)
-  }
-
-  async function addTask(e: React.FormEvent) {
-    e.preventDefault()
-    if (!title.trim() || isSubmitting) return
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          ...(dueDate && { dueDate }),
-          ...(recurrence && { recurrence }),
-          ...(activeProjectId && { projectId: activeProjectId }),
-        }),
-      })
-      if (!res.ok) throw new Error("Не удалось создать задачу")
-      const task = await res.json()
-      setTasks([{ ...task, subtasks: [], project: projects.find((p) => p.id === task.projectId) || null }, ...tasks])
-      setTitle("")
-      setDueDate("")
-      setRecurrence("")
-    } catch {
-      setError("Не удалось создать задачу. Попробуйте ещё раз.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  async function toggleTask(task: Task) {
-    const res = await fetch(`/api/tasks/${task.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ done: !task.done }),
-    })
-    const updated = await res.json()
-    setTasks(tasks.map((t) => (t.id === updated.id ? { ...updated, subtasks: t.subtasks, project: t.project } : t)))
-  }
-
-  async function deleteTask(id: string) {
-    await fetch(`/api/tasks/${id}`, { method: "DELETE" })
-    setTasks(tasks.filter((t) => t.id !== id))
-  }
-
-  async function renameTask(task: Task) {
-    if (!editingTitle.trim() || editingTitle === task.title) {
-      setEditingTaskId(null)
-      return
-    }
-    const res = await fetch(`/api/tasks/${task.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: editingTitle }),
-    })
-    const updated = await res.json()
-    setTasks(tasks.map((t) => (t.id === updated.id ? { ...updated, subtasks: t.subtasks, project: t.project } : t)))
-    setEditingTaskId(null)
-  }
-
-  async function updateDueDate(taskId: string, value: string) {
-    const res = await fetch(`/api/tasks/${taskId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dueDate: value ? new Date(value).toISOString() : null }),
-    })
-    const updated = await res.json()
-    setTasks(tasks.map((t) => (t.id === updated.id ? { ...updated, subtasks: t.subtasks, project: t.project } : t)))
-  }
-
-  async function addSubtask(e: React.FormEvent, taskId: string) {
-    e.preventDefault()
-    if (!subtaskTitle.trim()) return
-    const res = await fetch(`/api/tasks/${taskId}/subtasks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: subtaskTitle }),
-    })
-    const subtask = await res.json()
-    setTasks(tasks.map((t) =>
-      t.id === taskId ? { ...t, subtasks: [...t.subtasks, subtask] } : t
-    ))
-    setSubtaskTitle("")
-  }
-
-  async function toggleSubtask(taskId: string, subtask: Subtask) {
-    const res = await fetch(`/api/tasks/${taskId}/subtasks/${subtask.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ done: !subtask.done }),
-    })
-    const updated = await res.json()
-    setTasks(tasks.map((t) =>
-      t.id === taskId
-        ? { ...t, subtasks: t.subtasks.map((s) => (s.id === updated.id ? updated : s)) }
-        : t
-    ))
-  }
-
-  async function deleteSubtask(taskId: string, subtaskId: string) {
-    await fetch(`/api/tasks/${taskId}/subtasks/${subtaskId}`, { method: "DELETE" })
-    setTasks(tasks.map((t) =>
-      t.id === taskId ? { ...t, subtasks: t.subtasks.filter((s) => s.id !== subtaskId) } : t
-    ))
-  }
-
-  async function addProject(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newProjectTitle.trim()) return
-    setError(null)
-    try {
-      const res = await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newProjectTitle }),
-      })
-      if (!res.ok) throw new Error()
-      const project = await res.json()
-      setProjects([...projects, project])
-      setNewProjectTitle("")
-      setShowNewProject(false)
-      setActiveProjectId(project.id)
-    } catch {
-      setError("Не удалось создать проект. Попробуйте ещё раз.")
-    }
-  }
-
-  async function deleteProject(id: string) {
-    await fetch(`/api/projects/${id}`, { method: "DELETE" })
-    setProjects(projects.filter((p) => p.id !== id))
-    setTasks(tasks.filter((t) => t.project?.id !== id))
-    if (activeProjectId === id) setActiveProjectId(null)
-  }
-
-  async function renameProject(id: string) {
-    if (!editingProjectTitle.trim()) {
-      setEditingProjectId(null)
-      return
-    }
-    const res = await fetch(`/api/projects/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: editingProjectTitle }),
-    })
-    const updated = await res.json()
-    setProjects(projects.map((p) => (p.id === updated.id ? updated : p)))
-    setTasks(tasks.map((t) =>
-      t.project?.id === updated.id ? { ...t, project: updated } : t
-    ))
-    setEditingProjectId(null)
-  }
-
-  function handleDragStart(event: DragStartEvent) {
-    setDraggingTaskId(event.active.id as string)
-  }
+  function handleDragStart(_event: DragStartEvent) {}
 
   async function handleDragEnd(event: DragEndEvent) {
-    setDraggingTaskId(null)
     const { active, over } = event
     if (!over) return
 
     const taskId = active.id as string
-    const projectTabIds = ["all", ...projects.map((p) => p.id)]
+    const projectTabIds = ["all", ...projectHook.projects.map((p) => p.id)]
 
-    // Перетащили на вкладку проекта
     if (projectTabIds.includes(over.id as string)) {
-      const projectId = over.id === "all" ? null : over.id as string
-      const task = tasks.find((t) => t.id === taskId)
+      const projectId = over.id === "all" ? null : (over.id as string)
+      const task = taskHook.tasks.find((t) => t.id === taskId)
       if (!task || task.project?.id === projectId) return
-      const res = await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId }),
-      })
-      const updated = await res.json()
-      const newProject = projectId ? (projects.find((p) => p.id === projectId) || null) : null
-      setTasks(tasks.map((t) =>
-        t.id === taskId ? { ...t, ...updated, subtasks: t.subtasks, project: newProject } : t
-      ))
+      const newProject = projectId
+        ? (projectHook.projects.find((p) => p.id === projectId) ?? null)
+        : null
+      await taskHook.assignProject(taskId, projectId, newProject)
       return
     }
 
-    // Сортировка внутри списка
     if (active.id !== over.id) {
-      const oldIndex = tasks.findIndex((t) => t.id === active.id)
-      const newIndex = tasks.findIndex((t) => t.id === over.id)
-      const newTasks = arrayMove(tasks, oldIndex, newIndex)
-      setTasks(newTasks)
-      await fetch("/api/tasks/reorder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTasks.map((t, i) => ({ id: t.id, order: i }))),
-      })
+      const oldIndex = taskHook.tasks.findIndex((t) => t.id === active.id)
+      const newIndex = taskHook.tasks.findIndex((t) => t.id === over.id)
+      const newTasks = arrayMove(taskHook.tasks, oldIndex, newIndex)
+      await taskHook.reorderTasks(newTasks)
     }
   }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const weekEnd = new Date(today)
-  weekEnd.setDate(today.getDate() + 7)
+  const filtered = filterTasks(taskHook.tasks, dateFilter, activeProjectId)
 
-  const filteredTasks = tasks.filter((t) => {
-    if (activeProjectId && t.project?.id !== activeProjectId) return false
-
-    if (dateFilter === "today") {
-      if (!t.dueDate) return false
-      const d = new Date(t.dueDate)
-      d.setHours(0, 0, 0, 0)
-      return d.getTime() === today.getTime()
-    }
-    if (dateFilter === "week") {
-      if (!t.dueDate) return false
-      const d = new Date(t.dueDate)
-      d.setHours(0, 0, 0, 0)
-      return d.getTime() > today.getTime() && d < weekEnd
-    }
-    if (dateFilter === "someday") {
-      if (!t.dueDate) return false
-      const d = new Date(t.dueDate)
-      return d >= weekEnd
-    }
-    return true
-  })
-
-  if (status === "loading") return <p className="p-8">Загрузка...</p>
+  if (status === "loading" || taskHook.isLoading) {
+    return <p className="p-8">Загрузка...</p>
+  }
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-    <main className="max-w-2xl mx-auto px-4 py-6 md:p-8 pb-24 md:pb-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Мои задачи</h1>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
-          Выйти
-        </button>
-      </div>
-
-      {/* Фильтр по проектам */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <DroppableProject id="all">
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <main className="max-w-2xl mx-auto px-4 py-6 md:p-8 pb-24 md:pb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Мои задачи</h1>
           <button
-            onClick={() => setActiveProjectId(null)}
-            className={`text-sm px-3 py-1 rounded-full border min-h-[44px] ${
-              activeProjectId === null
-                ? "bg-blue-500 text-white border-blue-500"
-                : "text-gray-500 hover:border-gray-400"
-            }`}
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="text-sm text-gray-500 hover:text-gray-700"
           >
-            Все задачи
-          </button>
-        </DroppableProject>
-        {projects.map((project) => (
-          <div key={project.id} className="flex items-center gap-1">
-            <DroppableProject id={project.id}>
-            {editingProjectId === project.id ? (
-              <input
-                type="text"
-                value={editingProjectTitle}
-                onChange={(e) => setEditingProjectTitle(e.target.value)}
-                onBlur={() => renameProject(project.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") renameProject(project.id)
-                  if (e.key === "Escape") { setEditingProjectId(null); setEditingProjectTitle("") }
-                }}
-                className="border p-1 rounded text-sm w-32"
-                autoFocus
-              />
-            ) : (
-              <button
-                onClick={() => setActiveProjectId(project.id)}
-                onDoubleClick={() => {
-                  setEditingProjectId(project.id)
-                  setEditingProjectTitle(project.title)
-                }}
-                className={`text-sm px-3 py-1 rounded-full border min-h-[44px] ${
-                  activeProjectId === project.id
-                    ? "bg-blue-500 text-white border-blue-500"
-                    : "text-gray-500 hover:border-gray-400"
-                }`}
-              >
-                {project.title}
-              </button>
-            )}
-            {activeProjectId === project.id && editingProjectId !== project.id && (
-              <button
-                onClick={() => deleteProject(project.id)}
-                className="text-xs text-red-400 hover:text-red-600"
-              >
-                ✕
-              </button>
-            )}
-            </DroppableProject>
-          </div>
-        ))}
-        {showNewProject ? (
-          <form onSubmit={addProject} className="flex gap-1">
-            <input
-              type="text"
-              placeholder="Название проекта..."
-              value={newProjectTitle}
-              onChange={(e) => setNewProjectTitle(e.target.value)}
-              className="border p-1 rounded text-sm"
-              autoFocus
-              onBlur={() => { if (!newProjectTitle) setShowNewProject(false) }}
-            />
-            <button type="submit" className="text-sm bg-blue-500 text-white px-2 rounded">+</button>
-          </form>
-        ) : (
-          <button
-            onClick={() => setShowNewProject(true)}
-            className="text-sm px-3 py-1 rounded-full border border-dashed text-gray-400 hover:text-gray-600"
-          >
-            + проект
-          </button>
-        )}
-      </div>
-
-      {/* Фильтр по дате */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {(["all", "today", "week", "someday"] as const).map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setDateFilter(filter)}
-            className={`text-sm px-3 py-1 rounded-full border ${
-              dateFilter === filter
-                ? "bg-gray-700 text-white border-gray-700"
-                : "text-gray-500 hover:border-gray-400"
-            }`}
-          >
-            {{ all: "Все", today: "Сегодня", week: "Неделя", someday: "Когда-нибудь" }[filter]}
-          </button>
-        ))}
-      </div>
-
-      {/* Форма добавления задачи */}
-      {error && (
-        <p className="text-sm text-red-500 mb-3">{error}</p>
-      )}
-      <form
-        onSubmit={addTask}
-        className="flex flex-col gap-2 mb-6 md:static md:shadow-none md:bg-transparent sticky bottom-[80px] z-30 bg-white rounded-lg focus-within:shadow-lg focus-within:px-3 focus-within:py-2 transition-all"
-      >
-        <div className="flex gap-2">
-          <input
-            ref={titleInputRef}
-            type="text"
-            placeholder={activeProjectId ? `Задача в «${projects.find(p => p.id === activeProjectId)?.title}»...` : "Новая задача..."}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="border p-2 rounded flex-1"
-          />
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-blue-500 text-white px-4 rounded disabled:opacity-50"
-          >
-            {isSubmitting ? "..." : "Добавить"}
+            Выйти
           </button>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="border p-2 rounded text-sm text-gray-500 flex-1"
-          />
-          <select
-            value={recurrence}
-            onChange={(e) => setRecurrence(e.target.value)}
-            className="border p-2 rounded text-sm text-gray-500"
-          >
-            <option value="">Не повторять</option>
-            <option value="daily">Каждый день</option>
-            <option value="weekly">Каждую неделю</option>
-            <option value="monthly">Каждый месяц</option>
-          </select>
-        </div>
-      </form>
 
-      {/* Список задач */}
-      <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-      <ul id="task-list" className="flex flex-col gap-3">
-        {filteredTasks.map((task) => (
-          <SortableTask key={task.id} id={task.id}>
-          <SwipeableRow
-            onSubtasks={() => setOpenTaskId(openTaskId === task.id ? null : task.id)}
-            onDelete={() => deleteTask(task.id)}
-            subtasksLabel={openTaskId === task.id ? "Свернуть" : "Подзадачи"}
-          >
-          <div className="border rounded p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={task.done}
-                  onChange={() => toggleTask(task)}
-                />
-                {!activeProjectId && task.project && (
-                  <span className="text-xs text-blue-400 bg-blue-50 px-2 py-0.5 rounded-full">
-                    {task.project.title}
-                  </span>
-                )}
-                {editingTaskId === task.id ? (
-                  <input
-                    type="text"
-                    value={editingTitle}
-                    onChange={(e) => setEditingTitle(e.target.value)}
-                    onBlur={() => renameTask(task)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") renameTask(task)
-                      if (e.key === "Escape") { setEditingTaskId(null); setEditingTitle("") }
-                    }}
-                    className="border p-1 rounded text-sm"
-                    autoFocus
-                  />
-                ) : (
-                  <span
-                    className={task.done ? "line-through text-gray-400" : ""}
-                    onDoubleClick={() => {
-                      setEditingTaskId(task.id)
-                      setEditingTitle(task.title)
-                    }}
-                  >
-                    {task.title}
-                  </span>
-                )}
-              </div>
+        <ProjectTabs
+          projects={projectHook.projects}
+          activeProjectId={activeProjectId}
+          onSelect={setActiveProjectId}
+          onCreate={projectHook.createProject}
+          onDelete={async (id) => {
+            await projectHook.deleteProject(id)
+            taskHook.removeProjectTasks(id)
+            if (activeProjectId === id) setActiveProjectId(null)
+          }}
+          onRename={async (id, title) => {
+            const updated = await projectHook.renameProject(id, title)
+            taskHook.syncProjectRename(updated)
+          }}
+        />
 
-              <div className="flex gap-2 items-center">
-                <input
-                  type="date"
-                  id={`date-${task.id}`}
-                  defaultValue={task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : ""}
-                  onChange={(e) => updateDueDate(task.id, e.target.value)}
-                  className="sr-only"
-                />
-                {task.recurrence && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-400">
-                    {{ daily: "↻ день", weekly: "↻ неделя", monthly: "↻ месяц" }[task.recurrence]}
-                  </span>
-                )}
-                {task.dueDate ? (
-                  <span
-                    onClick={() => {
-                      const el = document.getElementById(`date-${task.id}`) as HTMLInputElement
-                      el?.showPicker()
-                    }}
-                    className={`text-xs px-2 py-0.5 rounded-full cursor-pointer ${
-                      new Date(task.dueDate) < new Date() && !task.done
-                        ? "text-red-500 bg-red-50"
-                        : "text-gray-400 bg-gray-100"
-                    }`}
-                  >
-                    {new Date(task.dueDate).toLocaleDateString("ru-RU")}
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => {
-                      const el = document.getElementById(`date-${task.id}`) as HTMLInputElement
-                      el?.showPicker()
-                    }}
-                    className="text-xs text-gray-300 hover:text-gray-500"
-                  >
-                    + дата
-                  </button>
-                )}
-                <button
-                  onClick={() => setOpenTaskId(openTaskId === task.id ? null : task.id)}
-                  className="hidden md:block text-sm text-blue-400 hover:text-blue-600 min-h-[44px] px-2"
-                >
-                  {openTaskId === task.id ? "Свернуть" : "Подзадачи"}
-                </button>
-                <button
-                  onClick={() => deleteTask(task.id)}
-                  className="hidden md:block text-sm text-red-400 hover:text-red-600 min-h-[44px] px-2"
-                >
-                  Удалить
-                </button>
-              </div>
-            </div>
+        <DateFilters value={dateFilter} onChange={setDateFilter} />
 
-            {openTaskId === task.id && (
-              <div className="mt-3 pl-6">
-                <ul className="flex flex-col gap-2 mb-2">
-                  {task.subtasks.map((subtask) => (
-                    <li key={subtask.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={subtask.done}
-                          onChange={() => toggleSubtask(task.id, subtask)}
-                        />
-                        <span className={subtask.done ? "line-through text-gray-400 text-sm" : "text-sm"}>
-                          {subtask.title}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => deleteSubtask(task.id, subtask.id)}
-                        className="text-xs text-red-400 hover:text-red-600"
-                      >
-                        Удалить
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+        <AddTaskForm
+          activeProjectId={activeProjectId}
+          projects={projectHook.projects}
+          inputRef={titleInputRef}
+          onSubmit={(input) => taskHook.createTask(input, projectHook.projects)}
+        />
 
-                <form onSubmit={(e) => addSubtask(e, task.id)} className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Новая подзадача..."
-                    value={subtaskTitle}
-                    onChange={(e) => setSubtaskTitle(e.target.value)}
-                    className="border p-1 rounded text-sm flex-1"
-                  />
-                  <button type="submit" className="bg-blue-400 text-white px-3 rounded text-sm">
-                    +
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
-          </SwipeableRow>
-          </SortableTask>
-        ))}
-      </ul>
-      </SortableContext>
+        <TaskList
+          tasks={taskHook.tasks}
+          filteredTasks={filtered}
+          activeProjectId={activeProjectId}
+          dateFilter={dateFilter}
+          onToggle={taskHook.toggleTask}
+          onDelete={taskHook.deleteTask}
+          onRename={taskHook.renameTask}
+          onUpdateDueDate={taskHook.updateDueDate}
+          onAddSubtask={taskHook.addSubtask}
+          onToggleSubtask={taskHook.toggleSubtask}
+          onDeleteSubtask={taskHook.deleteSubtask}
+        />
 
-      <BottomNav
-        onAddClick={() => {
-          titleInputRef.current?.focus()
-          titleInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-        }}
-      />
-    </main>
+        <BottomNav
+          onAddClick={() => {
+            titleInputRef.current?.focus()
+            titleInputRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            })
+          }}
+        />
+      </main>
     </DndContext>
   )
 }
