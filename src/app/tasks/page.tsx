@@ -420,7 +420,10 @@ export default function TasksPage() {
       {error && (
         <p className="text-sm text-red-500 mb-3">{error}</p>
       )}
-      <form onSubmit={addTask} className="flex flex-col gap-2 mb-6">
+      <form
+        onSubmit={addTask}
+        className="flex flex-col gap-2 mb-6 md:static md:shadow-none md:bg-transparent sticky bottom-[80px] z-30 bg-white rounded-lg focus-within:shadow-lg focus-within:px-3 focus-within:py-2 transition-all"
+      >
         <div className="flex gap-2">
           <input
             ref={titleInputRef}
@@ -460,7 +463,7 @@ export default function TasksPage() {
 
       {/* Список задач */}
       <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-      <ul className="flex flex-col gap-3">
+      <ul id="task-list" className="flex flex-col gap-3">
         {filteredTasks.map((task) => (
           <SortableTask key={task.id} id={task.id}>
           <SwipeableRow
