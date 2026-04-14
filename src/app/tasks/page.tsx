@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { DndContext, DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { SortableTask } from "@/components/SortableTask"
 import { DroppableProject } from "@/components/DroppableProject"
+import { BottomNav } from "@/components/BottomNav"
+import { SwipeableRow } from "@/components/SwipeableRow"
 
 type Subtask = {
   id: string
@@ -50,6 +52,7 @@ export default function TasksPage() {
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const titleInputRef = useRef<HTMLInputElement>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -305,7 +308,7 @@ export default function TasksPage() {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-    <main className="max-w-2xl mx-auto p-8">
+    <main className="max-w-2xl mx-auto px-4 py-6 md:p-8 pb-24 md:pb-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Мои задачи</h1>
         <button
@@ -321,7 +324,7 @@ export default function TasksPage() {
         <DroppableProject id="all">
           <button
             onClick={() => setActiveProjectId(null)}
-            className={`text-sm px-3 py-1 rounded-full border ${
+            className={`text-sm px-3 py-1 rounded-full border min-h-[44px] ${
               activeProjectId === null
                 ? "bg-blue-500 text-white border-blue-500"
                 : "text-gray-500 hover:border-gray-400"
@@ -353,7 +356,7 @@ export default function TasksPage() {
                   setEditingProjectId(project.id)
                   setEditingProjectTitle(project.title)
                 }}
-                className={`text-sm px-3 py-1 rounded-full border ${
+                className={`text-sm px-3 py-1 rounded-full border min-h-[44px] ${
                   activeProjectId === project.id
                     ? "bg-blue-500 text-white border-blue-500"
                     : "text-gray-500 hover:border-gray-400"
@@ -420,6 +423,7 @@ export default function TasksPage() {
       <form onSubmit={addTask} className="flex flex-col gap-2 mb-6">
         <div className="flex gap-2">
           <input
+            ref={titleInputRef}
             type="text"
             placeholder={activeProjectId ? `Задача в «${projects.find(p => p.id === activeProjectId)?.title}»...` : "Новая задача..."}
             value={title}
@@ -459,6 +463,11 @@ export default function TasksPage() {
       <ul className="flex flex-col gap-3">
         {filteredTasks.map((task) => (
           <SortableTask key={task.id} id={task.id}>
+          <SwipeableRow
+            onSubtasks={() => setOpenTaskId(openTaskId === task.id ? null : task.id)}
+            onDelete={() => deleteTask(task.id)}
+            subtasksLabel={openTaskId === task.id ? "Свернуть" : "Подзадачи"}
+          >
           <div className="border rounded p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -538,13 +547,13 @@ export default function TasksPage() {
                 )}
                 <button
                   onClick={() => setOpenTaskId(openTaskId === task.id ? null : task.id)}
-                  className="text-sm text-blue-400 hover:text-blue-600"
+                  className="hidden md:block text-sm text-blue-400 hover:text-blue-600 min-h-[44px] px-2"
                 >
                   {openTaskId === task.id ? "Свернуть" : "Подзадачи"}
                 </button>
                 <button
                   onClick={() => deleteTask(task.id)}
-                  className="text-sm text-red-400 hover:text-red-600"
+                  className="hidden md:block text-sm text-red-400 hover:text-red-600 min-h-[44px] px-2"
                 >
                   Удалить
                 </button>
@@ -591,10 +600,18 @@ export default function TasksPage() {
               </div>
             )}
           </div>
+          </SwipeableRow>
           </SortableTask>
         ))}
       </ul>
       </SortableContext>
+
+      <BottomNav
+        onAddClick={() => {
+          titleInputRef.current?.focus()
+          titleInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+        }}
+      />
     </main>
     </DndContext>
   )
