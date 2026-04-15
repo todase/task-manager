@@ -12,17 +12,21 @@ export async function PATCH(
   }
 
   const { id } = await params
-  const body = await req.json()
+  const { tagIds, done, title, dueDate, recurrence, projectId, description } =
+    await req.json()
 
-  if (body.recurrence !== undefined && body.recurrence !== null) {
+  if (recurrence !== undefined && recurrence !== null) {
     const valid = ["daily", "weekly", "monthly"]
-    if (!valid.includes(body.recurrence)) {
-      return NextResponse.json({ error: "Invalid recurrence value" }, { status: 400 })
+    if (!valid.includes(recurrence)) {
+      return NextResponse.json(
+        { error: "Invalid recurrence value" },
+        { status: 400 }
+      )
     }
   }
 
   // Если повторяющаяся задача отмечается выполненной — сдвигаем дату вместо done=true
-  if (body.done === true) {
+  if (done === true) {
     const existing = await prisma.task.findUnique({ where: { id } })
     if (existing?.recurrence && existing.dueDate) {
       const next = new Date(existing.dueDate)
@@ -33,19 +37,42 @@ export async function PATCH(
       const task = await prisma.task.update({
         where: { id, userId: session.user.id },
         data: { dueDate: next, done: false },
-        include: { project: { select: { id: true, title: true } }, subtasks: true },
+        include: {
+          project: { select: { id: true, title: true } },
+          subtasks: true,
+          tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+        },
       })
-      return NextResponse.json(task)
+      return NextResponse.json({ ...task, tags: task.tags.map((tt) => tt.tag) })
+    }
+  }
+
+  // Build update data from explicit fields only
+  const data: Record<string, unknown> = {}
+  if (done !== undefined) data.done = done
+  if (title !== undefined) data.title = title
+  if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null
+  if (recurrence !== undefined) data.recurrence = recurrence
+  if (projectId !== undefined) data.projectId = projectId
+  if (description !== undefined) data.description = description
+  if (Array.isArray(tagIds)) {
+    data.tags = {
+      deleteMany: {},
+      create: tagIds.map((tagId: string) => ({ tagId })),
     }
   }
 
   const task = await prisma.task.update({
     where: { id, userId: session.user.id },
-    data: body,
-    include: { project: { select: { id: true, title: true } }, subtasks: true },
+    data,
+    include: {
+      project: { select: { id: true, title: true } },
+      subtasks: true,
+      tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+    },
   })
 
-  return NextResponse.json(task)
+  return NextResponse.json({ ...task, tags: task.tags.map((tt) => tt.tag) })
 }
 
 
