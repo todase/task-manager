@@ -30,6 +30,7 @@ export function SortableTask({ id, children }: { id: string; children: React.Rea
         {...listeners}
         {...attributes}
         className="text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing mt-3 px-1 text-lg select-none"
+        style={{ touchAction: "none" }}
         tabIndex={-1}
       >
         ⠿
