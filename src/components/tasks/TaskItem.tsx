@@ -1,6 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  RefreshCw,
+  CalendarDays,
+  Tag,
+  Pencil,
+} from "lucide-react"
 import type { Task, Subtask } from "@/types"
 import { SwipeableRow } from "@/components/SwipeableRow"
 import { SubtaskPanel } from "@/components/tasks/SubtaskPanel"
@@ -11,6 +21,24 @@ function priorityColor(score: number): string {
   const g = Math.round(130 + (231 - 130) * (1 - score))
   const b = Math.round(246 + (235 - 246) * (1 - score))
   return `rgb(${r}, ${g}, ${b})`
+}
+
+function dateBadgeClasses(task: Task): string {
+  if (!task.dueDate) return ""
+  if (task.done) return "bg-gray-100 text-gray-400"
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const due = new Date(task.dueDate)
+  due.setHours(0, 0, 0, 0)
+  if (due < today) return "bg-red-50 text-red-600"
+  if (due.getTime() === today.getTime()) return "bg-green-50 text-green-700"
+  return "bg-blue-50 text-blue-700"
+}
+
+const RECURRENCE_LABEL: Record<string, string> = {
+  daily: "ежедневно",
+  weekly: "еженедельно",
+  monthly: "ежемесячно",
 }
 
 interface TaskItemProps {
@@ -46,7 +74,24 @@ export function TaskItem({
   const [editingDesc, setEditingDesc] = useState(false)
   const [descValue, setDescValue] = useState(task.description ?? "")
 
-  function startEdit() {
+  function handleRowClick(e: React.MouseEvent) {
+    const target = e.target as HTMLElement
+    if (
+      target.tagName === "INPUT" ||
+      target.tagName === "BUTTON" ||
+      target.tagName === "TEXTAREA" ||
+      target.tagName === "LABEL" ||
+      target.closest("button") !== null ||
+      target.closest("label") !== null ||
+      target.closest("input") !== null ||
+      target.closest("textarea") !== null
+    )
+      return
+    setIsOpen((o) => !o)
+  }
+
+  function handleTitleDoubleClick(e: React.MouseEvent) {
+    e.stopPropagation()
     setEditing(true)
     setEditTitle(task.title)
   }
@@ -70,181 +115,226 @@ export function TaskItem({
     setEditingDesc(false)
   }
 
+  const borderColor = isOpen ? "#3b82f6" : priorityColor(task.priorityScore)
+  const dateInputId = `date-${task.id}`
+
   return (
     <SwipeableRow
       onSubtasks={() => setIsOpen((o) => !o)}
       onDelete={() => onDelete(task.id)}
       subtasksLabel={isOpen ? "Свернуть" : "Подзадачи"}
     >
-      <div
-        className="border rounded p-3"
-        style={{ borderLeftWidth: "3px", borderLeftColor: priorityColor(task.priorityScore) }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={task.done}
-              onChange={() => onToggle(task)}
-            />
-            {showProject && task.project && (
-              <span className="text-xs text-blue-400 bg-blue-50 px-2 py-0.5 rounded-full">
-                {task.project.title}
-              </span>
-            )}
-            {editing ? (
-              <input
-                type="text"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                onBlur={commitRename}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitRename()
-                  if (e.key === "Escape") setEditing(false)
-                }}
-                className="border p-1 rounded text-sm"
-                autoFocus
-              />
-            ) : (
-              <span
-                className={task.done ? "line-through text-gray-400" : ""}
-                onDoubleClick={startEdit}
-              >
-                {task.title}
-              </span>
-            )}
-          </div>
+      {/* Hidden native date picker */}
+      <input
+        type="date"
+        id={dateInputId}
+        value={
+          task.dueDate
+            ? new Date(task.dueDate).toISOString().split("T")[0]
+            : ""
+        }
+        onChange={(e) => onUpdateDueDate(task.id, e.target.value)}
+        className="sr-only"
+      />
 
-          <div className="flex gap-2 items-center">
+      <div
+        className="bg-white rounded-xl shadow-sm cursor-pointer select-none overflow-hidden"
+        style={{ borderLeft: `3px solid ${borderColor}` }}
+        onClick={handleRowClick}
+      >
+        {/* ─── Collapsed row ─── */}
+        <div className="flex items-center gap-3 px-3 py-3">
+          {/* Round checkbox */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggle(task)
+            }}
+            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+              task.done
+                ? "border-blue-500 bg-blue-500"
+                : "border-gray-300 hover:border-blue-400"
+            }`}
+            aria-label={task.done ? "Отметить невыполненной" : "Отметить выполненной"}
+          >
+            {task.done && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+          </button>
+
+          {/* Project badge (when showing all projects) */}
+          {showProject && task.project && (
+            <span className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full flex-shrink-0">
+              {task.project.title}
+            </span>
+          )}
+
+          {/* Title */}
+          {editing ? (
             <input
-              type="date"
-              id={`date-${task.id}`}
-              value={
-                task.dueDate
-                  ? new Date(task.dueDate).toISOString().split("T")[0]
-                  : ""
-              }
-              onChange={(e) => onUpdateDueDate(task.id, e.target.value)}
-              className="sr-only"
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitRename()
+                if (e.key === "Escape") setEditing(false)
+              }}
+              className="border p-1 rounded text-sm flex-1 outline-none focus:border-blue-400"
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
             />
-            {task.recurrence && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-400">
-                {
-                  { daily: "↻ день", weekly: "↻ неделя", monthly: "↻ месяц" }[
-                    task.recurrence
-                  ]
-                }
-              </span>
+          ) : (
+            <span
+              className={`text-sm font-medium flex-1 min-w-0 truncate ${
+                task.done ? "line-through text-gray-400" : "text-gray-900"
+              }`}
+              onDoubleClick={handleTitleDoubleClick}
+            >
+              {task.title}
+            </span>
+          )}
+
+          {/* Date badge (only in collapsed) */}
+          {task.dueDate && !isOpen && (
+            <label
+              htmlFor={dateInputId}
+              className={`text-xs px-2 py-0.5 rounded-full cursor-pointer flex-shrink-0 ${dateBadgeClasses(task)}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {new Date(task.dueDate).toLocaleDateString("ru-RU")}
+            </label>
+          )}
+
+          {/* Chevron toggle */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsOpen((o) => !o)
+            }}
+            className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+            aria-label={isOpen ? "Свернуть" : "Развернуть"}
+          >
+            {isOpen ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
             )}
-            {task.dueDate ? (
-              <div className="flex items-center gap-0.5">
-                <label
-                  htmlFor={`date-${task.id}`}
-                  className={`text-xs px-2 py-0.5 rounded-full cursor-pointer ${(() => {
-                    const today = new Date(); today.setHours(0, 0, 0, 0)
-                    const due = new Date(task.dueDate); due.setHours(0, 0, 0, 0)
-                    if (task.done) return "text-gray-400 bg-gray-100"
-                    if (due < today) return "text-red-500 bg-red-50"
-                    if (due.getTime() === today.getTime()) return "text-green-600 bg-green-50"
-                    return "text-gray-400 bg-gray-100"
-                  })()}`}
-                >
-                  {new Date(task.dueDate).toLocaleDateString("ru-RU")}
-                </label>
+          </button>
+        </div>
+
+        {/* ─── Expanded section ─── */}
+        {isOpen && (
+          <div className="border-t border-gray-100 px-3 pb-3 pt-2 flex flex-col gap-2.5">
+            {/* Tags */}
+            {task.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {task.tags.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="text-xs px-2 py-0.5 rounded-full text-white flex items-center gap-1"
+                    style={{ backgroundColor: tag.color }}
+                  >
+                    <Tag className="w-2.5 h-2.5" />
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Recurrence */}
+            {task.recurrence && (
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <RefreshCw className="w-3 h-3" />
+                <span>{RECURRENCE_LABEL[task.recurrence] ?? task.recurrence}</span>
+              </div>
+            )}
+
+            {/* Date with icon + clear button */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor={dateInputId}
+                className={`flex items-center gap-1 text-xs cursor-pointer ${
+                  task.dueDate
+                    ? `${dateBadgeClasses(task)} px-2 py-0.5 rounded-full`
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <CalendarDays className="w-3 h-3" />
+                {task.dueDate
+                  ? new Date(task.dueDate).toLocaleDateString("ru-RU")
+                  : "Добавить дату"}
+              </label>
+              {task.dueDate && (
                 <button
-                  onClick={() => onUpdateDueDate(task.id, "")}
-                  className="text-gray-300 hover:text-gray-500 text-sm leading-none px-0.5"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onUpdateDueDate(task.id, "")
+                  }}
+                  className="text-gray-300 hover:text-gray-500 leading-none"
                   tabIndex={-1}
                   aria-label="Сбросить дату"
                 >
                   ×
                 </button>
-              </div>
+              )}
+            </div>
+
+            {/* Description */}
+            {editingDesc ? (
+              <textarea
+                value={descValue}
+                onChange={(e) => setDescValue(e.target.value)}
+                onBlur={saveDescription}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && e.ctrlKey) saveDescription()
+                  if (e.key === "Escape") {
+                    setDescValue(task.description ?? "")
+                    setEditingDesc(false)
+                  }
+                }}
+                className="w-full border border-gray-200 rounded-lg p-2 text-sm text-gray-600 resize-none outline-none focus:border-blue-400"
+                rows={3}
+                autoFocus
+                onClick={(e) => e.stopPropagation()}
+              />
             ) : (
-              <label
-                htmlFor={`date-${task.id}`}
-                className="text-xs text-gray-300 hover:text-gray-500 cursor-pointer"
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setEditingDesc(true)
+                  setDescValue(task.description ?? "")
+                }}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 text-left italic"
               >
-                + дата
-              </label>
+                <Pencil className="w-3 h-3 flex-shrink-0" />
+                {task.description
+                  ? task.description.slice(0, 100) +
+                    (task.description.length > 100 ? "…" : "")
+                  : "Добавить описание..."}
+              </button>
             )}
-            {task.subtasks.length > 0 && (
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                task.subtasks.every((s) => s.done)
-                  ? "bg-green-50 text-green-600"
-                  : "bg-gray-100 text-gray-400"
-              }`}>
-                {task.subtasks.filter((s) => s.done).length}/{task.subtasks.length}
-              </span>
-            )}
+
+            {/* Subtask panel */}
+            <SubtaskPanel
+              taskId={task.id}
+              subtasks={task.subtasks}
+              onAdd={onAddSubtask}
+              onToggle={onToggleSubtask}
+              onDelete={onDeleteSubtask}
+            />
+
+            {/* Delete */}
             <button
-              onClick={() => setIsOpen((o) => !o)}
-              className="hidden md:block text-sm text-blue-400 hover:text-blue-600 min-h-[44px] px-2"
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete(task.id)
+              }}
+              className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-600 self-start mt-1"
             >
-              {isOpen ? "Свернуть" : "Подзадачи"}
-            </button>
-            <button
-              onClick={() => onDelete(task.id)}
-              className="hidden md:block text-sm text-red-400 hover:text-red-600 min-h-[44px] px-2"
-            >
-              Удалить
+              <Trash2 className="w-4 h-4" />
+              Удалить задачу
             </button>
           </div>
-        </div>
-
-        {/* Tag pills */}
-        {task.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {task.tags.map((tag) => (
-              <span
-                key={tag.id}
-                className="text-xs px-2 py-0.5 rounded-full text-white"
-                style={{ backgroundColor: tag.color }}
-              >
-                {tag.name}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Description */}
-        {editingDesc ? (
-          <textarea
-            value={descValue}
-            onChange={(e) => setDescValue(e.target.value)}
-            onBlur={saveDescription}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && e.ctrlKey) saveDescription()
-              if (e.key === "Escape") {
-                setDescValue(task.description ?? "")
-                setEditingDesc(false)
-              }
-            }}
-            className="mt-2 w-full border rounded p-2 text-sm text-gray-600 resize-none"
-            rows={3}
-            autoFocus
-          />
-        ) : (
-          <button
-            onClick={() => setEditingDesc(true)}
-            className="mt-1 text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 text-left"
-          >
-            ✏{" "}
-            {task.description
-              ? task.description.slice(0, 60) +
-                (task.description.length > 60 ? "…" : "")
-              : "Добавить описание"}
-          </button>
-        )}
-
-        {isOpen && (
-          <SubtaskPanel
-            taskId={task.id}
-            subtasks={task.subtasks}
-            onAdd={onAddSubtask}
-            onToggle={onToggleSubtask}
-            onDelete={onDeleteSubtask}
-          />
         )}
       </div>
     </SwipeableRow>
