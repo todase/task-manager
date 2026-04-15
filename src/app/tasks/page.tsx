@@ -14,10 +14,12 @@ import {
 import { arrayMove } from "@dnd-kit/sortable"
 import { useTasks, filterTasks } from "@/hooks/useTasks"
 import { useProjects } from "@/hooks/useProjects"
+import { useTags } from "@/hooks/useTags"
 import { TaskList } from "@/components/tasks/TaskList"
 import { AddTaskForm } from "@/components/tasks/AddTaskForm"
 import { ProjectTabs } from "@/components/projects/ProjectTabs"
 import { DateFilters } from "@/components/filters/DateFilters"
+import { TagFilter } from "@/components/filters/TagFilter"
 import { BottomNav } from "@/components/BottomNav"
 import type { DateFilter } from "@/types"
 
@@ -27,9 +29,11 @@ export default function TasksPage() {
   const titleInputRef = useRef<HTMLInputElement>(null!)
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [dateFilter, setDateFilter] = useState<DateFilter>("all")
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
 
   const taskHook = useTasks()
   const projectHook = useProjects()
+  const tagHook = useTags()
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -43,6 +47,7 @@ export default function TasksPage() {
     if (status === "authenticated") {
       taskHook.fetchTasks()
       projectHook.fetchProjects()
+      tagHook.fetchTags()
     }
   }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -74,7 +79,11 @@ export default function TasksPage() {
     }
   }
 
-  const filtered = filterTasks(taskHook.tasks, dateFilter, activeProjectId)
+  const filtered = filterTasks(taskHook.tasks, dateFilter, activeProjectId).filter(
+    (t) =>
+      selectedTagIds.length === 0 ||
+      selectedTagIds.some((id) => t.tags.some((tag) => tag.id === id))
+  )
 
   if (status === "loading" || taskHook.isLoading) {
     return <p className="p-8">Загрузка...</p>
@@ -115,11 +124,19 @@ export default function TasksPage() {
 
         <DateFilters value={dateFilter} onChange={setDateFilter} />
 
+        <TagFilter
+          tags={tagHook.tags}
+          selectedIds={selectedTagIds}
+          onChange={setSelectedTagIds}
+        />
+
         <AddTaskForm
           activeProjectId={activeProjectId}
           projects={projectHook.projects}
+          tags={tagHook.tags}
           inputRef={titleInputRef}
           onSubmit={(input) => taskHook.createTask(input, projectHook.projects)}
+          onCreateTag={tagHook.createTag}
         />
 
         <TaskList
@@ -131,6 +148,8 @@ export default function TasksPage() {
           onDelete={taskHook.deleteTask}
           onRename={taskHook.renameTask}
           onUpdateDueDate={taskHook.updateDueDate}
+          onUpdateDescription={taskHook.updateDescription}
+          onUpdateTags={taskHook.updateTags}
           onAddSubtask={taskHook.addSubtask}
           onToggleSubtask={taskHook.toggleSubtask}
           onDeleteSubtask={taskHook.deleteSubtask}

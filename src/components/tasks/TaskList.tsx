@@ -15,6 +15,8 @@ interface TaskListProps {
   onDelete: (id: string) => Promise<void>
   onRename: (id: string, title: string) => Promise<void>
   onUpdateDueDate: (id: string, value: string) => Promise<void>
+  onUpdateDescription: (id: string, description: string) => Promise<void>
+  onUpdateTags: (id: string, tagIds: string[]) => Promise<void>
   onAddSubtask: (taskId: string, title: string) => Promise<void>
   onToggleSubtask: (taskId: string, subtask: Subtask) => Promise<void>
   onDeleteSubtask: (taskId: string, subtaskId: string) => Promise<void>
@@ -39,6 +41,8 @@ export function TaskList({
   onDelete,
   onRename,
   onUpdateDueDate,
+  onUpdateDescription,
+  onUpdateTags,
   onAddSubtask,
   onToggleSubtask,
   onDeleteSubtask,
@@ -64,6 +68,8 @@ export function TaskList({
                   onDelete={onDelete}
                   onRename={onRename}
                   onUpdateDueDate={onUpdateDueDate}
+                  onUpdateDescription={onUpdateDescription}
+                  onUpdateTags={onUpdateTags}
                   onAddSubtask={onAddSubtask}
                   onToggleSubtask={onToggleSubtask}
                   onDeleteSubtask={onDeleteSubtask}
