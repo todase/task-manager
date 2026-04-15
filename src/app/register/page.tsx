@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -50,6 +51,12 @@ export default function RegisterPage() {
         <button type="submit" className="bg-blue-500 text-white p-2 rounded">
           Зарегистрироваться
         </button>
+        <p className="text-sm text-center text-gray-500">
+          Уже есть аккаунт?{" "}
+          <Link href="/login" className="text-blue-500 hover:underline">
+            Войти
+          </Link>
+        </p>
       </form>
     </main>
   )
