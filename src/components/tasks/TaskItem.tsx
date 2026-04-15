@@ -1,9 +1,17 @@
 "use client"
 
 import { useState } from "react"
+import type { Task, Subtask } from "@/types"
 import { SwipeableRow } from "@/components/SwipeableRow"
 import { SubtaskPanel } from "@/components/tasks/SubtaskPanel"
-import type { Task, Subtask } from "@/types"
+
+function priorityColor(score: number): string {
+  // Interpolate from blue (#3b82f6) at score=1 to gray (#e5e7eb) at score=0
+  const r = Math.round(59 + (229 - 59) * (1 - score))
+  const g = Math.round(130 + (231 - 130) * (1 - score))
+  const b = Math.round(246 + (235 - 246) * (1 - score))
+  return `rgb(${r}, ${g}, ${b})`
+}
 
 interface TaskItemProps {
   task: Task
@@ -12,6 +20,8 @@ interface TaskItemProps {
   onDelete: (id: string) => Promise<void>
   onRename: (id: string, title: string) => Promise<void>
   onUpdateDueDate: (id: string, value: string) => Promise<void>
+  onUpdateDescription: (id: string, description: string) => Promise<void>
+  onUpdateTags: (id: string, tagIds: string[]) => Promise<void>
   onAddSubtask: (taskId: string, title: string) => Promise<void>
   onToggleSubtask: (taskId: string, subtask: Subtask) => Promise<void>
   onDeleteSubtask: (taskId: string, subtaskId: string) => Promise<void>
@@ -24,6 +34,8 @@ export function TaskItem({
   onDelete,
   onRename,
   onUpdateDueDate,
+  onUpdateDescription,
+  onUpdateTags,
   onAddSubtask,
   onToggleSubtask,
   onDeleteSubtask,
@@ -31,6 +43,8 @@ export function TaskItem({
   const [isOpen, setIsOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState("")
+  const [editingDesc, setEditingDesc] = useState(false)
+  const [descValue, setDescValue] = useState(task.description ?? "")
 
   function startEdit() {
     setEditing(true)
@@ -46,13 +60,26 @@ export function TaskItem({
     setEditing(false)
   }
 
+  async function saveDescription() {
+    const current = task.description ?? ""
+    if (descValue === current) {
+      setEditingDesc(false)
+      return
+    }
+    await onUpdateDescription(task.id, descValue)
+    setEditingDesc(false)
+  }
+
   return (
     <SwipeableRow
       onSubtasks={() => setIsOpen((o) => !o)}
       onDelete={() => onDelete(task.id)}
       subtasksLabel={isOpen ? "Свернуть" : "Подзадачи"}
     >
-      <div className="border rounded p-3">
+      <div
+        className="border rounded p-3"
+        style={{ borderLeftWidth: "3px", borderLeftColor: priorityColor(task.priorityScore) }}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <input
@@ -142,6 +169,51 @@ export function TaskItem({
             </button>
           </div>
         </div>
+
+        {/* Tag pills */}
+        {task.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {task.tags.map((tag) => (
+              <span
+                key={tag.id}
+                className="text-xs px-2 py-0.5 rounded-full text-white"
+                style={{ backgroundColor: tag.color }}
+              >
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Description */}
+        {editingDesc ? (
+          <textarea
+            value={descValue}
+            onChange={(e) => setDescValue(e.target.value)}
+            onBlur={saveDescription}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && e.ctrlKey) saveDescription()
+              if (e.key === "Escape") {
+                setDescValue(task.description ?? "")
+                setEditingDesc(false)
+              }
+            }}
+            className="mt-2 w-full border rounded p-2 text-sm text-gray-600 resize-none"
+            rows={3}
+            autoFocus
+          />
+        ) : (
+          <button
+            onClick={() => setEditingDesc(true)}
+            className="mt-1 text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 text-left"
+          >
+            ✏{" "}
+            {task.description
+              ? task.description.slice(0, 60) +
+                (task.description.length > 60 ? "…" : "")
+              : "Добавить описание"}
+          </button>
+        )}
 
         {isOpen && (
           <SubtaskPanel
