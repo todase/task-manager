@@ -92,7 +92,7 @@ export function TaskItem({
             <input
               type="date"
               id={`date-${task.id}`}
-              defaultValue={
+              value={
                 task.dueDate
                   ? new Date(task.dueDate).toISOString().split("T")[0]
                   : ""
@@ -110,12 +110,8 @@ export function TaskItem({
               </span>
             )}
             {task.dueDate ? (
-              <span
-                onClick={() =>
-                  (
-                    document.getElementById(`date-${task.id}`) as HTMLInputElement
-                  )?.showPicker()
-                }
+              <label
+                htmlFor={`date-${task.id}`}
                 className={`text-xs px-2 py-0.5 rounded-full cursor-pointer ${
                   new Date(task.dueDate) < new Date() && !task.done
                     ? "text-red-500 bg-red-50"
@@ -123,18 +119,14 @@ export function TaskItem({
                 }`}
               >
                 {new Date(task.dueDate).toLocaleDateString("ru-RU")}
-              </span>
+              </label>
             ) : (
-              <button
-                onClick={() =>
-                  (
-                    document.getElementById(`date-${task.id}`) as HTMLInputElement
-                  )?.showPicker()
-                }
-                className="text-xs text-gray-300 hover:text-gray-500"
+              <label
+                htmlFor={`date-${task.id}`}
+                className="text-xs text-gray-300 hover:text-gray-500 cursor-pointer"
               >
                 + дата
-              </button>
+              </label>
             )}
             <button
               onClick={() => setIsOpen((o) => !o)}

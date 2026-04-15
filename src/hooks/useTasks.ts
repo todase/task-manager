@@ -49,10 +49,14 @@ export function useTasks() {
 
   const fetchTasks = useCallback(async () => {
     setIsLoading(true)
+    setError(null)
     try {
       const res = await fetch("/api/tasks")
+      if (!res.ok) throw new Error("Не удалось загрузить задачи")
       const data = await res.json()
       setTasks(data)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка загрузки задач")
     } finally {
       setIsLoading(false)
     }
@@ -60,82 +64,114 @@ export function useTasks() {
 
   const createTask = useCallback(
     async (input: CreateTaskInput, projects: Project[]) => {
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      })
-      if (!res.ok) throw new Error("Не удалось создать задачу")
-      const task = await res.json()
-      const project = input.projectId
-        ? (projects.find((p) => p.id === input.projectId) ?? null)
-        : null
-      setTasks((prev) => [{ ...task, subtasks: [], project }, ...prev])
+      try {
+        const res = await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        })
+        if (!res.ok) throw new Error("Не удалось создать задачу")
+        const task = await res.json()
+        const project = input.projectId
+          ? (projects.find((p) => p.id === input.projectId) ?? null)
+          : null
+        setTasks((prev) => [{ ...task, subtasks: [], project }, ...prev])
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Ошибка создания задачи")
+        throw e
+      }
     },
     []
   )
 
   const toggleTask = useCallback(async (task: Task) => {
-    const res = await fetch(`/api/tasks/${task.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ done: !task.done }),
-    })
-    const updated = await res.json()
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === updated.id
-          ? { ...updated, subtasks: t.subtasks, project: t.project }
-          : t
+    try {
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ done: !task.done }),
+      })
+      if (!res.ok) throw new Error("Не удалось изменить статус задачи")
+      const updated = await res.json()
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === updated.id
+            ? { ...updated, subtasks: t.subtasks, project: t.project }
+            : t
+        )
       )
-    )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка изменения статуса")
+    }
   }, [])
 
   const deleteTask = useCallback(async (id: string) => {
-    await fetch(`/api/tasks/${id}`, { method: "DELETE" })
-    setTasks((prev) => prev.filter((t) => t.id !== id))
+    try {
+      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Не удалось удалить задачу")
+      setTasks((prev) => prev.filter((t) => t.id !== id))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка удаления задачи")
+    }
   }, [])
 
   const renameTask = useCallback(async (id: string, title: string) => {
-    const res = await fetch(`/api/tasks/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    })
-    const updated = await res.json()
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === updated.id
-          ? { ...updated, subtasks: t.subtasks, project: t.project }
-          : t
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      })
+      if (!res.ok) throw new Error("Не удалось переименовать задачу")
+      const updated = await res.json()
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === updated.id
+            ? { ...updated, subtasks: t.subtasks, project: t.project }
+            : t
+        )
       )
-    )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка переименования задачи")
+    }
   }, [])
 
   const updateDueDate = useCallback(async (taskId: string, value: string) => {
-    const res = await fetch(`/api/tasks/${taskId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dueDate: value ? new Date(value).toISOString() : null }),
-    })
-    const updated = await res.json()
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === updated.id
-          ? { ...updated, subtasks: t.subtasks, project: t.project }
-          : t
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dueDate: value ? new Date(value).toISOString() : null }),
+      })
+      if (!res.ok) throw new Error("Не удалось обновить дату задачи")
+      const updated = await res.json()
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === updated.id
+            ? { ...updated, subtasks: t.subtasks, project: t.project }
+            : t
+        )
       )
-    )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка обновления даты")
+    }
   }, [])
 
   const reorderTasks = useCallback(async (newTasks: Task[]) => {
+    const previous = tasks
     setTasks(newTasks)
-    await fetch("/api/tasks/reorder", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newTasks.map((t, i) => ({ id: t.id, order: i }))),
-    })
-  }, [])
+    try {
+      const res = await fetch("/api/tasks/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTasks.map((t, i) => ({ id: t.id, order: i }))),
+      })
+      if (!res.ok) throw new Error("Не удалось изменить порядок задач")
+    } catch (e) {
+      setTasks(previous)
+      setError(e instanceof Error ? e.message : "Ошибка изменения порядка")
+    }
+  }, [tasks])
 
   const assignProject = useCallback(
     async (
@@ -143,19 +179,24 @@ export function useTasks() {
       projectId: string | null,
       newProject: { id: string; title: string } | null
     ) => {
-      const res = await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId }),
-      })
-      const updated = await res.json()
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === taskId
-            ? { ...t, ...updated, subtasks: t.subtasks, project: newProject }
-            : t
+      try {
+        const res = await fetch(`/api/tasks/${taskId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId }),
+        })
+        if (!res.ok) throw new Error("Не удалось назначить проект")
+        const updated = await res.json()
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? { ...t, ...updated, subtasks: t.subtasks, project: newProject }
+              : t
+          )
         )
-      )
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Ошибка назначения проекта")
+      }
     },
     []
   )
@@ -176,44 +217,59 @@ export function useTasks() {
   )
 
   const addSubtask = useCallback(async (taskId: string, title: string) => {
-    const res = await fetch(`/api/tasks/${taskId}/subtasks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    })
-    const subtask = await res.json()
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId ? { ...t, subtasks: [...t.subtasks, subtask] } : t
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/subtasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      })
+      if (!res.ok) throw new Error("Не удалось добавить подзадачу")
+      const subtask = await res.json()
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, subtasks: [...t.subtasks, subtask] } : t
+        )
       )
-    )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка добавления подзадачи")
+    }
   }, [])
 
   const toggleSubtask = useCallback(async (taskId: string, subtask: Subtask) => {
-    const res = await fetch(`/api/tasks/${taskId}/subtasks/${subtask.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ done: !subtask.done }),
-    })
-    const updated = await res.json()
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, subtasks: t.subtasks.map((s) => (s.id === updated.id ? updated : s)) }
-          : t
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/subtasks/${subtask.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ done: !subtask.done }),
+      })
+      if (!res.ok) throw new Error("Не удалось изменить статус подзадачи")
+      const updated = await res.json()
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? { ...t, subtasks: t.subtasks.map((s) => (s.id === updated.id ? updated : s)) }
+            : t
+        )
       )
-    )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка изменения статуса подзадачи")
+    }
   }, [])
 
   const deleteSubtask = useCallback(async (taskId: string, subtaskId: string) => {
-    await fetch(`/api/tasks/${taskId}/subtasks/${subtaskId}`, { method: "DELETE" })
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, subtasks: t.subtasks.filter((s) => s.id !== subtaskId) }
-          : t
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/subtasks/${subtaskId}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Не удалось удалить подзадачу")
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? { ...t, subtasks: t.subtasks.filter((s) => s.id !== subtaskId) }
+            : t
+        )
       )
-    )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка удаления подзадачи")
+    }
   }, [])
 
   return {
