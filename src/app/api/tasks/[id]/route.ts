@@ -56,6 +56,14 @@ export async function PATCH(
   if (projectId !== undefined) data.projectId = projectId
   if (description !== undefined) data.description = description
   if (Array.isArray(tagIds)) {
+    if (tagIds.length > 0) {
+      const ownedCount = await prisma.tag.count({
+        where: { id: { in: tagIds }, userId: session.user.id },
+      })
+      if (ownedCount !== tagIds.length) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+    }
     data.tags = {
       deleteMany: {},
       create: tagIds.map((tagId: string) => ({ tagId })),

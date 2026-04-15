@@ -11,7 +11,7 @@ export type CreateTaskInput = {
   tagIds?: string[]
 }
 
-function withPriorityScores(tasks: Omit<Task, "priorityScore">[]): Task[] {
+export function withPriorityScores(tasks: Omit<Task, "priorityScore">[]): Task[] {
   const n = tasks.length
   return tasks.map((t) => ({
     ...t,

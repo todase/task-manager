@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { filterTasks } from "./useTasks"
+import { filterTasks, withPriorityScores } from "./useTasks"
 import type { Task } from "@/types"
 
 function makeTask(overrides: Partial<Task> = {}): Task {
@@ -71,5 +71,54 @@ describe("filterTasks", () => {
     const result = filterTasks(tasks, "someday", null)
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe("2")
+  })
+
+  it("filters 'someday': includes tasks with null dueDate", () => {
+    const tasks = [
+      makeTask({ id: "1", dueDate: null }),
+      makeTask({ id: "2", dueDate: tomorrow.toISOString() }),
+    ]
+    const result = filterTasks(tasks, "someday", null)
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe("1")
+  })
+})
+
+describe("withPriorityScores", () => {
+  function makeRaw(id: string, order: number): Omit<Task, "priorityScore"> {
+    return {
+      id,
+      title: "T",
+      done: false,
+      dueDate: null,
+      recurrence: null,
+      description: null,
+      order,
+      project: null,
+      subtasks: [],
+      tags: [],
+    }
+  }
+
+  it("returns score 1 for a single task", () => {
+    const [t] = withPriorityScores([makeRaw("1", 0)])
+    expect(t.priorityScore).toBe(1)
+  })
+
+  it("first task gets score 1, last gets score 0", () => {
+    const result = withPriorityScores([makeRaw("1", 0), makeRaw("2", 1)])
+    expect(result[0].priorityScore).toBe(1)
+    expect(result[1].priorityScore).toBe(0)
+  })
+
+  it("interpolates scores for 3 tasks", () => {
+    const result = withPriorityScores([
+      makeRaw("1", 0),
+      makeRaw("2", 1),
+      makeRaw("3", 2),
+    ])
+    expect(result[0].priorityScore).toBeCloseTo(1)
+    expect(result[1].priorityScore).toBeCloseTo(0.5)
+    expect(result[2].priorityScore).toBeCloseTo(0)
   })
 })

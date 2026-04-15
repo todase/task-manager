@@ -7,9 +7,14 @@ export function useTags() {
   const [tags, setTags] = useState<Tag[]>([])
 
   const fetchTags = useCallback(async () => {
-    const res = await fetch("/api/tags")
-    const data = await res.json()
-    setTags(data)
+    try {
+      const res = await fetch("/api/tags")
+      if (!res.ok) throw new Error("Не удалось загрузить метки")
+      const data = await res.json()
+      setTags(Array.isArray(data) ? data : [])
+    } catch {
+      setTags([])
+    }
   }, [])
 
   const createTag = useCallback(
