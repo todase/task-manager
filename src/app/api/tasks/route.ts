@@ -12,11 +12,16 @@ export async function GET() {
   const tasks = await prisma.task.findMany({
     where: { userId: session.user.id },
     orderBy: { order: "asc" },
-    include: { subtasks: true, project: { select: { id: true, title: true } } },
+    include: {
+      subtasks: true,
+      project: { select: { id: true, title: true } },
+      tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+    },
   })
 
-
-  return NextResponse.json(tasks)
+  return NextResponse.json(
+    tasks.map((t) => ({ ...t, tags: t.tags.map((tt) => tt.tag) }))
+  )
 }
 
 // Создать новую задачу
