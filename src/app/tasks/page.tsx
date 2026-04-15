@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
+import { LogOut } from "lucide-react"
 import {
   DndContext,
   DragEndEvent,
@@ -21,13 +22,11 @@ import { AddTaskForm } from "@/components/tasks/AddTaskForm"
 import { ProjectTabs } from "@/components/projects/ProjectTabs"
 import { DateFilters } from "@/components/filters/DateFilters"
 import { TagFilter } from "@/components/filters/TagFilter"
-import { BottomNav } from "@/components/BottomNav"
 import type { DateFilter } from "@/types"
 
 export default function TasksPage() {
   const { status } = useSession()
   const router = useRouter()
-  const titleInputRef = useRef<HTMLInputElement>(null!)
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [dateFilter, setDateFilter] = useState<DateFilter>("all")
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
@@ -97,13 +96,14 @@ export default function TasksPage() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <main className="max-w-2xl mx-auto px-4 py-6 md:p-8 pb-24 md:pb-8">
+      <main className="max-w-2xl mx-auto px-4 py-6 md:p-8 pb-20">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Мои задачи</h1>
+          <h1 className="text-xl font-bold text-gray-900">Мои задачи</h1>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
           >
+            <LogOut className="w-4 h-4" />
             Выйти
           </button>
         </div>
@@ -132,15 +132,6 @@ export default function TasksPage() {
           onChange={setSelectedTagIds}
         />
 
-        <AddTaskForm
-          activeProjectId={activeProjectId}
-          projects={projectHook.projects}
-          tags={tagHook.tags}
-          inputRef={titleInputRef}
-          onSubmit={(input) => taskHook.createTask(input, projectHook.projects)}
-          onCreateTag={tagHook.createTag}
-        />
-
         <TaskList
           tasks={taskHook.tasks}
           filteredTasks={filtered}
@@ -157,14 +148,12 @@ export default function TasksPage() {
           onDeleteSubtask={taskHook.deleteSubtask}
         />
 
-        <BottomNav
-          onAddClick={() => {
-            titleInputRef.current?.focus()
-            titleInputRef.current?.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            })
-          }}
+        <AddTaskForm
+          activeProjectId={activeProjectId}
+          projects={projectHook.projects}
+          tags={tagHook.tags}
+          onSubmit={(input) => taskHook.createTask(input, projectHook.projects)}
+          onCreateTag={tagHook.createTag}
         />
       </main>
     </DndContext>
