@@ -17,17 +17,23 @@ export function SwipeableRow({ children, onSubtasks, onDelete, subtasksLabel = "
   const [offsetX, setOffsetX] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const startXRef = useRef<number | null>(null)
+  const startYRef = useRef<number | null>(null)
   const isDraggingRef = useRef(false)
   const dragDirectionRef = useRef<"left" | "right" | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Non-passive listener — allows e.preventDefault() to block vertical scroll during swipe
+  // Non-passive listener — must run before the browser decides scroll direction.
+  // Blocks vertical scroll as soon as horizontal movement exceeds vertical movement
+  // (small 5px threshold so preventDefault fires before the browser locks into scroll).
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
 
     function onTouchMove(e: TouchEvent) {
-      if (isDraggingRef.current) {
+      if (startXRef.current === null || startYRef.current === null) return
+      const dx = Math.abs(e.touches[0].clientX - startXRef.current)
+      const dy = Math.abs(e.touches[0].clientY - startYRef.current)
+      if (dx > dy && dx > 5) {
         e.preventDefault()
       }
     }
@@ -38,6 +44,7 @@ export function SwipeableRow({ children, onSubtasks, onDelete, subtasksLabel = "
 
   function handleTouchStart(e: React.TouchEvent) {
     startXRef.current = e.touches[0].clientX
+    startYRef.current = e.touches[0].clientY
     isDraggingRef.current = false
     dragDirectionRef.current = null
   }
