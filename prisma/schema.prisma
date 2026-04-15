@@ -13,22 +13,25 @@ model User {
   password  String
   tasks     Task[]
   projects  Project[]
+  tags      Tag[]
   createdAt DateTime  @default(now())
 }
 
 model Task {
-  id        String    @id @default(cuid())
-  title     String
-  done      Boolean   @default(false)
-  dueDate    DateTime?
-  recurrence String?
-  order      Int       @default(0)
-  userId     String
-  user      User      @relation(fields: [userId], references: [id])
-  projectId String?
-  project   Project?  @relation(fields: [projectId], references: [id])
-  subtasks  Subtask[]
-  createdAt DateTime  @default(now())
+  id          String    @id @default(cuid())
+  title       String
+  done        Boolean   @default(false)
+  dueDate     DateTime?
+  recurrence  String?
+  description String?
+  order       Int       @default(0)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id])
+  subtasks    Subtask[]
+  tags        TaskTag[]
+  createdAt   DateTime  @default(now())
 }
 
 
@@ -50,3 +53,22 @@ model Project {
   createdAt DateTime @default(now())
 }
 
+model Tag {
+  id     String    @id @default(cuid())
+  name   String
+  color  String    @default("#6b7280")
+  userId String
+  user   User      @relation(fields: [userId], references: [id])
+  tasks  TaskTag[]
+
+  @@unique([name, userId])
+}
+
+model TaskTag {
+  taskId String
+  tagId  String
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, tagId])
+}
