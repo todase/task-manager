@@ -6,15 +6,24 @@ export type Subtask = {
   done: boolean
 }
 
+export type Tag = {
+  id: string
+  name: string
+  color: string
+}
+
 export type Task = {
   id: string
   title: string
   done: boolean
   dueDate: string | null
   recurrence: string | null
+  description: string | null
   order: number
   project: { id: string; title: string } | null
   subtasks: Subtask[]
+  tags: Tag[]
+  priorityScore: number
 }
 
 export type Project = {
