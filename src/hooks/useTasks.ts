@@ -8,6 +8,15 @@ export type CreateTaskInput = {
   dueDate?: string
   recurrence?: string
   projectId?: string
+  tagIds?: string[]
+}
+
+function withPriorityScores(tasks: Omit<Task, "priorityScore">[]): Task[] {
+  const n = tasks.length
+  return tasks.map((t) => ({
+    ...t,
+    priorityScore: n <= 1 ? 1 : 1 - t.order / (n - 1),
+  }))
 }
 
 export function filterTasks(
@@ -54,7 +63,7 @@ export function useTasks() {
       const res = await fetch("/api/tasks")
       if (!res.ok) throw new Error("Не удалось загрузить задачи")
       const data = await res.json()
-      setTasks(data)
+      setTasks(withPriorityScores(data))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка загрузки задач")
     } finally {
@@ -75,7 +84,10 @@ export function useTasks() {
         const project = input.projectId
           ? (projects.find((p) => p.id === input.projectId) ?? null)
           : null
-        setTasks((prev) => [{ ...task, subtasks: [], project }, ...prev])
+        setTasks((prev) => {
+          const shifted = prev.map((t) => ({ ...t, order: t.order + 1 }))
+          return withPriorityScores([{ ...task, subtasks: [], project, tags: task.tags ?? [] }, ...shifted])
+        })
       } catch (e) {
         setError(e instanceof Error ? e.message : "Ошибка создания задачи")
         throw e
@@ -109,7 +121,7 @@ export function useTasks() {
     try {
       const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Не удалось удалить задачу")
-      setTasks((prev) => prev.filter((t) => t.id !== id))
+      setTasks((prev) => withPriorityScores(prev.filter((t) => t.id !== id)))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка удаления задачи")
     }
@@ -159,7 +171,7 @@ export function useTasks() {
 
   const reorderTasks = useCallback(async (newTasks: Task[]) => {
     const previous = tasks
-    setTasks(newTasks)
+    setTasks(withPriorityScores(newTasks.map((t, i) => ({ ...t, order: i }))))
     try {
       const res = await fetch("/api/tasks/reorder", {
         method: "POST",
@@ -272,6 +284,48 @@ export function useTasks() {
     }
   }, [])
 
+  const updateDescription = useCallback(async (id: string, description: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description }),
+      })
+      if (!res.ok) throw new Error("Не удалось обновить описание")
+      const updated = await res.json()
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === updated.id
+            ? { ...updated, subtasks: t.subtasks, project: t.project, priorityScore: t.priorityScore }
+            : t
+        )
+      )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка обновления описания")
+    }
+  }, [])
+
+  const updateTags = useCallback(async (id: string, tagIds: string[]) => {
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tagIds }),
+      })
+      if (!res.ok) throw new Error("Не удалось обновить метки")
+      const updated = await res.json()
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === updated.id
+            ? { ...updated, subtasks: t.subtasks, project: t.project, priorityScore: t.priorityScore }
+            : t
+        )
+      )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка обновления меток")
+    }
+  }, [])
+
   return {
     tasks,
     isLoading,
@@ -289,5 +343,7 @@ export function useTasks() {
     addSubtask,
     toggleSubtask,
     deleteSubtask,
+    updateDescription,
+    updateTags,
   }
 }
