@@ -2,6 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { GripVertical } from "lucide-react"
 
 export function SortableTask({ id, children }: { id: string; children: React.ReactNode }) {
   const {
@@ -29,11 +30,12 @@ export function SortableTask({ id, children }: { id: string; children: React.Rea
         ref={setActivatorNodeRef}
         {...listeners}
         {...attributes}
-        className="text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing mt-3 px-1 text-lg select-none"
+        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing mt-3.5 px-0.5 select-none"
         style={{ touchAction: "none" }}
         tabIndex={-1}
+        aria-label="Перетащить задачу"
       >
-        ⠿
+        <GripVertical className="w-4 h-4" />
       </button>
       <div className="flex-1">{children}</div>
     </li>
