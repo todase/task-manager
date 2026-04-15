@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, ReactNode } from "react"
+import { useRef, useState, useEffect, ReactNode } from "react"
 
 type Props = {
   children: ReactNode
@@ -10,7 +10,7 @@ type Props = {
 }
 
 const SWIPE_THRESHOLD = 40   // px moved before we track
-const SNAP_OPEN_AT = 60      // px — if dragged past this, snap open
+const SNAP_OPEN_AT = 60      // px — if dragged past this, snap open/close
 const OPEN_WIDTH = 88        // px — total revealed width
 
 export function SwipeableRow({ children, onSubtasks, onDelete, subtasksLabel = "Подзадачи" }: Props) {
@@ -18,20 +18,44 @@ export function SwipeableRow({ children, onSubtasks, onDelete, subtasksLabel = "
   const [isOpen, setIsOpen] = useState(false)
   const startXRef = useRef<number | null>(null)
   const isDraggingRef = useRef(false)
+  const dragDirectionRef = useRef<"left" | "right" | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Non-passive listener — allows e.preventDefault() to block vertical scroll during swipe
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    function onTouchMove(e: TouchEvent) {
+      if (isDraggingRef.current) {
+        e.preventDefault()
+      }
+    }
+
+    el.addEventListener("touchmove", onTouchMove, { passive: false })
+    return () => el.removeEventListener("touchmove", onTouchMove)
+  }, [])
 
   function handleTouchStart(e: React.TouchEvent) {
     startXRef.current = e.touches[0].clientX
     isDraggingRef.current = false
+    dragDirectionRef.current = null
   }
 
   function handleTouchMove(e: React.TouchEvent) {
     if (startXRef.current === null) return
     const delta = e.touches[0].clientX - startXRef.current
 
-    // Only track leftward swipe
     if (!isDraggingRef.current && Math.abs(delta) > SWIPE_THRESHOLD) {
-      if (delta < 0) isDraggingRef.current = true
-      else return
+      if (delta < 0) {
+        isDraggingRef.current = true
+        dragDirectionRef.current = "left"
+      } else if (isOpen && delta > 0) {
+        isDraggingRef.current = true
+        dragDirectionRef.current = "right"
+      } else {
+        return
+      }
     }
 
     if (!isDraggingRef.current) return
@@ -43,19 +67,32 @@ export function SwipeableRow({ children, onSubtasks, onDelete, subtasksLabel = "
 
   function handleTouchEnd() {
     if (!isDraggingRef.current) return
-    const shouldOpen = isOpen
-      ? offsetX > -(OPEN_WIDTH - SNAP_OPEN_AT)
-      : offsetX < -SNAP_OPEN_AT
 
-    if (shouldOpen || (!isOpen && offsetX < -SNAP_OPEN_AT)) {
-      setOffsetX(-OPEN_WIDTH)
-      setIsOpen(true)
+    if (isOpen) {
+      if (dragDirectionRef.current === "left") {
+        // Left swipe when open → always close
+        close()
+      } else {
+        // Right swipe when open → close if past snap threshold, else spring back
+        if (offsetX > -(OPEN_WIDTH - SNAP_OPEN_AT)) {
+          close()
+        } else {
+          setOffsetX(-OPEN_WIDTH)
+        }
+      }
     } else {
-      setOffsetX(0)
-      setIsOpen(false)
+      // Menu closed: open if swiped left far enough
+      if (offsetX < -SNAP_OPEN_AT) {
+        setOffsetX(-OPEN_WIDTH)
+        setIsOpen(true)
+      } else {
+        setOffsetX(0)
+      }
     }
+
     startXRef.current = null
     isDraggingRef.current = false
+    dragDirectionRef.current = null
   }
 
   function close() {
@@ -64,7 +101,7 @@ export function SwipeableRow({ children, onSubtasks, onDelete, subtasksLabel = "
   }
 
   return (
-    <div className="relative overflow-hidden">
+    <div ref={containerRef} className="relative overflow-hidden">
       {/* Action buttons (revealed on swipe) — 48px height per spec */}
       <div className="absolute right-0 top-0 bottom-0 flex" style={{ width: OPEN_WIDTH }}>
         <button
