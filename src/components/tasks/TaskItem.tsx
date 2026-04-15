@@ -137,19 +137,29 @@ export function TaskItem({
               </span>
             )}
             {task.dueDate ? (
-              <label
-                htmlFor={`date-${task.id}`}
-                className={`text-xs px-2 py-0.5 rounded-full cursor-pointer ${(() => {
-                  const today = new Date(); today.setHours(0, 0, 0, 0)
-                  const due = new Date(task.dueDate); due.setHours(0, 0, 0, 0)
-                  if (task.done) return "text-gray-400 bg-gray-100"
-                  if (due < today) return "text-red-500 bg-red-50"
-                  if (due.getTime() === today.getTime()) return "text-green-600 bg-green-50"
-                  return "text-gray-400 bg-gray-100"
-                })()}`}
-              >
-                {new Date(task.dueDate).toLocaleDateString("ru-RU")}
-              </label>
+              <div className="flex items-center gap-0.5">
+                <label
+                  htmlFor={`date-${task.id}`}
+                  className={`text-xs px-2 py-0.5 rounded-full cursor-pointer ${(() => {
+                    const today = new Date(); today.setHours(0, 0, 0, 0)
+                    const due = new Date(task.dueDate); due.setHours(0, 0, 0, 0)
+                    if (task.done) return "text-gray-400 bg-gray-100"
+                    if (due < today) return "text-red-500 bg-red-50"
+                    if (due.getTime() === today.getTime()) return "text-green-600 bg-green-50"
+                    return "text-gray-400 bg-gray-100"
+                  })()}`}
+                >
+                  {new Date(task.dueDate).toLocaleDateString("ru-RU")}
+                </label>
+                <button
+                  onClick={() => onUpdateDueDate(task.id, "")}
+                  className="text-gray-300 hover:text-gray-500 text-sm leading-none px-0.5"
+                  tabIndex={-1}
+                  aria-label="Сбросить дату"
+                >
+                  ×
+                </button>
+              </div>
             ) : (
               <label
                 htmlFor={`date-${task.id}`}
