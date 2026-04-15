@@ -9,9 +9,12 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     done: false,
     dueDate: null,
     recurrence: null,
+    description: null,
     order: 0,
     project: null,
     subtasks: [],
+    tags: [],
+    priorityScore: 1,
     ...overrides,
   }
 }
