@@ -168,6 +168,15 @@ export function TaskItem({
                 + дата
               </label>
             )}
+            {task.subtasks.length > 0 && (
+              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                task.subtasks.every((s) => s.done)
+                  ? "bg-green-50 text-green-600"
+                  : "bg-gray-100 text-gray-400"
+              }`}>
+                {task.subtasks.filter((s) => s.done).length}/{task.subtasks.length}
+              </span>
+            )}
             <button
               onClick={() => setIsOpen((o) => !o)}
               className="hidden md:block text-sm text-blue-400 hover:text-blue-600 min-h-[44px] px-2"
