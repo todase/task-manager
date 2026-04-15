@@ -31,17 +31,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { title, projectId, dueDate, recurrence } = await req.json()
-  const task = await prisma.task.create({
-    data: {
-      title,
-      userId: session.user.id,
-      ...(projectId && { projectId }),
-      ...(dueDate && { dueDate: new Date(dueDate) }),
-      ...(recurrence && { recurrence }),
-    },
+  const userId = session.user.id
+  const { title, projectId, dueDate, recurrence, tagIds } = await req.json()
+
+  const task = await prisma.$transaction(async (tx) => {
+    // Shift all existing tasks down to make room at order 0
+    await tx.task.updateMany({
+      where: { userId },
+      data: { order: { increment: 1 } },
+    })
+
+    return tx.task.create({
+      data: {
+        title,
+        userId,
+        order: 0,
+        ...(projectId && { projectId }),
+        ...(dueDate && { dueDate: new Date(dueDate) }),
+        ...(recurrence && { recurrence }),
+        ...(Array.isArray(tagIds) && tagIds.length > 0 && {
+          tags: { create: tagIds.map((tagId: string) => ({ tagId })) },
+        }),
+      },
+      include: {
+        tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+      },
+    })
   })
 
-  return NextResponse.json(task)
+  return NextResponse.json({ ...task, tags: task.tags.map((tt) => tt.tag) })
 }
 
