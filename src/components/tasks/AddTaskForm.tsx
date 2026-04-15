@@ -1,6 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import {
+  Plus,
+  X,
+  CalendarDays,
+  RefreshCw,
+  Tag as TagIcon,
+} from "lucide-react"
 import type { CreateTaskInput } from "@/hooks/useTasks"
 import type { Project, Tag } from "@/types"
 
@@ -8,7 +15,6 @@ interface AddTaskFormProps {
   activeProjectId: string | null
   projects: Project[]
   tags: Tag[]
-  inputRef: React.RefObject<HTMLInputElement>
   onSubmit: (input: CreateTaskInput) => Promise<void>
   onCreateTag: (name: string) => Promise<Tag>
 }
@@ -17,18 +23,47 @@ export function AddTaskForm({
   activeProjectId,
   projects,
   tags,
-  inputRef,
   onSubmit,
   onCreateTag,
 }: AddTaskFormProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [dueDate, setDueDate] = useState("")
   const [recurrence, setRecurrence] = useState("")
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
   const [showTagMenu, setShowTagMenu] = useState(false)
+  const [activeField, setActiveField] = useState<"date" | "recurrence" | "tags" | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const titleInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isModalOpen) {
+      setTimeout(() => titleInputRef.current?.focus(), 50)
+    }
+  }, [isModalOpen])
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && isModalOpen) closeModal()
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [isModalOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function closeModal() {
+    setIsModalOpen(false)
+    setTitle("")
+    setDueDate("")
+    setRecurrence("")
+    setSelectedTagIds([])
+    setTagInput("")
+    setShowTagMenu(false)
+    setActiveField(null)
+    setError(null)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -43,10 +78,7 @@ export function AddTaskForm({
         ...(activeProjectId && { projectId: activeProjectId }),
         ...(selectedTagIds.length > 0 && { tagIds: selectedTagIds }),
       })
-      setTitle("")
-      setDueDate("")
-      setRecurrence("")
-      setSelectedTagIds([])
+      closeModal()
     } catch {
       setError("Не удалось создать задачу. Попробуйте ещё раз.")
     } finally {
@@ -78,118 +110,227 @@ export function AddTaskForm({
     setShowTagMenu(false)
   }
 
-  return (
-    <div>
-      {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-2 mb-6 md:static md:shadow-none md:bg-transparent sticky bottom-[80px] z-30 bg-white rounded-lg focus-within:shadow-lg focus-within:px-3 focus-within:py-2 transition-all"
-      >
-        <div className="flex gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder={placeholder}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="border p-2 rounded flex-1"
-          />
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-blue-500 text-white px-4 rounded disabled:opacity-50"
-          >
-            {isSubmitting ? "..." : "Добавить"}
-          </button>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="border p-2 rounded text-sm text-gray-500 flex-1"
-          />
-          <select
-            value={recurrence}
-            onChange={(e) => setRecurrence(e.target.value)}
-            className="border p-2 rounded text-sm text-gray-500"
-          >
-            <option value="">Не повторять</option>
-            <option value="daily">Каждый день</option>
-            <option value="weekly">Каждую неделю</option>
-            <option value="monthly">Каждый месяц</option>
-          </select>
-        </div>
+  function toggleField(field: "date" | "recurrence" | "tags") {
+    setActiveField((prev) => (prev === field ? null : field))
+  }
 
-        {/* Tag selector */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Добавить метку..."
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onFocus={() => setShowTagMenu(true)}
-            onBlur={() => setTimeout(() => setShowTagMenu(false), 150)}
-            className="border p-2 rounded text-sm w-full"
+  return (
+    <>
+      {/* FAB */}
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg flex items-center justify-center transition-colors z-30"
+        aria-label="Добавить задачу"
+      >
+        <Plus className="w-6 h-6" strokeWidth={2.5} />
+      </button>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={closeModal}
+            aria-hidden="true"
           />
-          {showTagMenu && (filteredTags.length > 0 || tagInput.trim()) && (
-            <div className="absolute top-full left-0 bg-white border rounded shadow-md z-10 w-full max-h-40 overflow-y-auto">
-              {filteredTags.map((tag) => (
+
+          {/* Panel — bottom sheet on mobile, centered on desktop */}
+          <div className="fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-50 pointer-events-none">
+            <div className="bg-white rounded-t-2xl md:rounded-2xl md:max-w-md md:w-full md:mx-4 shadow-xl pointer-events-auto">
+              {/* Drag handle (mobile) */}
+              <div className="flex justify-center pt-3 pb-1 md:hidden">
+                <div className="w-10 h-1 bg-gray-200 rounded-full" />
+              </div>
+
+              {/* Modal header */}
+              <div className="flex items-center justify-between px-4 py-3">
+                <h2 className="text-base font-semibold text-gray-900">
+                  Новая задача
+                </h2>
                 <button
-                  key={tag.id}
-                  type="button"
-                  onMouseDown={() => handleSelectTag(tag.id)}
-                  className="w-full text-left px-3 py-1 hover:bg-gray-50 text-sm flex items-center gap-2"
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600"
+                  aria-label="Закрыть"
                 >
-                  <span
-                    className="w-3 h-3 rounded-full inline-block flex-shrink-0"
-                    style={{ backgroundColor: tag.color }}
-                  />
-                  {tag.name}
+                  <X className="w-5 h-5" />
                 </button>
-              ))}
-              {tagInput.trim() &&
-                !tags.some(
-                  (t) => t.name.toLowerCase() === tagInput.trim().toLowerCase()
-                ) && (
+              </div>
+
+              <form onSubmit={handleSubmit} className="px-4 pb-6 flex flex-col gap-3">
+                {error && (
+                  <p className="text-sm text-red-500">{error}</p>
+                )}
+
+                {/* Title input */}
+                <input
+                  ref={titleInputRef}
+                  type="text"
+                  placeholder={placeholder}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg p-3 text-sm outline-none focus:border-blue-400"
+                />
+
+                {/* Icon buttons row */}
+                <div className="flex gap-2 flex-wrap">
                   <button
                     type="button"
-                    onMouseDown={handleCreateTag}
-                    className="w-full text-left px-3 py-1 hover:bg-gray-50 text-sm text-blue-600"
+                    onClick={() => toggleField("date")}
+                    className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      dueDate || activeField === "date"
+                        ? "bg-blue-50 border-blue-300 text-blue-600"
+                        : "border-gray-200 text-gray-500 hover:border-gray-400"
+                    }`}
                   >
-                    + Создать «{tagInput.trim()}»
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    {dueDate
+                      ? new Date(dueDate).toLocaleDateString("ru-RU")
+                      : "Дата"}
                   </button>
-                )}
-            </div>
-          )}
-          {selectedTagIds.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {selectedTagIds.map((id) => {
-                const tag = tags.find((t) => t.id === id)
-                if (!tag) return null
-                return (
-                  <span
-                    key={id}
-                    className="text-xs px-2 py-0.5 rounded-full text-white flex items-center gap-1"
-                    style={{ backgroundColor: tag.color }}
+
+                  <button
+                    type="button"
+                    onClick={() => toggleField("recurrence")}
+                    className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      recurrence || activeField === "recurrence"
+                        ? "bg-blue-50 border-blue-300 text-blue-600"
+                        : "border-gray-200 text-gray-500 hover:border-gray-400"
+                    }`}
                   >
-                    {tag.name}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSelectedTagIds((prev) => prev.filter((s) => s !== id))
-                      }
-                      className="hover:opacity-70"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )
-              })}
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    {recurrence
+                      ? ({ daily: "День", weekly: "Неделя", monthly: "Месяц" } as Record<string, string>)[recurrence]
+                      : "Повтор"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleField("tags")}
+                    className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      selectedTagIds.length > 0 || activeField === "tags"
+                        ? "bg-blue-50 border-blue-300 text-blue-600"
+                        : "border-gray-200 text-gray-500 hover:border-gray-400"
+                    }`}
+                  >
+                    <TagIcon className="w-3.5 h-3.5" />
+                    {selectedTagIds.length > 0
+                      ? `Метки (${selectedTagIds.length})`
+                      : "Метки"}
+                  </button>
+                </div>
+
+                {/* Date picker */}
+                {activeField === "date" && (
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="border border-gray-200 rounded-lg p-2 text-sm text-gray-600 outline-none focus:border-blue-400"
+                  />
+                )}
+
+                {/* Recurrence picker */}
+                {activeField === "recurrence" && (
+                  <select
+                    value={recurrence}
+                    onChange={(e) => setRecurrence(e.target.value)}
+                    className="border border-gray-200 rounded-lg p-2 text-sm text-gray-600 outline-none focus:border-blue-400"
+                  >
+                    <option value="">Не повторять</option>
+                    <option value="daily">Каждый день</option>
+                    <option value="weekly">Каждую неделю</option>
+                    <option value="monthly">Каждый месяц</option>
+                  </select>
+                )}
+
+                {/* Tag selector */}
+                {activeField === "tags" && (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Добавить метку..."
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onFocus={() => setShowTagMenu(true)}
+                        onBlur={() => setTimeout(() => setShowTagMenu(false), 150)}
+                        className="border border-gray-200 rounded-lg p-2 text-sm w-full outline-none focus:border-blue-400"
+                      />
+                      {showTagMenu && (filteredTags.length > 0 || tagInput.trim()) && (
+                        <div className="absolute top-full left-0 bg-white border rounded-lg shadow-md z-10 w-full max-h-40 overflow-y-auto mt-1">
+                          {filteredTags.map((tag) => (
+                            <button
+                              key={tag.id}
+                              type="button"
+                              onMouseDown={() => handleSelectTag(tag.id)}
+                              className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-sm flex items-center gap-2"
+                            >
+                              <span
+                                className="w-3 h-3 rounded-full inline-block flex-shrink-0"
+                                style={{ backgroundColor: tag.color }}
+                              />
+                              {tag.name}
+                            </button>
+                          ))}
+                          {tagInput.trim() &&
+                            !tags.some(
+                              (t) =>
+                                t.name.toLowerCase() === tagInput.trim().toLowerCase()
+                            ) && (
+                              <button
+                                type="button"
+                                onMouseDown={handleCreateTag}
+                                className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-sm text-blue-600"
+                              >
+                                + Создать «{tagInput.trim()}»
+                              </button>
+                            )}
+                        </div>
+                      )}
+                    </div>
+                    {selectedTagIds.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedTagIds.map((id) => {
+                          const tag = tags.find((t) => t.id === id)
+                          if (!tag) return null
+                          return (
+                            <span
+                              key={id}
+                              className="text-xs px-2 py-0.5 rounded-full text-white flex items-center gap-1"
+                              style={{ backgroundColor: tag.color }}
+                            >
+                              {tag.name}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSelectedTagIds((prev) => prev.filter((s) => s !== id))
+                                }
+                                className="hover:opacity-70"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Submit button */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !title.trim()}
+                  className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-medium py-3 rounded-xl transition-colors"
+                >
+                  {isSubmitting ? "Создаём..." : "Создать задачу"}
+                </button>
+              </form>
             </div>
-          )}
-        </div>
-      </form>
-    </div>
+          </div>
+        </>
+      )}
+    </>
   )
 }
