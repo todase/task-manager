@@ -44,7 +44,7 @@ export function filterTasks(
       return d.getTime() > today.getTime() && d < weekEnd
     }
     if (dateFilter === "someday") {
-      if (!t.dueDate) return false
+      if (!t.dueDate) return true
       return new Date(t.dueDate) >= weekEnd
     }
     return true
