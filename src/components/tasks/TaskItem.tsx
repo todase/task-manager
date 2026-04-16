@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
+import { useClickOutside } from "@/hooks/useClickOutside"
 import {
   Check,
   ChevronDown,
@@ -85,29 +86,11 @@ export function TaskItem({
   const projectDropdownRef = useRef<HTMLDivElement>(null)
   const [showTagPicker, setShowTagPicker] = useState(false)
   const [tagInput, setTagInput] = useState("")
+  const [tagError, setTagError] = useState<string | null>(null)
   const tagPickerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!showProjectDropdown) return
-    function handleClickOutside(e: MouseEvent) {
-      if (projectDropdownRef.current && !projectDropdownRef.current.contains(e.target as Node)) {
-        setShowProjectDropdown(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [showProjectDropdown])
-
-  useEffect(() => {
-    if (!showTagPicker) return
-    function handleClickOutside(e: MouseEvent) {
-      if (tagPickerRef.current && !tagPickerRef.current.contains(e.target as Node)) {
-        setShowTagPicker(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [showTagPicker])
+  useClickOutside(projectDropdownRef, () => setShowProjectDropdown(false), showProjectDropdown)
+  useClickOutside(tagPickerRef, () => setShowTagPicker(false), showTagPicker)
 
   function handleRowClick(e: React.MouseEvent) {
     const target = e.target as HTMLElement
@@ -155,13 +138,14 @@ export function TaskItem({
 
   async function handleCreateTag() {
     if (!tagInput.trim()) return
+    setTagError(null)
     try {
       const tag = await onCreateTag(tagInput.trim())
       setTagInput("")
       setShowTagPicker(false)
       await onUpdateTags(task.id, [...assignedTagIds, tag.id])
     } catch {
-      // silently fail
+      setTagError("Не удалось создать метку")
     }
   }
 
@@ -423,7 +407,7 @@ export function TaskItem({
                       type="text"
                       placeholder="Новая метка..."
                       value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
+                      onChange={(e) => { setTagInput(e.target.value); setTagError(null) }}
                       onKeyDown={async (e) => {
                         if (e.key === "Enter") {
                           e.preventDefault()
@@ -436,6 +420,9 @@ export function TaskItem({
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
                     />
+                    {tagError && (
+                      <p className="mt-1 text-xs text-red-500">{tagError}</p>
+                    )}
                     {tagInput.trim() &&
                       !tags.some(
                         (t) =>

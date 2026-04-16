@@ -1,9 +1,11 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
+import { useClickOutside } from "@/hooks/useClickOutside"
 import { FolderOpen, ChevronDown, ChevronUp, Pencil } from "lucide-react"
 import { DroppableProject } from "@/components/DroppableProject"
 import { ProjectIconPicker, ProjectIcon } from "@/components/projects/ProjectIconPicker"
+import { ConfirmDeleteDialog } from "@/components/projects/ConfirmDeleteDialog"
 import type { Project } from "@/types"
 
 interface ProjectTabsProps {
@@ -36,15 +38,7 @@ export function ProjectTabs({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+  useClickOutside(containerRef, () => setIsOpen(false))
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -139,31 +133,14 @@ export function ProjectTabs({
                 <DroppableProject id={project.id}>
                   {editingId === project.id ? (
                     deletingId === project.id ? (
-                      <div className="flex flex-col gap-2 min-w-[200px]">
-                        <p className="text-xs text-gray-600">
-                          Удалить проект? Выполненные задачи попадут в архив, незавершённые открепятся.
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setDeletingId(null)}
-                            className="text-xs px-3 py-1 rounded-full border border-gray-300 text-gray-600 hover:border-gray-400"
-                          >
-                            Отмена
-                          </button>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              await onDelete(project.id)
-                              setDeletingId(null)
-                              setEditingId(null)
-                            }}
-                            className="text-xs px-3 py-1 rounded-full bg-red-500 text-white hover:bg-red-600"
-                          >
-                            Удалить
-                          </button>
-                        </div>
-                      </div>
+                      <ConfirmDeleteDialog
+                        onCancel={() => setDeletingId(null)}
+                        onConfirm={async () => {
+                          await onDelete(project.id)
+                          setDeletingId(null)
+                          setEditingId(null)
+                        }}
+                      />
                     ) : (
                     <div className="flex flex-col gap-2 min-w-[200px]">
                       <div className="flex gap-1">
