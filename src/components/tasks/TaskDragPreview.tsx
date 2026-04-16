@@ -2,13 +2,7 @@
 
 import type { Task } from "@/types"
 import { Check } from "lucide-react"
-
-function priorityColor(score: number): string {
-  const r = Math.round(59 + (229 - 59) * (1 - score))
-  const g = Math.round(130 + (231 - 130) * (1 - score))
-  const b = Math.round(246 + (235 - 246) * (1 - score))
-  return `rgb(${r}, ${g}, ${b})`
-}
+import { priorityColor } from "@/lib/priority"
 
 export function TaskDragPreview({ task }: { task: Task }) {
   return (
