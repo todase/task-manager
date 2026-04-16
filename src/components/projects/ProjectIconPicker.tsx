@@ -3,6 +3,8 @@ import {
   Coffee, Music, Camera, Code, Globe, ShoppingCart, Clipboard,
   Flag, Rocket, Sun, GraduationCap, Dumbbell, Car, Plane,
   TreePine, FlaskConical,
+  Gamepad2, Palette, Wrench, Utensils, Bike, Tent,
+  Microscope, Cpu, Package, MapPin, Newspaper, Coins,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -31,6 +33,18 @@ export const PROJECT_ICONS: Record<string, LucideIcon> = {
   plane: Plane,
   "tree-pine": TreePine,
   "flask-conical": FlaskConical,
+  gamepad2: Gamepad2,
+  palette: Palette,
+  wrench: Wrench,
+  utensils: Utensils,
+  bike: Bike,
+  tent: Tent,
+  microscope: Microscope,
+  cpu: Cpu,
+  package: Package,
+  "map-pin": MapPin,
+  newspaper: Newspaper,
+  coins: Coins,
 }
 
 interface ProjectIconPickerProps {

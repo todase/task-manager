@@ -8,10 +8,10 @@ import {
   Trash2,
   RefreshCw,
   CalendarDays,
-  Tag,
+  Tag as TagIcon,
   Pencil,
 } from "lucide-react"
-import type { Task, Subtask, Project } from "@/types"
+import type { Task, Subtask, Project, Tag } from "@/types"
 import { SubtaskPanel } from "@/components/tasks/SubtaskPanel"
 import { ProjectIcon } from "@/components/projects/ProjectIconPicker"
 
@@ -52,6 +52,8 @@ interface TaskItemProps {
   onUpdateDueDate: (id: string, value: string) => Promise<void>
   onUpdateDescription: (id: string, description: string) => Promise<void>
   onUpdateTags: (id: string, tagIds: string[]) => Promise<void>
+  tags: Tag[]
+  onCreateTag: (name: string) => Promise<Tag>
   onAddSubtask: (taskId: string, title: string) => Promise<void>
   onToggleSubtask: (taskId: string, subtask: Subtask) => Promise<void>
   onDeleteSubtask: (taskId: string, subtaskId: string) => Promise<void>
@@ -68,6 +70,8 @@ export function TaskItem({
   onUpdateDueDate,
   onUpdateDescription,
   onUpdateTags,
+  tags,
+  onCreateTag,
   onAddSubtask,
   onToggleSubtask,
   onDeleteSubtask,
@@ -79,6 +83,9 @@ export function TaskItem({
   const [descValue, setDescValue] = useState(task.description ?? "")
   const [showProjectDropdown, setShowProjectDropdown] = useState(false)
   const projectDropdownRef = useRef<HTMLDivElement>(null)
+  const [showTagPicker, setShowTagPicker] = useState(false)
+  const [tagInput, setTagInput] = useState("")
+  const tagPickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!showProjectDropdown) return
@@ -90,6 +97,17 @@ export function TaskItem({
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [showProjectDropdown])
+
+  useEffect(() => {
+    if (!showTagPicker) return
+    function handleClickOutside(e: MouseEvent) {
+      if (tagPickerRef.current && !tagPickerRef.current.contains(e.target as Node)) {
+        setShowTagPicker(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [showTagPicker])
 
   function handleRowClick(e: React.MouseEvent) {
     const target = e.target as HTMLElement
@@ -124,6 +142,27 @@ export function TaskItem({
     }
     await onUpdateDescription(task.id, descValue)
     setEditingDesc(false)
+  }
+
+  const assignedTagIds = task.tags.map((t) => t.id)
+
+  function toggleTag(tagId: string) {
+    const newIds = assignedTagIds.includes(tagId)
+      ? assignedTagIds.filter((id) => id !== tagId)
+      : [...assignedTagIds, tagId]
+    onUpdateTags(task.id, newIds)
+  }
+
+  async function handleCreateTag() {
+    if (!tagInput.trim()) return
+    try {
+      const tag = await onCreateTag(tagInput.trim())
+      setTagInput("")
+      setShowTagPicker(false)
+      await onUpdateTags(task.id, [...assignedTagIds, tag.id])
+    } catch {
+      // silently fail
+    }
   }
 
   const borderColor = isOpen ? "#3b82f6" : priorityColor(task.priorityScore)
@@ -233,7 +272,7 @@ export function TaskItem({
 
         {/* ─── Expanded section ─── */}
         {isOpen && (
-          <div className="border-t border-gray-100 px-3 pb-3 pt-2 flex flex-col gap-2.5">
+          <div className="border-t border-gray-100 px-3 pb-3 pt-2 flex flex-col gap-2.5 animate-expand">
             {/* Project chip + rename button row */}
             <div className="flex items-center gap-2 flex-wrap">
               {/* Project chip */}
@@ -314,20 +353,106 @@ export function TaskItem({
             </div>
 
             {/* Tags */}
-            {task.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
+            <div className="relative" ref={tagPickerRef}>
+              <div className="flex flex-wrap gap-1 items-center">
                 {task.tags.map((tag) => (
                   <span
                     key={tag.id}
                     className="text-xs px-2 py-0.5 rounded-full text-white flex items-center gap-1"
                     style={{ backgroundColor: tag.color }}
                   >
-                    <Tag className="w-2.5 h-2.5" />
+                    <TagIcon className="w-2.5 h-2.5" />
                     {tag.name}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleTag(tag.id)
+                      }}
+                      className="hover:opacity-70 ml-0.5 leading-none"
+                      aria-label={`Снять метку ${tag.name}`}
+                    >
+                      ×
+                    </button>
                   </span>
                 ))}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowTagPicker((o) => !o)
+                    setTagInput("")
+                  }}
+                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 px-2 py-0.5 rounded-full border border-dashed border-gray-300 hover:border-gray-400"
+                >
+                  <TagIcon className="w-2.5 h-2.5" />
+                  + тег
+                </button>
               </div>
-            )}
+
+              {showTagPicker && (
+                <div
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-md z-20 min-w-[180px] max-h-48 overflow-y-auto"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {tags.filter((t) => !assignedTagIds.includes(t.id)).map((tag) => (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onMouseDown={() => {
+                        toggleTag(tag.id)
+                        setShowTagPicker(false)
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <span
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: tag.color }}
+                      />
+                      {tag.name}
+                    </button>
+                  ))}
+                  {tags.filter((t) => !assignedTagIds.includes(t.id)).length === 0 &&
+                    !tagInput && (
+                      <p className="px-3 py-2 text-xs text-gray-400">
+                        Все метки уже назначены
+                      </p>
+                    )}
+                  <div className="border-t border-gray-100 p-2">
+                    <input
+                      type="text"
+                      placeholder="Новая метка..."
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          await handleCreateTag()
+                        }
+                        if (e.key === "Escape") setShowTagPicker(false)
+                      }}
+                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 outline-none focus:border-blue-400"
+                      style={{ fontSize: "16px" }}
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {tagInput.trim() &&
+                      !tags.some(
+                        (t) =>
+                          t.name.toLowerCase() === tagInput.trim().toLowerCase()
+                      ) && (
+                        <button
+                          type="button"
+                          onMouseDown={handleCreateTag}
+                          className="mt-1 w-full text-left text-xs text-blue-600 px-1 hover:underline"
+                        >
+                          + Создать «{tagInput.trim()}»
+                        </button>
+                      )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Recurrence */}
             {task.recurrence && (

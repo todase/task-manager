@@ -145,6 +145,8 @@ export default function TasksPage() {
           onUpdateDueDate={taskHook.updateDueDate}
           onUpdateDescription={taskHook.updateDescription}
           onUpdateTags={taskHook.updateTags}
+          tags={tagHook.tags}
+          onCreateTag={tagHook.createTag}
           onAddSubtask={taskHook.addSubtask}
           onToggleSubtask={taskHook.toggleSubtask}
           onDeleteSubtask={taskHook.deleteSubtask}

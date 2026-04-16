@@ -4,7 +4,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { SortableTask } from "@/components/SortableTask"
 import { TaskItem } from "@/components/tasks/TaskItem"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
-import type { Task, Subtask, DateFilter, Project } from "@/types"
+import type { Task, Subtask, DateFilter, Project, Tag } from "@/types"
 
 interface TaskListProps {
   tasks: Task[]
@@ -19,6 +19,8 @@ interface TaskListProps {
   onUpdateDueDate: (id: string, value: string) => Promise<void>
   onUpdateDescription: (id: string, description: string) => Promise<void>
   onUpdateTags: (id: string, tagIds: string[]) => Promise<void>
+  tags: Tag[]
+  onCreateTag: (name: string) => Promise<Tag>
   onAddSubtask: (taskId: string, title: string) => Promise<void>
   onToggleSubtask: (taskId: string, subtask: Subtask) => Promise<void>
   onDeleteSubtask: (taskId: string, subtaskId: string) => Promise<void>
@@ -47,6 +49,8 @@ export function TaskList({
   onUpdateDueDate,
   onUpdateDescription,
   onUpdateTags,
+  tags,
+  onCreateTag,
   onAddSubtask,
   onToggleSubtask,
   onDeleteSubtask,
@@ -76,6 +80,8 @@ export function TaskList({
                   onUpdateDueDate={onUpdateDueDate}
                   onUpdateDescription={onUpdateDescription}
                   onUpdateTags={onUpdateTags}
+                  tags={tags}
+                  onCreateTag={onCreateTag}
                   onAddSubtask={onAddSubtask}
                   onToggleSubtask={onToggleSubtask}
                   onDeleteSubtask={onDeleteSubtask}

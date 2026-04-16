@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { FolderOpen, ChevronDown, ChevronUp, Pencil } from "lucide-react"
 import { DroppableProject } from "@/components/DroppableProject"
 import { ProjectIconPicker, ProjectIcon } from "@/components/projects/ProjectIconPicker"
@@ -33,6 +33,18 @@ export function ProjectTabs({
   const [editingIcon, setEditingIcon] = useState("folder")
   const [showEditIconPicker, setShowEditIconPicker] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -69,13 +81,12 @@ export function ProjectTabs({
 
   function handleSelectProject(id: string | null) {
     onSelect(id)
-    setIsOpen(false)
   }
 
   const activeProject = projects.find((p) => p.id === activeProjectId)
 
   return (
-    <div className="mb-3">
+    <div className="mb-3" ref={containerRef}>
       {/* Accordion header */}
       <button
         onClick={() => setIsOpen((o) => !o)}
@@ -127,6 +138,33 @@ export function ProjectTabs({
               <div key={project.id} className="flex items-center">
                 <DroppableProject id={project.id}>
                   {editingId === project.id ? (
+                    deletingId === project.id ? (
+                      <div className="flex flex-col gap-2 min-w-[200px]">
+                        <p className="text-xs text-gray-600">
+                          Удалить проект? Выполненные задачи попадут в архив, незавершённые открепятся.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setDeletingId(null)}
+                            className="text-xs px-3 py-1 rounded-full border border-gray-300 text-gray-600 hover:border-gray-400"
+                          >
+                            Отмена
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await onDelete(project.id)
+                              setDeletingId(null)
+                              setEditingId(null)
+                            }}
+                            className="text-xs px-3 py-1 rounded-full bg-red-500 text-white hover:bg-red-600"
+                          >
+                            Удалить
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
                     <div className="flex flex-col gap-2 min-w-[200px]">
                       <div className="flex gap-1">
                         <button
@@ -162,7 +200,15 @@ export function ProjectTabs({
                           }}
                         />
                       )}
+                      <button
+                        type="button"
+                        onClick={() => setDeletingId(project.id)}
+                        className="text-xs text-red-400 hover:text-red-600 self-start"
+                      >
+                        Удалить проект
+                      </button>
                     </div>
+                    )
                   ) : (
                     <div className="flex items-center">
                       <button
@@ -177,21 +223,13 @@ export function ProjectTabs({
                         {project.title}
                       </button>
                       {activeProjectId === project.id && (
-                        <>
-                          <button
-                            onClick={() => startEditing(project)}
-                            className="flex items-center justify-center w-8 min-h-[36px] bg-blue-500 text-white border border-l-0 border-blue-500 rounded-r-full hover:bg-blue-600 transition-colors"
-                            aria-label="Редактировать проект"
-                          >
-                            <Pencil className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={() => onDelete(project.id)}
-                            className="text-xs text-red-400 hover:text-red-600 ml-1"
-                          >
-                            ✕
-                          </button>
-                        </>
+                        <button
+                          onClick={() => startEditing(project)}
+                          className="flex items-center justify-center w-8 min-h-[36px] bg-blue-500 text-white border border-l-0 border-blue-500 rounded-r-full hover:bg-blue-600 transition-colors"
+                          aria-label="Редактировать проект"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
                       )}
                     </div>
                   )}

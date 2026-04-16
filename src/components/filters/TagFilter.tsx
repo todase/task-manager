@@ -13,8 +13,6 @@ interface TagFilterProps {
 export function TagFilter({ tags, selectedIds, onChange }: TagFilterProps) {
   const [isOpen, setIsOpen] = useState(false)
 
-  if (tags.length === 0) return null
-
   function toggle(id: string) {
     onChange(
       selectedIds.includes(id)
@@ -27,7 +25,6 @@ export function TagFilter({ tags, selectedIds, onChange }: TagFilterProps) {
 
   return (
     <div className="mb-3">
-      {/* Accordion header */}
       <button
         onClick={() => setIsOpen((o) => !o)}
         className="flex items-center gap-2 w-full text-left px-3 py-2 rounded-xl bg-white shadow-sm hover:shadow transition-shadow"
@@ -50,34 +47,41 @@ export function TagFilter({ tags, selectedIds, onChange }: TagFilterProps) {
         )}
       </button>
 
-      {/* Expanded content */}
       {isOpen && (
         <div className="mt-2 bg-white rounded-xl shadow-sm p-3 flex flex-wrap gap-2">
-          {tags.map((tag) => (
-            <button
-              key={tag.id}
-              onClick={() => toggle(tag.id)}
-              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                selectedIds.includes(tag.id)
-                  ? "text-white border-transparent"
-                  : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
-              }`}
-              style={
-                selectedIds.includes(tag.id)
-                  ? { backgroundColor: tag.color, borderColor: tag.color }
-                  : {}
-              }
-            >
-              {tag.name}
-            </button>
-          ))}
-          {selectedIds.length > 0 && (
-            <button
-              onClick={() => onChange([])}
-              className="text-xs text-gray-400 hover:text-gray-600"
-            >
-              Сбросить
-            </button>
+          {tags.length === 0 ? (
+            <p className="text-xs text-gray-400 italic">
+              Теги появятся здесь после создания
+            </p>
+          ) : (
+            <>
+              {tags.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() => toggle(tag.id)}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                    selectedIds.includes(tag.id)
+                      ? "text-white border-transparent"
+                      : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
+                  }`}
+                  style={
+                    selectedIds.includes(tag.id)
+                      ? { backgroundColor: tag.color, borderColor: tag.color }
+                      : {}
+                  }
+                >
+                  {tag.name}
+                </button>
+              ))}
+              {selectedIds.length > 0 && (
+                <button
+                  onClick={() => onChange([])}
+                  className="text-xs text-gray-400 hover:text-gray-600"
+                >
+                  Сбросить
+                </button>
+              )}
+            </>
           )}
         </div>
       )}

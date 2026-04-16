@@ -2,14 +2,12 @@
 
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { GripVertical } from "lucide-react"
 
 export function SortableTask({ id, children }: { id: string; children: React.ReactNode }) {
   const {
     attributes,
     listeners,
     setNodeRef,
-    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -18,26 +16,21 @@ export function SortableTask({ id, children }: { id: string; children: React.Rea
   return (
     <li
       ref={setNodeRef}
+      {...attributes}
+      {...listeners}
       style={{
-        transform: CSS.Transform.toString(transform),
+        transform: isDragging
+          ? `${CSS.Transform.toString(transform)} scale(1.03)`
+          : CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.4 : 1,
-        zIndex: isDragging ? 10 : undefined,
+        boxShadow: isDragging ? "0 8px 24px rgba(0,0,0,0.12)" : undefined,
+        zIndex: isDragging ? 50 : undefined,
+        opacity: 1,
+        touchAction: "none",
       }}
-      className="flex items-start gap-1"
+      className="cursor-grab active:cursor-grabbing"
     >
-      <button
-        ref={setActivatorNodeRef}
-        {...listeners}
-        {...attributes}
-        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing mt-3.5 px-0.5 select-none"
-        style={{ touchAction: "none" }}
-        tabIndex={-1}
-        aria-label="Перетащить задачу"
-      >
-        <GripVertical className="w-4 h-4" />
-      </button>
-      <div className="flex-1 min-w-0">{children}</div>
+      {children}
     </li>
   )
 }
