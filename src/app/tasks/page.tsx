@@ -137,6 +137,8 @@ export default function TasksPage() {
           filteredTasks={filtered}
           activeProjectId={activeProjectId}
           dateFilter={dateFilter}
+          projects={projectHook.projects}
+          onAssignProject={taskHook.assignProject}
           onToggle={taskHook.toggleTask}
           onDelete={taskHook.deleteTask}
           onRename={taskHook.renameTask}
