@@ -28,7 +28,8 @@ export function useProjects() {
   )
 
   const deleteProject = useCallback(async (id: string) => {
-    await fetch(`/api/projects/${id}`, { method: "DELETE" })
+    const res = await fetch(`/api/projects/${id}`, { method: "DELETE" })
+    if (!res.ok) throw new Error("Не удалось удалить проект")
     setProjects((prev) => prev.filter((p) => p.id !== id))
   }, [])
 
