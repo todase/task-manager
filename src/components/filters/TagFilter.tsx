@@ -48,7 +48,7 @@ export function TagFilter({ tags, selectedIds, onChange }: TagFilterProps) {
       </button>
 
       {isOpen && (
-        <div className="mt-2 bg-white rounded-xl shadow-sm p-3 flex flex-wrap gap-2">
+        <div className="mt-2 bg-white rounded-xl shadow-sm p-3 flex flex-wrap gap-2 animate-expand">
           {tags.length === 0 ? (
             <p className="text-xs text-gray-400 italic">
               Теги появятся здесь после создания

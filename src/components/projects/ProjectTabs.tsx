@@ -115,7 +115,7 @@ export function ProjectTabs({
 
       {/* Expanded content */}
       {isOpen && (
-        <div className="mt-2 bg-white rounded-xl shadow-sm p-3 flex flex-col gap-2">
+        <div className="mt-2 bg-white rounded-xl shadow-sm p-3 flex flex-col gap-2 animate-expand">
           {error && <p className="text-sm text-red-500">{error}</p>}
 
           <div className="flex flex-wrap gap-2">
