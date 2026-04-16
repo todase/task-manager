@@ -14,7 +14,7 @@ export async function GET() {
     orderBy: { order: "asc" },
     include: {
       subtasks: true,
-      project: { select: { id: true, title: true } },
+      project: { select: { id: true, title: true, icon: true } },
       tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
     },
   })

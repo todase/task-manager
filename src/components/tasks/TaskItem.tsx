@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import type { Task, Subtask } from "@/types"
 import { SubtaskPanel } from "@/components/tasks/SubtaskPanel"
+import { ProjectIcon } from "@/components/projects/ProjectIconPicker"
 
 function priorityColor(score: number): string {
   // Interpolate from blue (#3b82f6) at score=1 to gray (#e5e7eb) at score=0
@@ -155,10 +156,13 @@ export function TaskItem({
             {task.done && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
           </button>
 
-          {/* Project badge (when showing all projects) */}
+          {/* Project icon (when showing all projects) */}
           {showProject && task.project && (
-            <span className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full flex-shrink-0">
-              {task.project.title}
+            <span
+              className="text-blue-500 flex-shrink-0"
+              title={task.project.title}
+            >
+              <ProjectIcon icon={task.project.icon} className="w-4 h-4" />
             </span>
           )}
 
