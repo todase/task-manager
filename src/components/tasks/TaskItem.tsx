@@ -138,7 +138,9 @@ export function TaskItem({
     const newIds = assignedTagIds.includes(tagId)
       ? assignedTagIds.filter((id) => id !== tagId)
       : [...assignedTagIds, tagId]
-    onUpdateTags(task.id, newIds)
+    onUpdateTags(task.id, newIds).catch(() => {
+      setTagError("Не удалось обновить метки")
+    })
   }
 
   async function handleCreateTag() {

@@ -38,7 +38,7 @@ export function ProjectTabs({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  useClickOutside(containerRef, () => setIsOpen(false))
+  useClickOutside(containerRef, () => setIsOpen(false), isOpen)
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -61,9 +61,14 @@ export function ProjectTabs({
       setEditingId(null)
       return
     }
-    await onUpdate(id, { title: editingTitle.trim(), icon: editingIcon })
-    setEditingId(null)
-    setShowEditIconPicker(false)
+    setError(null)
+    try {
+      await onUpdate(id, { title: editingTitle.trim(), icon: editingIcon })
+      setEditingId(null)
+      setShowEditIconPicker(false)
+    } catch {
+      setError("Не удалось сохранить проект. Попробуйте ещё раз.")
+    }
   }
 
   function startEditing(project: Project) {
@@ -71,6 +76,7 @@ export function ProjectTabs({
     setEditingTitle(project.title)
     setEditingIcon(project.icon)
     setShowEditIconPicker(false)
+    setDeletingId(null)
   }
 
   function handleSelectProject(id: string | null) {
