@@ -189,6 +189,7 @@ export function TaskItem({
                 if (e.key === "Escape") setEditing(false)
               }}
               className="border p-1 rounded text-sm flex-1 outline-none focus:border-blue-400"
+              style={{ fontSize: "16px" }}
               autoFocus
               onClick={(e) => e.stopPropagation()}
             />

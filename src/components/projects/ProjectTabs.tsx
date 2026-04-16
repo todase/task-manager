@@ -217,6 +217,7 @@ export function ProjectTabs({
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   className="border p-1 rounded text-sm flex-1 outline-none focus:border-blue-400"
+                  style={{ fontSize: "16px" }}
                   autoFocus
                   onBlur={() => {
                     if (!newTitle) {

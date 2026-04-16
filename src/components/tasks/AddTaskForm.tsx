@@ -180,6 +180,7 @@ export function AddTaskForm({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg p-3 text-sm outline-none focus:border-blue-400"
+                  style={{ fontSize: "16px" }}
                 />
 
                 {/* Icon buttons row */}
@@ -328,6 +329,7 @@ export function AddTaskForm({
                         onFocus={() => setShowTagMenu(true)}
                         onBlur={() => setTimeout(() => setShowTagMenu(false), 150)}
                         className="border border-gray-200 rounded-lg p-2 text-sm w-full outline-none focus:border-blue-400"
+                        style={{ fontSize: "16px" }}
                       />
                       {showTagMenu && (filteredTags.length > 0 || tagInput.trim()) && (
                         <div className="absolute top-full left-0 bg-white border rounded-lg shadow-md z-10 w-full max-h-40 overflow-y-auto mt-1">
