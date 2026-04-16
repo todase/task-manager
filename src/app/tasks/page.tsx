@@ -8,6 +8,7 @@ import {
   DndContext,
   DragEndEvent,
   DragStartEvent,
+  DragOverlay,
   MouseSensor,
   TouchSensor,
   useSensor,
@@ -22,7 +23,8 @@ import { AddTaskForm } from "@/components/tasks/AddTaskForm"
 import { ProjectTabs } from "@/components/projects/ProjectTabs"
 import { DateFilters } from "@/components/filters/DateFilters"
 import { TagFilter } from "@/components/filters/TagFilter"
-import type { DateFilter } from "@/types"
+import type { DateFilter, Task } from "@/types"
+import { TaskDragPreview } from "@/components/tasks/TaskDragPreview"
 
 export default function TasksPage() {
   const { status } = useSession()
@@ -30,6 +32,7 @@ export default function TasksPage() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [dateFilter, setDateFilter] = useState<DateFilter>("all")
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
+  const [draggingTask, setDraggingTask] = useState<Task | null>(null)
 
   const taskHook = useTasks()
   const projectHook = useProjects()
@@ -52,9 +55,13 @@ export default function TasksPage() {
     }
   }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleDragStart(_event: DragStartEvent) {}
+  function handleDragStart(event: DragStartEvent) {
+    const task = taskHook.tasks.find((t) => t.id === event.active.id) ?? null
+    setDraggingTask(task)
+  }
 
   async function handleDragEnd(event: DragEndEvent) {
+    setDraggingTask(null)
     const { active, over } = event
     if (!over) return
 
@@ -160,6 +167,9 @@ export default function TasksPage() {
           onCreateTag={tagHook.createTag}
         />
       </main>
+      <DragOverlay dropAnimation={null}>
+        {draggingTask && <TaskDragPreview task={draggingTask} />}
+      </DragOverlay>
     </DndContext>
   )
 }
