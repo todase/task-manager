@@ -118,9 +118,9 @@ export default function TasksPage() {
             taskHook.removeProjectTasks(id)
             if (activeProjectId === id) setActiveProjectId(null)
           }}
-          onRename={async (id, title) => {
-            const updated = await projectHook.renameProject(id, title)
-            taskHook.syncProjectRename(updated)
+          onUpdate={async (id, updates) => {
+            const updated = await projectHook.updateProject(id, updates)
+            if (updates.title) taskHook.syncProjectRename(updated)
           }}
         />
 

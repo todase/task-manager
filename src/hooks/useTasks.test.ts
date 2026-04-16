@@ -34,8 +34,8 @@ describe("filterTasks", () => {
 
   it("filters by project", () => {
     const tasks = [
-      makeTask({ id: "1", project: { id: "p1", title: "A" } }),
-      makeTask({ id: "2", project: { id: "p2", title: "B" } }),
+      makeTask({ id: "1", project: { id: "p1", title: "A", icon: "folder" } }),
+      makeTask({ id: "2", project: { id: "p2", title: "B", icon: "folder" } }),
     ]
     expect(filterTasks(tasks, "all", "p1")).toHaveLength(1)
     expect(filterTasks(tasks, "all", "p1")[0].id).toBe("1")

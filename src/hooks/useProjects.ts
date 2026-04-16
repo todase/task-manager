@@ -12,29 +12,32 @@ export function useProjects() {
     setProjects(data)
   }, [])
 
-  const createProject = useCallback(async (title: string): Promise<Project> => {
-    const res = await fetch("/api/projects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    })
-    if (!res.ok) throw new Error("Не удалось создать проект")
-    const project = await res.json()
-    setProjects((prev) => [...prev, project])
-    return project
-  }, [])
+  const createProject = useCallback(
+    async (title: string, icon = "folder"): Promise<Project> => {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, icon }),
+      })
+      if (!res.ok) throw new Error("Не удалось создать проект")
+      const project = await res.json()
+      setProjects((prev) => [...prev, project])
+      return project
+    },
+    []
+  )
 
   const deleteProject = useCallback(async (id: string) => {
     await fetch(`/api/projects/${id}`, { method: "DELETE" })
     setProjects((prev) => prev.filter((p) => p.id !== id))
   }, [])
 
-  const renameProject = useCallback(
-    async (id: string, title: string): Promise<Project> => {
+  const updateProject = useCallback(
+    async (id: string, updates: { title?: string; icon?: string }): Promise<Project> => {
       const res = await fetch(`/api/projects/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
+        body: JSON.stringify(updates),
       })
       const updated = await res.json()
       setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
@@ -43,5 +46,5 @@ export function useProjects() {
     []
   )
 
-  return { projects, fetchProjects, createProject, deleteProject, renameProject }
+  return { projects, fetchProjects, createProject, deleteProject, updateProject }
 }

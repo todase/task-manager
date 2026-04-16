@@ -218,7 +218,7 @@ export function useTasks() {
   }, [])
 
   const syncProjectRename = useCallback(
-    (updated: { id: string; title: string }) => {
+    (updated: Project) => {
       setTasks((prev) =>
         prev.map((t) =>
           t.project?.id === updated.id ? { ...t, project: updated } : t
