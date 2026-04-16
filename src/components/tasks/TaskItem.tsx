@@ -233,7 +233,7 @@ export function TaskItem({
 
         {/* ─── Expanded section ─── */}
         {isOpen && (
-          <div className="border-t border-gray-100 px-3 pb-3 pt-2 flex flex-col gap-2.5">
+          <div className="border-t border-gray-100 px-3 pb-3 pt-2 flex flex-col gap-2.5 animate-expand">
             {/* Project chip + rename button row */}
             <div className="flex items-center gap-2 flex-wrap">
               {/* Project chip */}
