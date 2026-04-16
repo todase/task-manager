@@ -149,7 +149,7 @@ export function SwipeableRow({ children, onSubtasks, onDelete, subtasksLabel = "
 
       {/* Main content — slides left */}
       <div
-        className="relative bg-white"
+        className="relative"
         style={{
           transform: `translateX(${offsetX}px)`,
           transition: isDraggingRef.current ? "none" : "transform 200ms ease-out",

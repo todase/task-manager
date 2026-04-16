@@ -53,7 +53,7 @@ export function TaskList({
         items={tasks.map((t) => t.id)}
         strategy={verticalListSortingStrategy}
       >
-        <ul id="task-list" className="flex flex-col gap-3">
+        <ul id="task-list" className="flex flex-col gap-2">
           {filteredTasks.length === 0 ? (
             <li className="text-center text-gray-400 py-8 text-sm">
               {emptyMessage(dateFilter, activeProjectId, tasks.length === 0)}

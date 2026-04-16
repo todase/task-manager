@@ -12,7 +12,6 @@ import {
   Pencil,
 } from "lucide-react"
 import type { Task, Subtask } from "@/types"
-import { SwipeableRow } from "@/components/SwipeableRow"
 import { SubtaskPanel } from "@/components/tasks/SubtaskPanel"
 
 function priorityColor(score: number): string {
@@ -119,11 +118,7 @@ export function TaskItem({
   const dateInputId = `date-${task.id}`
 
   return (
-    <SwipeableRow
-      onSubtasks={() => setIsOpen((o) => !o)}
-      onDelete={() => onDelete(task.id)}
-      subtasksLabel={isOpen ? "Свернуть" : "Подзадачи"}
-    >
+    <>
       {/* Hidden native date picker */}
       <input
         type="date"
@@ -337,6 +332,6 @@ export function TaskItem({
           </div>
         )}
       </div>
-    </SwipeableRow>
+    </>
   )
 }
