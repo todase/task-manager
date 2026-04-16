@@ -37,11 +37,14 @@ export async function PATCH(
   }
 
   const { id } = await params
-  const { title } = await req.json()
+  const { title, icon } = await req.json()
 
   const project = await prisma.project.update({
     where: { id, userId: session.user.id },
-    data: { title },
+    data: {
+      ...(title !== undefined && { title }),
+      ...(icon !== undefined && { icon }),
+    },
   })
 
   return NextResponse.json(project)

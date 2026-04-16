@@ -20,7 +20,7 @@ export type Task = {
   recurrence: string | null
   description: string | null
   order: number
-  project: { id: string; title: string } | null
+  project: { id: string; title: string; icon: string } | null
   subtasks: Subtask[]
   tags: Tag[]
   priorityScore: number
@@ -29,6 +29,7 @@ export type Task = {
 export type Project = {
   id: string
   title: string
+  icon: string
 }
 
 export type DateFilter = "all" | "today" | "week" | "someday"
