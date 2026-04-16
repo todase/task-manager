@@ -90,12 +90,6 @@ export function TaskItem({
     setIsOpen((o) => !o)
   }
 
-  function handleTitleDoubleClick(e: React.MouseEvent) {
-    e.stopPropagation()
-    setEditing(true)
-    setEditTitle(task.title)
-  }
-
   async function commitRename() {
     if (!editTitle.trim() || editTitle === task.title) {
       setEditing(false)
@@ -139,7 +133,7 @@ export function TaskItem({
         onClick={handleRowClick}
       >
         {/* ─── Collapsed row ─── */}
-        <div className="flex items-center gap-3 px-3 py-3">
+        <div className={`flex gap-3 px-3 py-3 ${isOpen ? "items-start" : "items-center"}`}>
           {/* Round checkbox */}
           <button
             onClick={(e) => {
@@ -183,10 +177,9 @@ export function TaskItem({
             />
           ) : (
             <span
-              className={`text-sm font-medium flex-1 min-w-0 truncate ${
-                task.done ? "line-through text-gray-400" : "text-gray-900"
-              }`}
-              onDoubleClick={handleTitleDoubleClick}
+              className={`text-sm font-medium flex-1 min-w-0 ${
+                isOpen ? "break-words" : "truncate"
+              } ${task.done ? "line-through text-gray-400" : "text-gray-900"}`}
             >
               {task.title}
             </span>
