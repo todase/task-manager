@@ -7,9 +7,11 @@ import {
   CalendarDays,
   RefreshCw,
   Tag as TagIcon,
+  Folder,
 } from "lucide-react"
 import type { CreateTaskInput } from "@/hooks/useTasks"
 import type { Project, Tag } from "@/types"
+import { ProjectIcon } from "@/components/projects/ProjectIconPicker"
 
 interface AddTaskFormProps {
   activeProjectId: string | null
@@ -36,6 +38,8 @@ export function AddTaskForm({
   const [activeField, setActiveField] = useState<"date" | "recurrence" | "tags" | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false)
 
   const titleInputRef = useRef<HTMLInputElement>(null)
 
@@ -63,6 +67,8 @@ export function AddTaskForm({
     setShowTagMenu(false)
     setActiveField(null)
     setError(null)
+    setSelectedProjectId(null)
+    setShowProjectDropdown(false)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -75,7 +81,11 @@ export function AddTaskForm({
         title: title.trim(),
         ...(dueDate && { dueDate }),
         ...(recurrence && { recurrence }),
-        ...(activeProjectId && { projectId: activeProjectId }),
+        ...(activeProjectId
+          ? { projectId: activeProjectId }
+          : selectedProjectId
+          ? { projectId: selectedProjectId }
+          : {}),
         ...(selectedTagIds.length > 0 && { tagIds: selectedTagIds }),
       })
       closeModal()
@@ -218,6 +228,68 @@ export function AddTaskForm({
                       ? `Метки (${selectedTagIds.length})`
                       : "Метки"}
                   </button>
+
+                  {activeProjectId === null && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowProjectDropdown((o) => !o)}
+                        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                          selectedProjectId
+                            ? "bg-blue-50 border-blue-300 text-blue-600"
+                            : "border-gray-200 text-gray-500 hover:border-gray-400"
+                        }`}
+                      >
+                        {selectedProjectId ? (
+                          <>
+                            <ProjectIcon
+                              icon={projects.find((p) => p.id === selectedProjectId)?.icon ?? "folder"}
+                              className="w-3.5 h-3.5"
+                            />
+                            {projects.find((p) => p.id === selectedProjectId)?.title}
+                          </>
+                        ) : (
+                          <>
+                            <Folder className="w-3.5 h-3.5" />
+                            Проект
+                          </>
+                        )}
+                      </button>
+
+                      {showProjectDropdown && (
+                        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-md z-20 min-w-[160px] max-h-48 overflow-y-auto">
+                          <button
+                            type="button"
+                            onMouseDown={() => {
+                              setSelectedProjectId(null)
+                              setShowProjectDropdown(false)
+                            }}
+                            className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 ${
+                              !selectedProjectId ? "font-medium text-blue-600" : "text-gray-600"
+                            }`}
+                          >
+                            Без проекта
+                          </button>
+                          {projects.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onMouseDown={() => {
+                                setSelectedProjectId(p.id)
+                                setShowProjectDropdown(false)
+                              }}
+                              className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 ${
+                                selectedProjectId === p.id ? "font-medium text-blue-600" : "text-gray-600"
+                              }`}
+                            >
+                              <ProjectIcon icon={p.icon} className="w-3 h-3 flex-shrink-0" />
+                              {p.title}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Date picker */}
