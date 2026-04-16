@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FolderOpen, ChevronDown, ChevronUp } from "lucide-react"
+import { FolderOpen, ChevronDown, ChevronUp, Pencil } from "lucide-react"
 import { DroppableProject } from "@/components/DroppableProject"
 import { ProjectIconPicker, ProjectIcon } from "@/components/projects/ProjectIconPicker"
 import type { Project } from "@/types"
@@ -39,12 +39,11 @@ export function ProjectTabs({
     if (!newTitle.trim()) return
     setError(null)
     try {
-      const project = await onCreate(newTitle.trim(), newIcon)
+      await onCreate(newTitle.trim(), newIcon)
       setNewTitle("")
       setNewIcon("folder")
       setShowNew(false)
       setShowNewIconPicker(false)
-      onSelect(project.id)
       setIsOpen(false)
     } catch {
       setError("Не удалось создать проект. Попробуйте ещё раз.")
@@ -125,7 +124,7 @@ export function ProjectTabs({
 
             {/* Project pills */}
             {projects.map((project) => (
-              <div key={project.id} className="flex items-center gap-1">
+              <div key={project.id} className="flex items-center">
                 <DroppableProject id={project.id}>
                   {editingId === project.id ? (
                     <div className="flex flex-col gap-2 min-w-[200px]">
@@ -150,6 +149,7 @@ export function ProjectTabs({
                             }
                           }}
                           className="border p-1 rounded text-sm flex-1 outline-none focus:border-blue-400"
+                          style={{ fontSize: "16px" }}
                           autoFocus
                         />
                       </div>
@@ -164,28 +164,38 @@ export function ProjectTabs({
                       )}
                     </div>
                   ) : (
-                    <button
-                      onClick={() => handleSelectProject(project.id)}
-                      onDoubleClick={() => startEditing(project)}
-                      className={`flex items-center gap-1.5 text-sm px-3 py-1 rounded-full border min-h-[36px] transition-colors ${
-                        activeProjectId === project.id
-                          ? "bg-blue-500 text-white border-blue-500"
-                          : "text-gray-500 border-gray-200 hover:border-gray-400"
-                      }`}
-                    >
-                      <ProjectIcon icon={project.icon} className="w-3.5 h-3.5" />
-                      {project.title}
-                    </button>
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => handleSelectProject(project.id)}
+                        className={`flex items-center gap-1.5 text-sm px-3 py-1 min-h-[36px] transition-colors border ${
+                          activeProjectId === project.id
+                            ? "bg-blue-500 text-white border-blue-500 rounded-l-full"
+                            : "text-gray-500 border-gray-200 hover:border-gray-400 rounded-full"
+                        }`}
+                      >
+                        <ProjectIcon icon={project.icon} className="w-3.5 h-3.5" />
+                        {project.title}
+                      </button>
+                      {activeProjectId === project.id && (
+                        <>
+                          <button
+                            onClick={() => startEditing(project)}
+                            className="flex items-center justify-center w-8 min-h-[36px] bg-blue-500 text-white border border-l-0 border-blue-500 rounded-r-full hover:bg-blue-600 transition-colors"
+                            aria-label="Редактировать проект"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => onDelete(project.id)}
+                            className="text-xs text-red-400 hover:text-red-600 ml-1"
+                          >
+                            ✕
+                          </button>
+                        </>
+                      )}
+                    </div>
                   )}
                 </DroppableProject>
-                {activeProjectId === project.id && editingId !== project.id && (
-                  <button
-                    onClick={() => onDelete(project.id)}
-                    className="text-xs text-red-400 hover:text-red-600 ml-1"
-                  >
-                    ✕
-                  </button>
-                )}
               </div>
             ))}
           </div>
@@ -207,6 +217,7 @@ export function ProjectTabs({
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   className="border p-1 rounded text-sm flex-1 outline-none focus:border-blue-400"
+                  style={{ fontSize: "16px" }}
                   autoFocus
                   onBlur={() => {
                     if (!newTitle) {

@@ -139,6 +139,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 /src/generated/prisma
+.worktrees/
 
 # next-pwa generated service worker files
 /public/sw.js
