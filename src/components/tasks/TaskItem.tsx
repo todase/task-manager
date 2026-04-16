@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   Check,
   ChevronDown,
@@ -11,7 +11,7 @@ import {
   Tag,
   Pencil,
 } from "lucide-react"
-import type { Task, Subtask } from "@/types"
+import type { Task, Subtask, Project } from "@/types"
 import { SubtaskPanel } from "@/components/tasks/SubtaskPanel"
 import { ProjectIcon } from "@/components/projects/ProjectIconPicker"
 
@@ -44,6 +44,8 @@ const RECURRENCE_LABEL: Record<string, string> = {
 interface TaskItemProps {
   task: Task
   showProject: boolean
+  projects: Project[]
+  onAssignProject: (taskId: string, projectId: string | null, project: Project | null) => Promise<void>
   onToggle: (task: Task) => Promise<void>
   onDelete: (id: string) => Promise<void>
   onRename: (id: string, title: string) => Promise<void>
@@ -58,6 +60,8 @@ interface TaskItemProps {
 export function TaskItem({
   task,
   showProject,
+  projects,
+  onAssignProject,
   onToggle,
   onDelete,
   onRename,
@@ -73,6 +77,19 @@ export function TaskItem({
   const [editTitle, setEditTitle] = useState("")
   const [editingDesc, setEditingDesc] = useState(false)
   const [descValue, setDescValue] = useState(task.description ?? "")
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false)
+  const projectDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showProjectDropdown) return
+    function handleClickOutside(e: MouseEvent) {
+      if (projectDropdownRef.current && !projectDropdownRef.current.contains(e.target as Node)) {
+        setShowProjectDropdown(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [showProjectDropdown])
 
   function handleRowClick(e: React.MouseEvent) {
     const target = e.target as HTMLElement
@@ -216,6 +233,85 @@ export function TaskItem({
         {/* ─── Expanded section ─── */}
         {isOpen && (
           <div className="border-t border-gray-100 px-3 pb-3 pt-2 flex flex-col gap-2.5">
+            {/* Project chip + rename button row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Project chip */}
+              <div className="relative" ref={projectDropdownRef}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowProjectDropdown((o) => !o)
+                  }}
+                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full border transition-colors ${
+                    task.project
+                      ? "bg-blue-50 border-blue-300 text-blue-600"
+                      : "border-gray-200 text-gray-400 hover:border-gray-400"
+                  }`}
+                >
+                  {task.project ? (
+                    <>
+                      <ProjectIcon icon={task.project.icon} className="w-3 h-3" />
+                      <span>{task.project.title}</span>
+                    </>
+                  ) : (
+                    <span>Без проекта</span>
+                  )}
+                  <ChevronDown className="w-3 h-3 ml-0.5" />
+                </button>
+
+                {showProjectDropdown && (
+                  <div
+                    className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-md z-20 min-w-[160px] max-h-48 overflow-y-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onAssignProject(task.id, null, null)
+                        setShowProjectDropdown(false)
+                      }}
+                      className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 ${
+                        !task.project ? "font-medium text-blue-600" : "text-gray-600"
+                      }`}
+                    >
+                      Без проекта
+                    </button>
+                    {projects.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          onAssignProject(task.id, p.id, p)
+                          setShowProjectDropdown(false)
+                        }}
+                        className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 ${
+                          task.project?.id === p.id ? "font-medium text-blue-600" : "text-gray-600"
+                        }`}
+                      >
+                        <ProjectIcon icon={p.icon} className="w-3 h-3 flex-shrink-0" />
+                        {p.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Rename button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setEditing(true)
+                  setEditTitle(task.title)
+                }}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded-full border border-gray-200 hover:border-gray-400 transition-colors"
+              >
+                <Pencil className="w-3 h-3" />
+                переименовать
+              </button>
+            </div>
+
             {/* Tags */}
             {task.tags.length > 0 && (
               <div className="flex flex-wrap gap-1">
