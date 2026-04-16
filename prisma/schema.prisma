@@ -47,6 +47,7 @@ model Subtask {
 model Project {
   id        String   @id @default(cuid())
   title     String
+  icon      String   @default("folder")
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   tasks     Task[]
