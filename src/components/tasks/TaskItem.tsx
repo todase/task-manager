@@ -15,6 +15,7 @@ import {
 import type { Task, Subtask, Project, Tag } from "@/types"
 import { SubtaskPanel } from "@/components/tasks/SubtaskPanel"
 import { ProjectIcon } from "@/components/projects/ProjectIconPicker"
+import { formatDueDate } from "@/lib/dates"
 
 function priorityColor(score: number): string {
   // Interpolate from blue (#3b82f6) at score=1 to gray (#e5e7eb) at score=0
@@ -240,7 +241,7 @@ export function TaskItem({
               className={`text-xs px-2 py-0.5 rounded-full cursor-pointer flex-shrink-0 ${dateBadgeClasses(task)}`}
               onClick={(e) => e.stopPropagation()}
             >
-              {new Date(task.dueDate).toLocaleDateString("ru-RU")}
+              {formatDueDate(task.dueDate)}
             </label>
           )}
 
@@ -468,9 +469,7 @@ export function TaskItem({
                 onClick={(e) => e.stopPropagation()}
               >
                 <CalendarDays className="w-3 h-3" />
-                {task.dueDate
-                  ? new Date(task.dueDate).toLocaleDateString("ru-RU")
-                  : "Добавить дату"}
+                {task.dueDate ? formatDueDate(task.dueDate) : "Добавить дату"}
               </label>
               {task.dueDate && (
                 <button
