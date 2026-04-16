@@ -37,7 +37,7 @@ export function SortableTask({ id, children }: { id: string; children: React.Rea
       >
         <GripVertical className="w-4 h-4" />
       </button>
-      <div className="flex-1">{children}</div>
+      <div className="flex-1 min-w-0">{children}</div>
     </li>
   )
 }
