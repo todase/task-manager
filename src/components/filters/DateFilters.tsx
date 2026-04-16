@@ -14,7 +14,7 @@ const LABELS: Record<DateFilter, string> = {
   someday: "Потом",
 }
 
-const FILTERS: DateFilter[] = ["today", "week", "all", "someday"]
+const FILTERS: DateFilter[] = ["today", "week", "someday", "all"]
 
 export function DateFilters({ value, onChange }: DateFiltersProps) {
   return (

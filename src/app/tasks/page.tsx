@@ -108,6 +108,8 @@ export default function TasksPage() {
           </button>
         </div>
 
+        <DateFilters value={dateFilter} onChange={setDateFilter} />
+
         <ProjectTabs
           projects={projectHook.projects}
           activeProjectId={activeProjectId}
@@ -123,8 +125,6 @@ export default function TasksPage() {
             if (updates.title) taskHook.syncProjectRename(updated)
           }}
         />
-
-        <DateFilters value={dateFilter} onChange={setDateFilter} />
 
         <TagFilter
           tags={tagHook.tags}
