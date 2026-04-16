@@ -169,6 +169,7 @@ export function ProjectTabs({
                       <div className="flex gap-1">
                         <button
                           type="button"
+                          onMouseDown={(e) => e.preventDefault()}
                           onClick={() => setShowEditIconPicker((o) => !o)}
                           className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 flex-shrink-0"
                         >
@@ -202,6 +203,7 @@ export function ProjectTabs({
                       )}
                       <button
                         type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => setDeletingId(project.id)}
                         className="text-xs text-red-400 hover:text-red-600 self-start"
                       >
