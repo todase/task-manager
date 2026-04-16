@@ -89,8 +89,13 @@ export function TaskItem({
   const [tagError, setTagError] = useState<string | null>(null)
   const tagPickerRef = useRef<HTMLDivElement>(null)
 
+  function closeTagPicker() {
+    setShowTagPicker(false)
+    setTagError(null)
+  }
+
   useClickOutside(projectDropdownRef, () => setShowProjectDropdown(false), showProjectDropdown)
-  useClickOutside(tagPickerRef, () => setShowTagPicker(false), showTagPicker)
+  useClickOutside(tagPickerRef, closeTagPicker, showTagPicker)
 
   function handleRowClick(e: React.MouseEvent) {
     const target = e.target as HTMLElement
@@ -142,7 +147,7 @@ export function TaskItem({
     try {
       const tag = await onCreateTag(tagInput.trim())
       setTagInput("")
-      setShowTagPicker(false)
+      closeTagPicker()
       await onUpdateTags(task.id, [...assignedTagIds, tag.id])
     } catch {
       setTagError("Не удалось создать метку")
@@ -385,7 +390,7 @@ export function TaskItem({
                       type="button"
                       onMouseDown={() => {
                         toggleTag(tag.id)
-                        setShowTagPicker(false)
+                        closeTagPicker()
                       }}
                       className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 flex items-center gap-2"
                     >
@@ -413,7 +418,7 @@ export function TaskItem({
                           e.preventDefault()
                           await handleCreateTag()
                         }
-                        if (e.key === "Escape") setShowTagPicker(false)
+                        if (e.key === "Escape") closeTagPicker()
                       }}
                       className="w-full text-xs border border-gray-200 rounded px-2 py-1 outline-none focus:border-blue-400"
                       style={{ fontSize: "16px" }}

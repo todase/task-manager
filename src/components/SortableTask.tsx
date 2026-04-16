@@ -26,6 +26,8 @@ export function SortableTask({ id, children }: { id: string; children: React.Rea
         boxShadow: isDragging ? "0 8px 24px rgba(0,0,0,0.12)" : undefined,
         zIndex: isDragging ? 50 : undefined,
         opacity: 1,
+        // "manipulation" allows native scroll; "none" would block it.
+        // TouchSensor with delay:500 handles drag without needing "none".
         touchAction: "manipulation",
       }}
       className="cursor-grab active:cursor-grabbing"
