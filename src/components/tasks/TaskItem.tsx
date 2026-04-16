@@ -180,7 +180,7 @@ export function TaskItem({
         onClick={handleRowClick}
       >
         {/* ─── Collapsed row ─── */}
-        <div className={`flex gap-3 px-3 py-3 ${isOpen ? "items-start" : "items-center"}`}>
+        <div className={`flex gap-3 px-3 py-4 ${isOpen ? "items-start" : "items-center"}`}>
           {/* Round checkbox */}
           <button
             onClick={(e) => {
