@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useSession } from "next-auth/react"
+import { ArrowLeft } from "lucide-react"
 import { useTasks } from "@/hooks/useTasks"
 import { TaskSkeleton } from "@/components/tasks/TaskSkeleton"
 import { BurgerMenu } from "@/components/BurgerMenu"
@@ -29,7 +31,16 @@ export default function ArchivePage() {
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 md:p-8 pb-24 md:pb-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold text-gray-900">Архив</h1>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/tasks"
+            className="flex items-center justify-center w-9 h-9 rounded-lg bg-white border border-gray-200 shadow-sm text-gray-500 hover:text-gray-700"
+            aria-label="Назад к задачам"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <h1 className="text-xl font-bold text-gray-900">Архив</h1>
+        </div>
         <BurgerMenu />
       </div>
 
