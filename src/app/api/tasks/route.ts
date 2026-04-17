@@ -16,7 +16,8 @@ export async function GET(req: Request) {
   const sortParam = searchParams.get("sort")
   const q = searchParams.get("q") ?? undefined
 
-  const doneFilter = doneParam === "true"
+  const doneFilter =
+    doneParam === "true" ? true : doneParam === "false" ? false : undefined
   const parsedLimit = parseInt(limitParam ?? "", 10)
   const take = isNaN(parsedLimit) ? 200 : Math.max(1, Math.min(parsedLimit, 500))
   const orderBy =
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
 
   const where: Prisma.TaskWhereInput = {
     userId: session.user.id,
-    done: doneFilter,
+    ...(doneFilter !== undefined && { done: doneFilter }),
     ...(q && {
       OR: [
         { title: { contains: q, mode: "insensitive" } },
