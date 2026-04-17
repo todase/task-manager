@@ -349,22 +349,41 @@ export function TaskItem({
 
             {/* Description */}
             {editingDesc ? (
-              <textarea
-                value={descValue}
-                onChange={(e) => setDescValue(e.target.value)}
-                onBlur={saveDescription}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && e.ctrlKey) saveDescription()
-                  if (e.key === "Escape") {
-                    setDescValue(task.description ?? "")
-                    setEditingDesc(false)
-                  }
-                }}
-                className="w-full border border-gray-200 rounded-lg p-2 text-sm text-gray-600 resize-none outline-none focus:border-blue-400"
-                rows={3}
-                autoFocus
-                onClick={(e) => e.stopPropagation()}
-              />
+              <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                <textarea
+                  value={descValue}
+                  onChange={(e) => setDescValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.ctrlKey) saveDescription()
+                    if (e.key === "Escape") {
+                      setDescValue(task.description ?? "")
+                      setEditingDesc(false)
+                    }
+                  }}
+                  className="w-full border border-gray-200 rounded-lg p-2 text-sm text-gray-600 resize-none outline-none focus:border-blue-400"
+                  rows={3}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={saveDescription}
+                    className="text-xs bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600"
+                  >
+                    Сохранить
+                  </button>
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setDescValue(task.description ?? "")
+                      setEditingDesc(false)
+                    }}
+                    className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1"
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </div>
             ) : (
               <button
                 onClick={(e) => {
