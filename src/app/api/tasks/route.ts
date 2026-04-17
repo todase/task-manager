@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 
@@ -13,6 +14,7 @@ export async function GET(req: Request) {
   const doneParam = searchParams.get("done")
   const limitParam = searchParams.get("limit")
   const sortParam = searchParams.get("sort")
+  const q = searchParams.get("q") ?? undefined
 
   const doneFilter = doneParam === "true"
   const parsedLimit = parseInt(limitParam ?? "", 10)
@@ -22,10 +24,21 @@ export async function GET(req: Request) {
       ? { updatedAt: "desc" as const }
       : { order: "asc" as const }
 
+  const where: Prisma.TaskWhereInput = {
+    userId: session.user.id,
+    done: doneFilter,
+    ...(q && {
+      OR: [
+        { title: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+      ],
+    }),
+  }
+
   const tasks = await prisma.task.findMany({
-    where: { userId: session.user.id, done: doneFilter },
+    where,
     orderBy,
-    take,
+    ...(q ? {} : { take }),
     include: {
       subtasks: true,
       project: { select: { id: true, title: true, icon: true } },
