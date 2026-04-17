@@ -3,15 +3,29 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 
 // Получить все задачи пользователя
-export async function GET() {
+export async function GET(req: Request) {
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { searchParams } = new URL(req.url)
+  const doneParam = searchParams.get("done")
+  const limitParam = searchParams.get("limit")
+  const sortParam = searchParams.get("sort")
+
+  const doneFilter = doneParam === "true"
+  const parsedLimit = parseInt(limitParam ?? "", 10)
+  const take = isNaN(parsedLimit) ? 200 : Math.max(1, Math.min(parsedLimit, 500))
+  const orderBy =
+    sortParam === "updatedAt_desc"
+      ? { updatedAt: "desc" as const }
+      : { order: "asc" as const }
+
   const tasks = await prisma.task.findMany({
-    where: { userId: session.user.id },
-    orderBy: { order: "asc" },
+    where: { userId: session.user.id, done: doneFilter },
+    orderBy,
+    take,
     include: {
       subtasks: true,
       project: { select: { id: true, title: true, icon: true } },
