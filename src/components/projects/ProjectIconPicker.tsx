@@ -59,6 +59,7 @@ export function ProjectIconPicker({ selected, onChange }: ProjectIconPickerProps
         <button
           key={key}
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => onChange(key)}
           className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
             selected === key
