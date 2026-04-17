@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { signOut, useSession } from "next-auth/react"
-import { LogOut } from "lucide-react"
+import { useSession } from "next-auth/react"
 import {
   DndContext,
   DragEndEvent,
@@ -25,6 +24,7 @@ import { DateFilters } from "@/components/filters/DateFilters"
 import { TagFilter } from "@/components/filters/TagFilter"
 import type { DateFilter, Task } from "@/types"
 import { TaskDragPreview } from "@/components/tasks/TaskDragPreview"
+import { BurgerMenu } from "@/components/BurgerMenu"
 
 export default function TasksPage() {
   const { status } = useSession()
@@ -106,13 +106,7 @@ export default function TasksPage() {
       <main className="max-w-2xl mx-auto px-4 py-6 md:p-8 pb-20">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-bold text-gray-900">Мои задачи</h1>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Выйти
-          </button>
+          <BurgerMenu />
         </div>
 
         <DateFilters value={dateFilter} onChange={setDateFilter} />
