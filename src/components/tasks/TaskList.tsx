@@ -4,6 +4,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { SortableTask } from "@/components/SortableTask"
 import { TaskItem } from "@/components/tasks/TaskItem"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { TaskSkeleton } from "@/components/tasks/TaskSkeleton"
 import type { Task, Subtask, DateFilter, Project, Tag } from "@/types"
 
 interface TaskListProps {
@@ -11,6 +12,7 @@ interface TaskListProps {
   filteredTasks: Task[]
   activeProjectId: string | null
   dateFilter: DateFilter
+  isLoading?: boolean
   projects: Project[]
   onAssignProject: (taskId: string, projectId: string | null, project: Project | null) => Promise<void>
   onToggle: (task: Task) => Promise<void>
@@ -41,6 +43,7 @@ export function TaskList({
   filteredTasks,
   activeProjectId,
   dateFilter,
+  isLoading,
   projects,
   onAssignProject,
   onToggle,
@@ -55,6 +58,8 @@ export function TaskList({
   onToggleSubtask,
   onDeleteSubtask,
 }: TaskListProps) {
+  if (isLoading) return <TaskSkeleton />
+
   return (
     <ErrorBoundary>
       <SortableContext

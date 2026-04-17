@@ -93,7 +93,7 @@ export default function TasksPage() {
       selectedTagIds.some((id) => t.tags.some((tag) => tag.id === id))
   )
 
-  if (status === "loading" || taskHook.isLoading) {
+  if (status === "loading") {
     return <p className="p-8">Загрузка...</p>
   }
 
@@ -144,6 +144,7 @@ export default function TasksPage() {
           filteredTasks={filtered}
           activeProjectId={activeProjectId}
           dateFilter={dateFilter}
+          isLoading={taskHook.isLoading}
           projects={projectHook.projects}
           onAssignProject={taskHook.assignProject}
           onToggle={taskHook.toggleTask}
