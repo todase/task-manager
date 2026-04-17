@@ -40,6 +40,7 @@ export function useProjects() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       })
+      if (!res.ok) throw new Error("Не удалось сохранить проект")
       const updated = await res.json()
       setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
       return updated
