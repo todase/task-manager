@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { filterTasks, withPriorityScores } from "./useTasks"
+import { filterTasks, buildTasksUrl, withPriorityScores } from "./useTasks"
 import type { Task } from "@/types"
 
 function makeTask(overrides: Partial<Task> = {}): Task {
@@ -81,6 +81,40 @@ describe("filterTasks", () => {
     const result = filterTasks(tasks, "someday", null)
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe("1")
+  })
+})
+
+describe("buildTasksUrl", () => {
+  it("returns /api/tasks with no filters", () => {
+    expect(buildTasksUrl({})).toBe("/api/tasks")
+  })
+
+  it("includes done=true", () => {
+    expect(buildTasksUrl({ done: true })).toBe("/api/tasks?done=true")
+  })
+
+  it("includes done=false", () => {
+    expect(buildTasksUrl({ done: false })).toBe("/api/tasks?done=false")
+  })
+
+  it("includes q param", () => {
+    expect(buildTasksUrl({ q: "hello" })).toBe("/api/tasks?q=hello")
+  })
+
+  it("includes sort param", () => {
+    expect(buildTasksUrl({ sort: "updatedAt_desc" })).toBe(
+      "/api/tasks?sort=updatedAt_desc"
+    )
+  })
+
+  it("combines done and sort", () => {
+    expect(buildTasksUrl({ done: true, sort: "updatedAt_desc" })).toBe(
+      "/api/tasks?done=true&sort=updatedAt_desc"
+    )
+  })
+
+  it("omits q when empty string", () => {
+    expect(buildTasksUrl({ q: "" })).toBe("/api/tasks")
   })
 })
 

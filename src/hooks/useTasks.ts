@@ -1,7 +1,22 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import type { Task, Subtask, DateFilter, Project } from "@/types"
+
+export type TaskFilters = {
+  done?: boolean
+  q?: string
+  sort?: "order" | "updatedAt_desc"
+}
+
+export function buildTasksUrl(filters: TaskFilters): string {
+  const params = new URLSearchParams()
+  if (filters.done !== undefined) params.set("done", String(filters.done))
+  if (filters.q) params.set("q", filters.q)
+  if (filters.sort) params.set("sort", filters.sort)
+  const str = params.toString()
+  return str ? `/api/tasks?${str}` : "/api/tasks"
+}
 
 export type CreateTaskInput = {
   title: string
@@ -51,16 +66,19 @@ export function filterTasks(
   })
 }
 
-export function useTasks() {
+export function useTasks(baseFilters: TaskFilters = {}) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const baseFiltersRef = useRef(baseFilters)
+  baseFiltersRef.current = baseFilters
 
-  const fetchTasks = useCallback(async () => {
+  const fetchTasks = useCallback(async (overrideFilters: TaskFilters = {}) => {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/tasks")
+      const filters = { ...baseFiltersRef.current, ...overrideFilters }
+      const res = await fetch(buildTasksUrl(filters))
       if (!res.ok) throw new Error("Не удалось загрузить задачи")
       const data = await res.json()
       setTasks(withPriorityScores(data))
@@ -326,6 +344,40 @@ export function useTasks() {
     }
   }, [])
 
+  const restoreTask = useCallback(async (id: string) => {
+    let removed: Task | undefined
+    setTasks((prev) => {
+      removed = prev.find((t) => t.id === id)
+      return prev.filter((t) => t.id !== id)
+    })
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ done: false }),
+      })
+      if (!res.ok) throw new Error("Не удалось восстановить задачу")
+    } catch (e) {
+      if (removed) setTasks((prev) => [...prev, removed!])
+      setError(e instanceof Error ? e.message : "Ошибка восстановления задачи")
+    }
+  }, [])
+
+  const clearArchive = useCallback(async () => {
+    let previous: Task[] = []
+    setTasks((prev) => {
+      previous = prev
+      return []
+    })
+    try {
+      const res = await fetch("/api/tasks?done=true", { method: "DELETE" })
+      if (!res.ok) throw new Error("Не удалось очистить архив")
+    } catch (e) {
+      setTasks(previous)
+      setError(e instanceof Error ? e.message : "Ошибка очистки архива")
+    }
+  }, [])
+
   return {
     tasks,
     isLoading,
@@ -345,5 +397,7 @@ export function useTasks() {
     deleteSubtask,
     updateDescription,
     updateTags,
+    restoreTask,
+    clearArchive,
   }
 }
