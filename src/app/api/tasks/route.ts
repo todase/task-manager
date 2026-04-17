@@ -22,7 +22,7 @@ export async function GET(req: Request) {
   const take = isNaN(parsedLimit) ? 200 : Math.max(1, Math.min(parsedLimit, 500))
   const orderBy =
     sortParam === "updatedAt_desc"
-      ? { updatedAt: "desc" as const }
+      ? { createdAt: "desc" as const }
       : { order: "asc" as const }
 
   const where: Prisma.TaskWhereInput = {
