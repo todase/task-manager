@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { useClickOutside } from "@/hooks/useClickOutside"
+import { useState } from "react"
 import { useProjectEditing } from "@/hooks/useProjectEditing"
 import { FolderOpen, ChevronDown, ChevronUp, Pencil } from "lucide-react"
 import { DroppableProject } from "@/components/DroppableProject"
@@ -16,6 +15,8 @@ interface ProjectTabsProps {
   onCreate: (title: string, icon: string) => Promise<Project>
   onDelete: (id: string) => Promise<void>
   onUpdate: (id: string, updates: { title?: string; icon?: string }) => Promise<void>
+  isOpen: boolean
+  onToggle: () => void
 }
 
 export function ProjectTabs({
@@ -25,20 +26,17 @@ export function ProjectTabs({
   onCreate,
   onDelete,
   onUpdate,
+  isOpen,
+  onToggle,
 }: ProjectTabsProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useClickOutside(containerRef, () => setIsOpen(false), isOpen)
-
   const edit = useProjectEditing({ onCreate, onDelete, onUpdate })
   const activeProject = projects.find((p) => p.id === activeProjectId)
 
   return (
-    <div className="mb-3" ref={containerRef}>
+    <div className="mb-3">
       {/* Accordion header */}
       <button
-        onClick={() => setIsOpen((o) => !o)}
+        onClick={onToggle}
         className="flex items-center gap-2 w-full text-left px-3 py-2 rounded-xl bg-white shadow-sm hover:shadow transition-shadow"
       >
         {activeProject ? (

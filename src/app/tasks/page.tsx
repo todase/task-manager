@@ -38,6 +38,7 @@ export default function TasksPage() {
   const [searchMode, setSearchMode] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [tagsOpen, setTagsOpen] = useState(false)
+  const [projectsOpen, setProjectsOpen] = useState(false)
 
   const taskHook = useTasks()
   const projectHook = useProjects()
@@ -167,6 +168,8 @@ export default function TasksPage() {
                 const updated = await projectHook.updateProject(id, updates)
                 if (updates.title) taskHook.syncProjectRename(updated)
               }}
+              isOpen={projectsOpen}
+              onToggle={() => setProjectsOpen((o) => !o)}
             />
 
             <TagFilter
@@ -190,36 +193,43 @@ export default function TasksPage() {
           </p>
         )}
 
-        <TaskList
-          tasks={taskHook.tasks}
-          filteredTasks={filtered}
-          activeProjectId={activeProjectId}
-          dateFilter={dateFilter}
-          isLoading={taskHook.isLoading}
-          projects={projectHook.projects}
-          onAssignProject={taskHook.assignProject}
-          onToggle={taskHook.toggleTask}
-          onDelete={taskHook.deleteTask}
-          onRename={taskHook.renameTask}
-          onUpdateDueDate={taskHook.updateDueDate}
-          onUpdateDescription={taskHook.updateDescription}
-          onUpdateTags={taskHook.updateTags}
-          tags={tagHook.tags}
-          onCreateTag={tagHook.createTag}
-          onAddSubtask={taskHook.addSubtask}
-          onToggleSubtask={taskHook.toggleSubtask}
-          onDeleteSubtask={taskHook.deleteSubtask}
-        />
-
-        {!searchMode && (
-          <AddTaskForm
+        <div
+          onClick={() => {
+            setProjectsOpen(false)
+            setTagsOpen(false)
+          }}
+        >
+          <TaskList
+            tasks={taskHook.tasks}
+            filteredTasks={filtered}
             activeProjectId={activeProjectId}
+            dateFilter={dateFilter}
+            isLoading={taskHook.isLoading}
             projects={projectHook.projects}
+            onAssignProject={taskHook.assignProject}
+            onToggle={taskHook.toggleTask}
+            onDelete={taskHook.deleteTask}
+            onRename={taskHook.renameTask}
+            onUpdateDueDate={taskHook.updateDueDate}
+            onUpdateDescription={taskHook.updateDescription}
+            onUpdateTags={taskHook.updateTags}
             tags={tagHook.tags}
-            onSubmit={(input) => taskHook.createTask(input, projectHook.projects)}
             onCreateTag={tagHook.createTag}
+            onAddSubtask={taskHook.addSubtask}
+            onToggleSubtask={taskHook.toggleSubtask}
+            onDeleteSubtask={taskHook.deleteSubtask}
           />
-        )}
+
+          {!searchMode && (
+            <AddTaskForm
+              activeProjectId={activeProjectId}
+              projects={projectHook.projects}
+              tags={tagHook.tags}
+              onSubmit={(input) => taskHook.createTask(input, projectHook.projects)}
+              onCreateTag={tagHook.createTag}
+            />
+          )}
+        </div>
       </main>
       <DragOverlay dropAnimation={null}>
         {draggingTask && <TaskDragPreview task={draggingTask} />}
