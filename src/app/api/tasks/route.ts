@@ -76,3 +76,20 @@ export async function POST(req: Request) {
   return NextResponse.json({ ...task, tags: task.tags.map((tt) => tt.tag) })
 }
 
+export async function DELETE(req: Request) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(req.url)
+  if (searchParams.get("done") !== "true") {
+    return NextResponse.json({ error: "Missing done=true param" }, { status: 400 })
+  }
+
+  await prisma.task.deleteMany({
+    where: { userId: session.user.id, done: true },
+  })
+
+  return new NextResponse(null, { status: 204 })
+}
