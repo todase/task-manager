@@ -38,9 +38,14 @@ export function useTagEditing({ onUpdate, onDelete }: UseTagEditingOptions) {
   }
 
   async function handleConfirmDelete(id: string) {
-    await onDelete(id)
-    setDeletingId(null)
-    setEditingId(null)
+    setError(null)
+    try {
+      await onDelete(id)
+      setDeletingId(null)
+      setEditingId(null)
+    } catch {
+      setError("Не удалось удалить метку.")
+    }
   }
 
   return {

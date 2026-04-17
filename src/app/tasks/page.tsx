@@ -59,7 +59,7 @@ export default function TasksPage() {
       projectHook.fetchProjects()
       tagHook.fetchTags()
     }
-  }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status, taskHook.fetchTasks, projectHook.fetchProjects, tagHook.fetchTags])
 
   useEffect(() => {
     if (!searchMode || status !== "authenticated") return
@@ -67,7 +67,7 @@ export default function TasksPage() {
       taskHook.fetchTasks({ q: searchQuery || undefined })
     }, 300)
     return () => clearTimeout(timer)
-  }, [searchQuery, searchMode, status]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchQuery, searchMode, status, taskHook.fetchTasks])
 
   function exitSearch() {
     setSearchMode(false)

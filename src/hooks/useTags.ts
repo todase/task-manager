@@ -58,9 +58,7 @@ export function useTags() {
     })
     if (!res.ok) throw new Error("Не удалось обновить метку")
     const tag = await res.json()
-    setTags((prev) =>
-      prev.map((t) => (t.id === id ? tag : t)).sort((a, b) => a.name.localeCompare(b.name))
-    )
+    setTags((prev) => prev.map((t) => (t.id === id ? tag : t)))
     return tag
   }, [])
 
