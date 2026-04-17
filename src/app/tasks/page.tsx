@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
+import { ArrowLeft } from "lucide-react"
 import {
   DndContext,
   DragEndEvent,
@@ -25,6 +26,7 @@ import { TagFilter } from "@/components/filters/TagFilter"
 import type { DateFilter, Task } from "@/types"
 import { TaskDragPreview } from "@/components/tasks/TaskDragPreview"
 import { BurgerMenu } from "@/components/BurgerMenu"
+import { SearchInput } from "@/components/search/SearchInput"
 
 export default function TasksPage() {
   const { status } = useSession()
@@ -33,6 +35,8 @@ export default function TasksPage() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("all")
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [draggingTask, setDraggingTask] = useState<Task | null>(null)
+  const [searchMode, setSearchMode] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
 
   const taskHook = useTasks()
   const projectHook = useProjects()
@@ -54,6 +58,20 @@ export default function TasksPage() {
       tagHook.fetchTags()
     }
   }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!searchMode || status !== "authenticated") return
+    const timer = setTimeout(() => {
+      taskHook.fetchTasks({ q: searchQuery || undefined })
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery, searchMode, status]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function exitSearch() {
+    setSearchMode(false)
+    setSearchQuery("")
+    taskHook.fetchTasks()
+  }
 
   function handleDragStart(event: DragStartEvent) {
     const task = taskHook.tasks.find((t) => t.id === event.active.id) ?? null
@@ -87,11 +105,13 @@ export default function TasksPage() {
     }
   }
 
-  const filtered = filterTasks(taskHook.tasks, dateFilter, activeProjectId).filter(
-    (t) =>
-      selectedTagIds.length === 0 ||
-      selectedTagIds.some((id) => t.tags.some((tag) => tag.id === id))
-  )
+  const filtered = searchMode
+    ? taskHook.tasks
+    : filterTasks(taskHook.tasks, dateFilter, activeProjectId).filter(
+        (t) =>
+          selectedTagIds.length === 0 ||
+          selectedTagIds.some((id) => t.tags.some((tag) => tag.id === id))
+      )
 
   if (status === "loading") {
     return <p className="p-8">Загрузка...</p>
@@ -104,34 +124,63 @@ export default function TasksPage() {
       onDragEnd={handleDragEnd}
     >
       <main className="max-w-2xl mx-auto px-4 py-6 md:p-8 pb-20">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-xl font-bold text-gray-900">Мои задачи</h1>
-          <BurgerMenu />
-        </div>
+        {/* ── Header — normal / search mode ── */}
+        {searchMode ? (
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={exitSearch}
+              className="flex items-center justify-center w-9 h-9 rounded-lg bg-white border border-gray-200 shadow-sm text-gray-500 hover:text-gray-700 flex-shrink-0"
+              aria-label="Выйти из поиска"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              autoFocus
+            />
+          </div>
+        ) : (
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-xl font-bold text-gray-900">Мои задачи</h1>
+            <BurgerMenu onSearch={() => setSearchMode(true)} />
+          </div>
+        )}
 
-        <DateFilters value={dateFilter} onChange={setDateFilter} />
+        {/* ── Filters — скрыты в режиме поиска ── */}
+        {!searchMode && (
+          <>
+            <DateFilters value={dateFilter} onChange={setDateFilter} />
 
-        <ProjectTabs
-          projects={projectHook.projects}
-          activeProjectId={activeProjectId}
-          onSelect={setActiveProjectId}
-          onCreate={projectHook.createProject}
-          onDelete={async (id) => {
-            await projectHook.deleteProject(id)
-            taskHook.removeProjectTasks(id)
-            if (activeProjectId === id) setActiveProjectId(null)
-          }}
-          onUpdate={async (id, updates) => {
-            const updated = await projectHook.updateProject(id, updates)
-            if (updates.title) taskHook.syncProjectRename(updated)
-          }}
-        />
+            <ProjectTabs
+              projects={projectHook.projects}
+              activeProjectId={activeProjectId}
+              onSelect={setActiveProjectId}
+              onCreate={projectHook.createProject}
+              onDelete={async (id) => {
+                await projectHook.deleteProject(id)
+                taskHook.removeProjectTasks(id)
+                if (activeProjectId === id) setActiveProjectId(null)
+              }}
+              onUpdate={async (id, updates) => {
+                const updated = await projectHook.updateProject(id, updates)
+                if (updates.title) taskHook.syncProjectRename(updated)
+              }}
+            />
 
-        <TagFilter
-          tags={tagHook.tags}
-          selectedIds={selectedTagIds}
-          onChange={setSelectedTagIds}
-        />
+            <TagFilter
+              tags={tagHook.tags}
+              selectedIds={selectedTagIds}
+              onChange={setSelectedTagIds}
+            />
+          </>
+        )}
+
+        {searchMode && searchQuery && (
+          <p className="text-xs text-gray-400 mb-3 px-1">
+            Результаты поиска для «{searchQuery}»
+          </p>
+        )}
 
         <TaskList
           tasks={taskHook.tasks}
@@ -154,13 +203,15 @@ export default function TasksPage() {
           onDeleteSubtask={taskHook.deleteSubtask}
         />
 
-        <AddTaskForm
-          activeProjectId={activeProjectId}
-          projects={projectHook.projects}
-          tags={tagHook.tags}
-          onSubmit={(input) => taskHook.createTask(input, projectHook.projects)}
-          onCreateTag={tagHook.createTag}
-        />
+        {!searchMode && (
+          <AddTaskForm
+            activeProjectId={activeProjectId}
+            projects={projectHook.projects}
+            tags={tagHook.tags}
+            onSubmit={(input) => taskHook.createTask(input, projectHook.projects)}
+            onCreateTag={tagHook.createTag}
+          />
+        )}
       </main>
       <DragOverlay dropAnimation={null}>
         {draggingTask && <TaskDragPreview task={draggingTask} />}
