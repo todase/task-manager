@@ -123,13 +123,16 @@ export function useTasks(baseFilters: TaskFilters = {}) {
       })
       if (!res.ok) throw new Error("Не удалось изменить статус задачи")
       const updated = await res.json()
-      setTasks((prev) =>
-        prev.map((t) =>
+      setTasks((prev) => {
+        if (baseFiltersRef.current.done === false && updated.done) {
+          return withPriorityScores(prev.filter((t) => t.id !== updated.id))
+        }
+        return prev.map((t) =>
           t.id === updated.id
             ? { ...updated, subtasks: t.subtasks, project: t.project }
             : t
         )
-      )
+      })
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка изменения статуса")
     }

@@ -40,7 +40,7 @@ export default function TasksPage() {
   const [tagsOpen, setTagsOpen] = useState(false)
   const [projectsOpen, setProjectsOpen] = useState(false)
 
-  const taskHook = useTasks()
+  const taskHook = useTasks({ done: false })
   const projectHook = useProjects()
   const tagHook = useTags()
 
