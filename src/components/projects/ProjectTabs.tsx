@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react"
 import { useClickOutside } from "@/hooks/useClickOutside"
+import { useProjectEditing } from "@/hooks/useProjectEditing"
 import { FolderOpen, ChevronDown, ChevronUp, Pencil } from "lucide-react"
 import { DroppableProject } from "@/components/DroppableProject"
 import { ProjectIconPicker, ProjectIcon } from "@/components/projects/ProjectIconPicker"
@@ -26,63 +27,11 @@ export function ProjectTabs({
   onUpdate,
 }: ProjectTabsProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [showNew, setShowNew] = useState(false)
-  const [newTitle, setNewTitle] = useState("")
-  const [newIcon, setNewIcon] = useState("folder")
-  const [showNewIconPicker, setShowNewIconPicker] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editingTitle, setEditingTitle] = useState("")
-  const [editingIcon, setEditingIcon] = useState("folder")
-  const [showEditIconPicker, setShowEditIconPicker] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useClickOutside(containerRef, () => setIsOpen(false), isOpen)
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newTitle.trim()) return
-    setError(null)
-    try {
-      await onCreate(newTitle.trim(), newIcon)
-      setNewTitle("")
-      setNewIcon("folder")
-      setShowNew(false)
-      setShowNewIconPicker(false)
-      setIsOpen(false)
-    } catch {
-      setError("Не удалось создать проект. Попробуйте ещё раз.")
-    }
-  }
-
-  async function handleUpdate(id: string) {
-    if (!editingTitle.trim()) {
-      setEditingId(null)
-      return
-    }
-    setError(null)
-    try {
-      await onUpdate(id, { title: editingTitle.trim(), icon: editingIcon })
-      setEditingId(null)
-      setShowEditIconPicker(false)
-    } catch {
-      setError("Не удалось сохранить проект. Попробуйте ещё раз.")
-    }
-  }
-
-  function startEditing(project: Project) {
-    setEditingId(project.id)
-    setEditingTitle(project.title)
-    setEditingIcon(project.icon)
-    setShowEditIconPicker(false)
-    setDeletingId(null)
-  }
-
-  function handleSelectProject(id: string | null) {
-    onSelect(id)
-  }
-
+  const edit = useProjectEditing({ onCreate, onDelete, onUpdate })
   const activeProject = projects.find((p) => p.id === activeProjectId)
 
   return (
@@ -116,13 +65,13 @@ export function ProjectTabs({
       {/* Expanded content */}
       {isOpen && (
         <div className="mt-2 bg-white rounded-xl shadow-sm p-3 flex flex-col gap-2 animate-expand">
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {edit.error && <p className="text-sm text-red-500">{edit.error}</p>}
 
           <div className="flex flex-wrap gap-2">
             {/* All tasks */}
             <DroppableProject id="all">
               <button
-                onClick={() => handleSelectProject(null)}
+                onClick={() => onSelect(null)}
                 className={`text-sm px-3 py-1 rounded-full border min-h-[36px] transition-colors ${
                   activeProjectId === null
                     ? "bg-blue-500 text-white border-blue-500"
@@ -137,67 +86,60 @@ export function ProjectTabs({
             {projects.map((project) => (
               <div key={project.id} className="flex items-center">
                 <DroppableProject id={project.id}>
-                  {editingId === project.id ? (
-                    deletingId === project.id ? (
+                  {edit.editingId === project.id ? (
+                    edit.deletingId === project.id ? (
                       <ConfirmDeleteDialog
-                        onCancel={() => setDeletingId(null)}
-                        onConfirm={async () => {
-                          await onDelete(project.id)
-                          setDeletingId(null)
-                          setEditingId(null)
-                        }}
+                        onCancel={() => edit.setDeletingId(null)}
+                        onConfirm={() => edit.handleConfirmDelete(project.id)}
                       />
                     ) : (
-                    <div className="flex flex-col gap-2 min-w-[200px]">
-                      <div className="flex gap-1">
+                      <div className="flex flex-col gap-2 min-w-[200px]">
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={edit.toggleEditIconPicker}
+                            className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 flex-shrink-0"
+                          >
+                            <ProjectIcon icon={edit.editingIcon} className="w-4 h-4" />
+                          </button>
+                          <input
+                            type="text"
+                            value={edit.editingTitle}
+                            onChange={(e) => edit.setEditingTitle(e.target.value)}
+                            onBlur={() => edit.handleUpdate(project.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") edit.handleUpdate(project.id)
+                              if (e.key === "Escape") edit.cancelEdit()
+                            }}
+                            className="border p-1 rounded text-sm flex-1 outline-none focus:border-blue-400"
+                            style={{ fontSize: "16px" }}
+                            autoFocus
+                          />
+                        </div>
+                        {edit.showEditIconPicker && (
+                          <ProjectIconPicker
+                            selected={edit.editingIcon}
+                            onChange={(icon) => {
+                              edit.setEditingIcon(icon)
+                              edit.toggleEditIconPicker()
+                            }}
+                          />
+                        )}
                         <button
                           type="button"
                           onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => setShowEditIconPicker((o) => !o)}
-                          className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 flex-shrink-0"
+                          onClick={() => edit.setDeletingId(project.id)}
+                          className="text-xs text-red-400 hover:text-red-600 self-start"
                         >
-                          <ProjectIcon icon={editingIcon} className="w-4 h-4" />
+                          Удалить проект
                         </button>
-                        <input
-                          type="text"
-                          value={editingTitle}
-                          onChange={(e) => setEditingTitle(e.target.value)}
-                          onBlur={() => handleUpdate(project.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleUpdate(project.id)
-                            if (e.key === "Escape") {
-                              setEditingId(null)
-                              setShowEditIconPicker(false)
-                            }
-                          }}
-                          className="border p-1 rounded text-sm flex-1 outline-none focus:border-blue-400"
-                          style={{ fontSize: "16px" }}
-                          autoFocus
-                        />
                       </div>
-                      {showEditIconPicker && (
-                        <ProjectIconPicker
-                          selected={editingIcon}
-                          onChange={(icon) => {
-                            setEditingIcon(icon)
-                            setShowEditIconPicker(false)
-                          }}
-                        />
-                      )}
-                      <button
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => setDeletingId(project.id)}
-                        className="text-xs text-red-400 hover:text-red-600 self-start"
-                      >
-                        Удалить проект
-                      </button>
-                    </div>
                     )
                   ) : (
                     <div className="flex items-center">
                       <button
-                        onClick={() => handleSelectProject(project.id)}
+                        onClick={() => onSelect(project.id)}
                         className={`flex items-center gap-1.5 text-sm px-3 py-1 min-h-[36px] transition-colors border ${
                           activeProjectId === project.id
                             ? "bg-blue-500 text-white border-blue-500 rounded-l-full"
@@ -209,7 +151,7 @@ export function ProjectTabs({
                       </button>
                       {activeProjectId === project.id && (
                         <button
-                          onClick={() => startEditing(project)}
+                          onClick={() => edit.startEditing(project)}
                           className="flex items-center justify-center w-8 min-h-[36px] bg-blue-500 text-white border border-l-0 border-blue-500 rounded-r-full hover:bg-blue-600 transition-colors"
                           aria-label="Редактировать проект"
                         >
@@ -224,29 +166,26 @@ export function ProjectTabs({
           </div>
 
           {/* New project form */}
-          {showNew ? (
-            <form onSubmit={handleCreate} className="flex flex-col gap-2">
+          {edit.showNew ? (
+            <form onSubmit={edit.handleCreate} className="flex flex-col gap-2">
               <div className="flex gap-1">
                 <button
                   type="button"
-                  onClick={() => setShowNewIconPicker((o) => !o)}
+                  onClick={edit.toggleNewIconPicker}
                   className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 flex-shrink-0"
                 >
-                  <ProjectIcon icon={newIcon} className="w-4 h-4" />
+                  <ProjectIcon icon={edit.newIcon} className="w-4 h-4" />
                 </button>
                 <input
                   type="text"
                   placeholder="Название проекта..."
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
+                  value={edit.newTitle}
+                  onChange={(e) => edit.setNewTitle(e.target.value)}
                   className="border p-1 rounded text-sm flex-1 outline-none focus:border-blue-400"
                   style={{ fontSize: "16px" }}
                   autoFocus
                   onBlur={() => {
-                    if (!newTitle) {
-                      setShowNew(false)
-                      setShowNewIconPicker(false)
-                    }
+                    if (!edit.newTitle) edit.setShowNew(false)
                   }}
                 />
                 <button
@@ -256,19 +195,19 @@ export function ProjectTabs({
                   +
                 </button>
               </div>
-              {showNewIconPicker && (
+              {edit.showNewIconPicker && (
                 <ProjectIconPicker
-                  selected={newIcon}
+                  selected={edit.newIcon}
                   onChange={(icon) => {
-                    setNewIcon(icon)
-                    setShowNewIconPicker(false)
+                    edit.setNewIcon(icon)
+                    edit.toggleNewIconPicker()
                   }}
                 />
               )}
             </form>
           ) : (
             <button
-              onClick={() => setShowNew(true)}
+              onClick={() => edit.setShowNew(true)}
               className="text-sm px-3 py-1 rounded-full border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 self-start"
             >
               + проект
