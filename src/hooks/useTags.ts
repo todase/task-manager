@@ -50,5 +50,25 @@ export function useTags() {
     []
   )
 
-  return { tags, fetchTags, createTag }
+  const updateTag = useCallback(async (id: string, updates: { name?: string; color?: string }): Promise<Tag> => {
+    const res = await fetch(`/api/tags/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    })
+    if (!res.ok) throw new Error("Не удалось обновить метку")
+    const tag = await res.json()
+    setTags((prev) =>
+      prev.map((t) => (t.id === id ? tag : t)).sort((a, b) => a.name.localeCompare(b.name))
+    )
+    return tag
+  }, [])
+
+  const deleteTag = useCallback(async (id: string): Promise<void> => {
+    const res = await fetch(`/api/tags/${id}`, { method: "DELETE" })
+    if (!res.ok) throw new Error("Не удалось удалить метку")
+    setTags((prev) => prev.filter((t) => t.id !== id))
+  }, [])
+
+  return { tags, fetchTags, createTag, updateTag, deleteTag }
 }

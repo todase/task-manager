@@ -37,6 +37,7 @@ export default function TasksPage() {
   const [draggingTask, setDraggingTask] = useState<Task | null>(null)
   const [searchMode, setSearchMode] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [tagsOpen, setTagsOpen] = useState(false)
 
   const taskHook = useTasks()
   const projectHook = useProjects()
@@ -172,6 +173,13 @@ export default function TasksPage() {
               tags={tagHook.tags}
               selectedIds={selectedTagIds}
               onChange={setSelectedTagIds}
+              isOpen={tagsOpen}
+              onToggle={() => setTagsOpen((o) => !o)}
+              onUpdate={tagHook.updateTag}
+              onDelete={async (id) => {
+                await tagHook.deleteTag(id)
+                setSelectedTagIds((prev) => prev.filter((s) => s !== id))
+              }}
             />
           </>
         )}
