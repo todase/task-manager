@@ -146,3 +146,4 @@ vite.config.ts.timestamp-*
 /public/sw.js.map
 /public/swe-worker-*.js
 /public/workbox-*.js
+.worktrees/
