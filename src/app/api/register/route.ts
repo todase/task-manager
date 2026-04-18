@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { createVerificationToken } from "@/lib/tokens"
+import { sendVerificationEmail } from "@/lib/email"
 
 export async function POST(req: Request) {
   const { email, password } = await req.json()
@@ -18,7 +20,6 @@ export async function POST(req: Request) {
 
   const existing = await prisma.user.findUnique({ where: { email } })
   if (existing) {
-    // Return 200 to prevent email enumeration
     return NextResponse.json({ email })
   }
 
@@ -26,6 +27,13 @@ export async function POST(req: Request) {
   const user = await prisma.user.create({
     data: { email, password: hashed },
   })
+
+  try {
+    const token = await createVerificationToken(user.id)
+    await sendVerificationEmail(email, token)
+  } catch {
+    // Email failure doesn't block registration — user can resend from banner
+  }
 
   return NextResponse.json({ email: user.email })
 }
