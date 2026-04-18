@@ -4,6 +4,11 @@ import { createVerificationToken, createPasswordResetToken } from "./tokens"
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    $transaction: vi.fn().mockImplementation(async (ops: unknown[]) => {
+      if (Array.isArray(ops)) {
+        for (const op of ops) await op
+      }
+    }),
     emailVerificationToken: {
       deleteMany: vi.fn(),
       create: vi.fn(),
