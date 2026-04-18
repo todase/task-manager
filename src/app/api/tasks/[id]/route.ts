@@ -53,7 +53,17 @@ export async function PATCH(
   if (title !== undefined) data.title = title
   if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null
   if (recurrence !== undefined) data.recurrence = recurrence
-  if (projectId !== undefined) data.projectId = projectId
+  if (projectId !== undefined) {
+    if (projectId !== null) {
+      const project = await prisma.project.findFirst({
+        where: { id: projectId, userId: session.user.id },
+      })
+      if (!project) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+    }
+    data.projectId = projectId
+  }
   if (description !== undefined) data.description = description
   if (Array.isArray(tagIds)) {
     if (tagIds.length > 0) {

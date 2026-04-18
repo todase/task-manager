@@ -62,6 +62,24 @@ export async function POST(req: Request) {
   const userId = session.user.id
   const { title, projectId, dueDate, recurrence, tagIds } = await req.json()
 
+  if (projectId) {
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, userId },
+    })
+    if (!project) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+  }
+
+  if (Array.isArray(tagIds) && tagIds.length > 0) {
+    const ownedCount = await prisma.tag.count({
+      where: { id: { in: tagIds }, userId },
+    })
+    if (ownedCount !== tagIds.length) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+  }
+
   const task = await prisma.$transaction(async (tx) => {
     // Shift all existing tasks down to make room at order 0
     await tx.task.updateMany({
