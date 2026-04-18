@@ -8,13 +8,17 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  password  String
-  tasks     Task[]
-  projects  Project[]
-  tags      Tag[]
-  createdAt DateTime  @default(now())
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String?
+  emailVerified DateTime?
+  oauthProvider String?
+  tasks         Task[]
+  projects      Project[]
+  tags          Tag[]
+  createdAt     DateTime  @default(now())
+
+  verificationTokens EmailVerificationToken[]
 }
 
 model Task {
@@ -72,4 +76,21 @@ model TaskTag {
   tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([taskId, tagId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique @default(cuid())
+  email     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
