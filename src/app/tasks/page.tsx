@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner"
 import { ArrowLeft } from "lucide-react"
 import {
   DndContext,
@@ -29,7 +30,7 @@ import { BurgerMenu } from "@/components/BurgerMenu"
 import { SearchInput } from "@/components/search/SearchInput"
 
 export default function TasksPage() {
-  const { status } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [dateFilter, setDateFilter] = useState<DateFilter>("all")
@@ -120,11 +121,16 @@ export default function TasksPage() {
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
+    <>
+      <EmailVerificationBanner
+        email={session?.user?.email}
+        emailVerified={session?.user?.emailVerified}
+      />
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
       <main className="max-w-2xl mx-auto px-4 py-6 md:p-8 pb-20">
         {/* ── Header — normal / search mode ── */}
         {searchMode ? (
@@ -235,5 +241,6 @@ export default function TasksPage() {
         {draggingTask && <TaskDragPreview task={draggingTask} />}
       </DragOverlay>
     </DndContext>
+    </>
   )
 }
