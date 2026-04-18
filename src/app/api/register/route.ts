@@ -20,7 +20,7 @@ export async function POST(req: Request) {
 
   const existing = await prisma.user.findUnique({ where: { email } })
   if (existing) {
-    return NextResponse.json({ email })
+    return NextResponse.json({ email }, { status: 200 })
   }
 
   const hashed = await bcrypt.hash(password, 10)
