@@ -85,6 +85,8 @@ model EmailVerificationToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model PasswordResetToken {
@@ -93,4 +95,6 @@ model PasswordResetToken {
   email     String
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([email])
 }
