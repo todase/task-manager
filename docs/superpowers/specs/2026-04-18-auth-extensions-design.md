@@ -32,7 +32,6 @@ model User {
   createdAt     DateTime  @default(now())
 
   verificationTokens  EmailVerificationToken[]
-  passwordResetTokens PasswordResetToken[]
 }
 
 model EmailVerificationToken {
@@ -76,7 +75,7 @@ NEXTAUTH_URL=http://localhost:3000
 `POST /api/resend-verification` — auth required, delete all existing tokens for user, create new token, send email. Returns 200 always.
 
 ### Banner
-Shown on `/tasks` (and other protected pages) when `session.user.emailVerified` is null. Orange style (background `#fff7ed`, border `#fed7aa`, text `#7c2d12`). Contains email address, "Отправить повторно" button, dismiss (×) button. Dismissing hides for the session only (not permanently — reappears on next login).
+Shown on `/tasks` (and other protected pages) when `session.user.emailVerified` is null. Orange style (background `#fff7ed`, border `#fed7aa`, text `#7c2d12`). Contains email address, "Отправить повторно" button, dismiss (×) button. Dismissing hides for the session only (not permanently — reappears on next login). Implemented with `useState` on the banner component — no localStorage needed.
 
 Session must expose `emailVerified` — add to JWT callback and session callback in `src/auth.ts`.
 
