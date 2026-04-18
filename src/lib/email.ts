@@ -1,10 +1,12 @@
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
 export async function sendVerificationEmail(email: string, token: string): Promise<void> {
   const url = `${process.env.NEXTAUTH_URL}/api/verify-email?token=${token}`
-  await resend.emails.send({
+  await getResend().emails.send({
     from: "Task Manager <noreply@yourdomain.com>",
     to: email,
     subject: "Подтвердите ваш email",
@@ -19,7 +21,7 @@ export async function sendVerificationEmail(email: string, token: string): Promi
 
 export async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
   const url = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`
-  await resend.emails.send({
+  await getResend().emails.send({
     from: "Task Manager <noreply@yourdomain.com>",
     to: email,
     subject: "Сброс пароля",
