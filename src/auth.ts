@@ -31,16 +31,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.emailVerified = (user as any).emailVerified ?? null
+        token.id = user.id as string
+        token.emailVerified = (user as { emailVerified?: Date | null }).emailVerified ?? null
       }
       return token
     },
     session({ session, token }) {
       session.user.id = token.id as string
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(session.user as any).emailVerified = token.emailVerified ?? null
+      session.user.emailVerified = token.emailVerified ?? null
       return session
     },
   },
