@@ -17,15 +17,32 @@ jobs:
         run: |
           git clone https://x-access-token:${{ secrets.PLUGIN_REPO_TOKEN }}@github.com/todase/task-manager-skill.git /tmp/plugin-repo
 
-      - name: Copy files
+      - name: Copy files to plugin repo
         run: |
           cp -r task-manager-skill/. /tmp/plugin-repo/
 
-      - name: Commit and push
+      - name: Commit and push plugin repo
         run: |
           cd /tmp/plugin-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git diff --cached --quiet && echo "No changes" || git commit -m "sync: update from task-manager main repo"
+          git push
+
+      - name: Clone ClaudeAssist repo
+        run: |
+          git clone https://x-access-token:${{ secrets.PLUGIN_REPO_TOKEN }}@github.com/todase/ClaudeAssist.git /tmp/claude-assist
+
+      - name: Copy files to ClaudeAssist
+        run: |
+          cp -r task-manager-skill/. /tmp/claude-assist/task-manager-skill/
+
+      - name: Commit and push ClaudeAssist
+        run: |
+          cd /tmp/claude-assist
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add task-manager-skill/
+          git diff --cached --quiet && echo "No changes" || git commit -m "sync: update task-manager-skill from task-manager main repo"
           git push
