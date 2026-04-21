@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import { getUserId } from "@/lib/api-auth"
+
+export const dynamic = "force-dynamic"
 import { prisma } from "@/lib/prisma"
 
 // Получить все задачи пользователя

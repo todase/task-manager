@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { getUserId } from "@/lib/api-auth"
 import { prisma } from "@/lib/prisma"
 
+export const dynamic = "force-dynamic"
+
 // Получить все проекты пользователя
 export async function GET(req: Request) {
   const userId = await getUserId(req)
