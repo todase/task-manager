@@ -1,0 +1,30 @@
+{
+  "planPath": "docs/superpowers/plans/2026-04-21-ui-fixes-and-improvements.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 1: Auto-date when creating tasks in Today view",
+      "status": "pending",
+      "description": "**Goal:** When the 'Today' date filter is active, new tasks are pre-populated with today's date.\n\n**Files:**\n- Modify: `src/app/tasks/page.tsx`\n- Modify: `src/components/tasks/AddTaskForm.tsx`\n\n**Acceptance Criteria:**\n- [ ] Creating a task while 'Today' filter is active saves task with today's date\n- [ ] Switching to another filter — new task form has no pre-filled date\n- [ ] Switching back to 'Today' — date pre-fills again\n- [ ] User can manually clear the pre-filled date before submitting\n\n**Verify:** Manual test — switch to 'Today' filter, open add task form, verify date field shows today's date.\n\n```json:metadata\n{\"files\": [\"src/app/tasks/page.tsx\", \"src/components/tasks/AddTaskForm.tsx\"], \"verifyCommand\": \"manual\", \"acceptanceCriteria\": [\"Creating task in Today view pre-fills today's date\", \"Switching filters updates the pre-filled date\", \"User can clear the pre-filled date\"]}\n```"
+    },
+    {
+      "id": 1,
+      "subject": "Task 2: Project reset button in Projects tab header",
+      "status": "pending",
+      "description": "**Goal:** Add an × button in the accordion header that clears the active project filter without opening the accordion.\n\n**Files:**\n- Modify: `src/components/projects/ProjectTabs.tsx`\n\n**Acceptance Criteria:**\n- [ ] × button appears in header only when a project is selected\n- [ ] Clicking × resets project filter without toggling accordion\n- [ ] After reset, header shows just 'Проекты' with no project name\n\n**Verify:** Select a project → × button appears. Click × → project deselected, accordion state unchanged.\n\n```json:metadata\n{\"files\": [\"src/components/projects/ProjectTabs.tsx\"], \"verifyCommand\": \"manual\", \"acceptanceCriteria\": [\"× button visible only when project selected\", \"Click × deselects project\", \"Accordion does not toggle on × click\"]}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 3: Fix date picker not opening in desktop browsers",
+      "status": "pending",
+      "description": "**Goal:** Replace htmlFor label linkage with useRef + .showPicker() so date picker opens reliably on desktop.\n\n**Files:**\n- Modify: `src/components/tasks/TaskItem.tsx`\n\n**Acceptance Criteria:**\n- [ ] Clicking 'Добавить дату' opens native date picker in Chrome/Firefox/Safari desktop\n- [ ] Mobile behavior unchanged\n- [ ] Clearing date (×) still works\n\n**Verify:** Open task, click 'Добавить дату' in expanded view — native date picker opens in desktop browser.\n\n```json:metadata\n{\"files\": [\"src/components/tasks/TaskItem.tsx\"], \"verifyCommand\": \"manual\", \"acceptanceCriteria\": [\"Date picker opens on desktop browser click\", \"Mobile unchanged\", \"Clear button works\"]}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 4: Double the number of project icons",
+      "status": "pending",
+      "description": "**Goal:** Increase icon selection from 36 to ~72 by adding new icons from Lucide React.\n\n**Files:**\n- Modify: `src/components/projects/ProjectIconPicker.tsx`\n\n**Acceptance Criteria:**\n- [ ] Icon picker shows ~72 icons\n- [ ] All new icons render correctly\n- [ ] Existing projects with old icon keys are unaffected\n\n**Verify:** Open project edit mode — icon picker shows roughly double the icons, all rendering.\n\n```json:metadata\n{\"files\": [\"src/components/projects/ProjectIconPicker.tsx\"], \"verifyCommand\": \"manual\", \"acceptanceCriteria\": [\"~72 icons visible in picker\", \"All icons render\", \"Existing projects unaffected\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-04-21T00:00:00.000Z"
+}
