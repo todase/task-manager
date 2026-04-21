@@ -19,6 +19,7 @@ interface AddTaskFormProps {
   tags: Tag[]
   onSubmit: (input: CreateTaskInput) => Promise<void>
   onCreateTag: (name: string) => Promise<Tag>
+  defaultDueDate?: string
 }
 
 export function AddTaskForm({
@@ -27,10 +28,11 @@ export function AddTaskForm({
   tags,
   onSubmit,
   onCreateTag,
+  defaultDueDate,
 }: AddTaskFormProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [title, setTitle] = useState("")
-  const [dueDate, setDueDate] = useState("")
+  const [dueDate, setDueDate] = useState(defaultDueDate ?? "")
   const [recurrence, setRecurrence] = useState("")
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
@@ -57,10 +59,14 @@ export function AddTaskForm({
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [isModalOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    setDueDate(defaultDueDate ?? "")
+  }, [defaultDueDate])
+
   function closeModal() {
     setIsModalOpen(false)
     setTitle("")
-    setDueDate("")
+    setDueDate(defaultDueDate ?? "")
     setRecurrence("")
     setSelectedTagIds([])
     setTagInput("")

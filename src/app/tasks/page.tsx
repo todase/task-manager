@@ -233,6 +233,7 @@ export default function TasksPage() {
               tags={tagHook.tags}
               onSubmit={(input) => taskHook.createTask(input, projectHook.projects)}
               onCreateTag={tagHook.createTag}
+              defaultDueDate={dateFilter === "today" ? new Date().toISOString().split("T")[0] : undefined}
             />
           )}
         </div>
