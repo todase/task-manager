@@ -53,6 +53,19 @@ export function ProjectTabs({
         <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
           {projects.length}
         </span>
+        {activeProjectId !== null && (
+          <span
+            role="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onSelect(null)
+            }}
+            className="text-gray-400 hover:text-gray-600 text-base leading-none px-0.5"
+            aria-label="Сбросить проект"
+          >
+            ×
+          </span>
+        )}
         {isOpen ? (
           <ChevronUp className="w-4 h-4 text-gray-400" />
         ) : (
