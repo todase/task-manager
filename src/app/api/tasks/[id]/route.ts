@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/auth"
+import { getUserId } from "@/lib/api-auth"
 import { prisma } from "@/lib/prisma"
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getUserId(req)
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -35,7 +35,7 @@ export async function PATCH(
       if (existing.recurrence === "monthly") next.setMonth(next.getMonth() + 1)
 
       const task = await prisma.task.update({
-        where: { id, userId: session.user.id },
+        where: { id, userId },
         data: { dueDate: next, done: false },
         include: {
           project: { select: { id: true, title: true } },
@@ -56,7 +56,7 @@ export async function PATCH(
   if (projectId !== undefined) {
     if (projectId !== null) {
       const project = await prisma.project.findFirst({
-        where: { id: projectId, userId: session.user.id },
+        where: { id: projectId, userId },
       })
       if (!project) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -68,7 +68,7 @@ export async function PATCH(
   if (Array.isArray(tagIds)) {
     if (tagIds.length > 0) {
       const ownedCount = await prisma.tag.count({
-        where: { id: { in: tagIds }, userId: session.user.id },
+        where: { id: { in: tagIds }, userId },
       })
       if (ownedCount !== tagIds.length) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -81,7 +81,7 @@ export async function PATCH(
   }
 
   const task = await prisma.task.update({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
     data,
     include: {
       project: { select: { id: true, title: true } },
@@ -95,17 +95,17 @@ export async function PATCH(
 
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getUserId(req)
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   const { id } = await params
   await prisma.task.delete({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
   })
 
   return NextResponse.json({ success: true })

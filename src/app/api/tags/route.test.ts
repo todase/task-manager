@@ -20,6 +20,10 @@ function session(userId = "u1") {
   return { user: { id: userId } }
 }
 
+function getReq() {
+  return new Request("http://localhost/api/tags")
+}
+
 function jsonReq(body: unknown) {
   return new Request("http://localhost/api/tags", {
     method: "POST",
@@ -35,7 +39,7 @@ beforeEach(() => vi.clearAllMocks())
 describe("GET /api/tags", () => {
   it("returns 401 when not authenticated", async () => {
     mockAuth.mockResolvedValue(null as never)
-    const res = await GET()
+    const res = await GET(getReq())
     expect(res.status).toBe(401)
   })
 
@@ -43,7 +47,7 @@ describe("GET /api/tags", () => {
     mockAuth.mockResolvedValue(session() as never)
     mockTag.findMany.mockResolvedValue([dbTag] as never)
 
-    const res = await GET()
+    const res = await GET(getReq())
     const body = await res.json()
 
     expect(res.status).toBe(200)

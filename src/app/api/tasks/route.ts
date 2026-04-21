@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
-import { auth } from "@/auth"
+import { getUserId } from "@/lib/api-auth"
 import { prisma } from "@/lib/prisma"
 
 // Получить все задачи пользователя
 export async function GET(req: Request) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getUserId(req)
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       : { order: "asc" as const }
 
   const where: Prisma.TaskWhereInput = {
-    userId: session.user.id,
+    userId,
     ...(doneFilter !== undefined && { done: doneFilter }),
     ...(q && {
       OR: [
@@ -54,12 +54,11 @@ export async function GET(req: Request) {
 
 // Создать новую задачу
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getUserId(req)
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const userId = session.user.id
   const { title, projectId, dueDate, recurrence, tagIds } = await req.json()
 
   if (projectId) {
@@ -109,8 +108,8 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getUserId(req)
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -120,7 +119,7 @@ export async function DELETE(req: Request) {
   }
 
   await prisma.task.deleteMany({
-    where: { userId: session.user.id, done: true },
+    where: { userId, done: true },
   })
 
   return new NextResponse(null, { status: 204 })

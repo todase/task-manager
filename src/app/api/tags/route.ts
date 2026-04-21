@@ -1,23 +1,23 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/auth"
+import { getUserId } from "@/lib/api-auth"
 import { prisma } from "@/lib/prisma"
 
-export async function GET() {
-  const session = await auth()
-  if (!session?.user?.id) {
+export async function GET(req: Request) {
+  const userId = await getUserId(req)
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   const tags = await prisma.tag.findMany({
-    where: { userId: session.user.id },
+    where: { userId },
     orderBy: { name: "asc" },
   })
   return NextResponse.json(tags)
 }
 
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getUserId(req)
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     data: {
       name: name.trim(),
       color: color ?? "#6b7280",
-      userId: session.user.id,
+      userId,
     },
   })
   return NextResponse.json(tag)

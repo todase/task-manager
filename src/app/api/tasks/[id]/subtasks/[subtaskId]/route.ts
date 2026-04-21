@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/auth"
+import { getUserId } from "@/lib/api-auth"
 import { prisma } from "@/lib/prisma"
 
 // Обновить подзадачу
@@ -7,12 +7,11 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ subtaskId: string }> }
 ) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getUserId(req)
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const userId = session.user.id
   const { subtaskId } = await params
   const { done } = await req.json()
 
@@ -35,15 +34,14 @@ export async function PATCH(
 
 // Удалить подзадачу
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ subtaskId: string }> }
 ) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getUserId(req)
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const userId = session.user.id
   const { subtaskId } = await params
 
   const existing = await prisma.subtask.findUnique({
