@@ -1,0 +1,6 @@
+{
+  "name": "task-manager",
+  "description": "Full CRUD for tasks, projects, and tags in the task manager app via its production API",
+  "version": "1.0.0",
+  "author": { "name": "sk01d" }
+}
