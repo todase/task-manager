@@ -17,6 +17,26 @@ echo $TASK_MANAGER_API_KEY
 echo $TASK_MANAGER_BASE_URL
 ```
 
+## Sending JSON with non-ASCII text (Cyrillic, emoji, etc.)
+
+**Never use `-d '...'` with non-ASCII characters** — the shell may corrupt them. Always write the payload to a temp file and use `--data-binary @file`:
+
+```bash
+# Write payload to temp file, then send
+cat > /tmp/tm_payload.json << 'ENDJSON'
+{"title": "Купить молоко"}
+ENDJSON
+
+curl -X POST "$TASK_MANAGER_BASE_URL/api/tasks" \
+  -H "X-API-Key: $TASK_MANAGER_API_KEY" \
+  -H "Content-Type: application/json" \
+  --data-binary @/tmp/tm_payload.json
+
+rm /tmp/tm_payload.json
+```
+
+This applies to all POST and PATCH requests with user-provided text content.
+
 ## API Reference
 
 All requests use:
