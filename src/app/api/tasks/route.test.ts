@@ -105,6 +105,19 @@ describe("GET /api/tasks", () => {
       expect.objectContaining({ orderBy: { createdAt: "desc" } })
     )
   })
+
+  it("sorts by completedAt desc when done=true", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockPrisma.task.findMany.mockResolvedValue([] as never)
+
+    await GET(req("http://localhost/api/tasks?done=true"))
+
+    expect(mockPrisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: { completedAt: { sort: "desc", nulls: "last" } },
+      })
+    )
+  })
 })
 
 describe("POST /api/tasks", () => {

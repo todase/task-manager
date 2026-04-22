@@ -22,10 +22,12 @@ export async function GET(req: Request) {
     doneParam === "true" ? true : doneParam === "false" ? false : undefined
   const parsedLimit = parseInt(limitParam ?? "", 10)
   const take = isNaN(parsedLimit) ? 200 : Math.max(1, Math.min(parsedLimit, 500))
-  const orderBy =
-    sortParam === "updatedAt_desc"
-      ? { createdAt: "desc" as const }
-      : { order: "asc" as const }
+  const orderBy: Prisma.TaskOrderByWithRelationInput =
+    doneFilter === true
+      ? { completedAt: { sort: "desc", nulls: "last" } }
+      : sortParam === "updatedAt_desc"
+      ? { createdAt: "desc" }
+      : { order: "asc" }
 
   const where: Prisma.TaskWhereInput = {
     userId,
