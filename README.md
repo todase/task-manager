@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Task Manager
 
-## Getting Started
+Personal task manager built with Next.js, deployed on Vercel. Supports projects, tags, subtasks, recurring tasks, and a Claude Code plugin for programmatic access.
 
-First, run the development server:
+## Features
+
+- Tasks with due dates, recurrence (daily/weekly/monthly), subtasks, descriptions, and tags
+- Projects with custom icons (72 options)
+- Archive with completion timestamps, sorted newest-first
+- Date filters: Today, This Week, Someday
+- Drag-and-drop reordering
+- PWA (installable, offline-capable)
+- Auth: email/password with email verification, password reset, Google OAuth
+- API key access for Claude Code via the `task-manager-skill` plugin
+
+## Stack
+
+| Layer | Tech |
+|-------|------|
+| Framework | Next.js (App Router) |
+| Database | PostgreSQL (Neon) via Prisma |
+| Auth | NextAuth v5 |
+| UI | Tailwind CSS, Lucide React, dnd-kit |
+| Email | Resend |
+| Tests | Vitest + Testing Library (236 tests) |
+| Deploy | Vercel |
+
+## Local Development
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in DATABASE_URL, NEXTAUTH_SECRET, etc.
+npx prisma migrate dev
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `DATABASE_URL` | yes | PostgreSQL connection string |
+| `NEXTAUTH_SECRET` | yes | NextAuth session signing key |
+| `NEXTAUTH_URL` | yes | App base URL |
+| `GOOGLE_CLIENT_ID` | for OAuth | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | for OAuth | Google OAuth client secret |
+| `RESEND_API_KEY` | for email | Transactional email (verification, password reset) |
+| `CLAUDE_API_KEY` | for plugin | Secret key for Claude Code API access |
+| `CLAUDE_API_USER_ID` | for plugin | Owner's user ID for API key requests |
 
-## Learn More
+## API
 
-To learn more about Next.js, take a look at the following resources:
+All endpoints under `/api/tasks`, `/api/projects`, `/api/tags` require auth — either a NextAuth session cookie or an `X-API-Key` header.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+See [`task-manager-skill/skills/task-manager.md`](task-manager-skill/skills/task-manager.md) for the full API reference with curl examples.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Claude Code Plugin
 
-## Deploy on Vercel
+The `task-manager-skill/` directory is a standalone Claude Code plugin. It lets Claude create, list, update, and delete tasks programmatically.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# Load the plugin
+claude --plugin-dir ./task-manager-skill
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Set credentials
+export TASK_MANAGER_API_KEY=your-api-key
+export TASK_MANAGER_BASE_URL=https://your-app.vercel.app
+```
+
+Then in any Claude Code session: `/task-manager`
+
+## Tests
+
+```bash
+npm test              # run all 236 tests
+npm test -- --watch   # watch mode
+```

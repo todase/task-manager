@@ -58,7 +58,11 @@ If the header is absent, the middleware is a no-op — NextAuth handles auth as 
 
 ### Implementation detail
 
-The middleware sets a request header `x-api-user-id` with the owner's userId after validating the key. Each route reads this header as a fallback when no NextAuth session is present. This avoids touching `auth.ts` or NextAuth internals.
+The middleware **always strips** the `x-api-user-id` header from incoming requests first, preventing external spoofing. Only after a successful API key validation does it inject `x-api-user-id` with the owner's userId.
+
+`getUserId(req)` in `src/lib/api-auth.ts` checks the injected header first (fast path — no `auth()` call needed), then falls back to the NextAuth session. This avoids touching `auth.ts` or NextAuth internals.
+
+API key comparison uses a timing-safe XOR loop to prevent timing oracle attacks.
 
 ### Environment variables
 
@@ -151,9 +155,9 @@ User → Claude → /task-manager skill → Bash (curl)
        curl -X POST https://app.vercel.app/api/tasks \
             -H "X-API-Key: $TASK_MANAGER_API_KEY" \
             -H "Content-Type: application/json" \
-            -d '{"title":"..."}'
-       → Next.js middleware (validates key, injects userId)
-       → API route handler (reads userId, queries Prisma)
+            --data-binary @/tmp/payload.json
+       → Next.js middleware (strips x-api-user-id, validates key, injects userId)
+       → API route handler (getUserId reads header, queries Prisma)
        → PostgreSQL (Neon)
 ```
 

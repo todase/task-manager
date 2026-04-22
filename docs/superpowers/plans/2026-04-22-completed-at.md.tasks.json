@@ -4,20 +4,20 @@
     {
       "id": 0,
       "subject": "Task 0: Prisma schema migration",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Add `completedAt DateTime?` to the Task model and apply the migration locally.\n\n**Files:**\n- Modify: `prisma/schema.prisma`\n\n**Acceptance Criteria:**\n- [ ] `completedAt DateTime?` present in `Task` model\n- [ ] Migration file created and applied locally\n- [ ] `npx tsc --noEmit` passes\n\n**Verify:** `npx prisma migrate status` → all migrations applied\n\n```json:metadata\n{\"files\": [\"prisma/schema.prisma\"], \"verifyCommand\": \"npx prisma migrate status\", \"acceptanceCriteria\": [\"completedAt field added\", \"migration applied\", \"tsc passes\"]}\n```"
     },
     {
       "id": 1,
       "subject": "Task 1: Set/clear completedAt in PATCH route",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [0],
       "description": "**Goal:** When `done=true` set `completedAt=now()`, when `done=false` clear it to `null`. Recurring task path is unaffected.\n\n**Files:**\n- Modify: `src/app/api/tasks/[id]/route.ts`\n- Modify: `src/app/api/tasks/[id]/route.test.ts`\n\n**Acceptance Criteria:**\n- [ ] done=true (non-recurring) → completedAt set to current timestamp\n- [ ] done=false → completedAt set to null\n- [ ] Recurring task advance path → completedAt not included\n- [ ] All existing tests pass\n\n**Verify:** `npx vitest run src/app/api/tasks/\\[id\\]/route.test.ts` → all passed\n\n```json:metadata\n{\"files\": [\"src/app/api/tasks/[id]/route.ts\", \"src/app/api/tasks/[id]/route.test.ts\"], \"verifyCommand\": \"npx vitest run src/app/api/tasks/\\\\[id\\\\]/route.test.ts\", \"acceptanceCriteria\": [\"completedAt set on done=true\", \"completedAt null on done=false\", \"recurring path unaffected\"]}\n```"
     },
     {
       "id": 2,
       "subject": "Task 2: Sort archive by completedAt in GET route",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [0],
       "description": "**Goal:** When `GET /api/tasks?done=true`, sort results by `completedAt desc nulls last`.\n\n**Files:**\n- Modify: `src/app/api/tasks/route.ts`\n- Modify: `src/app/api/tasks/route.test.ts`\n\n**Acceptance Criteria:**\n- [ ] done=true requests use completedAt desc nulls last sort\n- [ ] Other requests use existing sort logic unchanged\n- [ ] All tests pass\n\n**Verify:** `npx vitest run src/app/api/tasks/route.test.ts` → all passed\n\n```json:metadata\n{\"files\": [\"src/app/api/tasks/route.ts\", \"src/app/api/tasks/route.test.ts\"], \"verifyCommand\": \"npx vitest run src/app/api/tasks/route.test.ts\", \"acceptanceCriteria\": [\"archive sorted by completedAt desc\", \"other sorts unchanged\", \"all tests pass\"]}\n```"
     }
