@@ -102,14 +102,14 @@ describe("buildTasksUrl", () => {
   })
 
   it("includes sort param", () => {
-    expect(buildTasksUrl({ sort: "updatedAt_desc" })).toBe(
-      "/api/tasks?sort=updatedAt_desc"
+    expect(buildTasksUrl({ sort: "createdAt_desc" })).toBe(
+      "/api/tasks?sort=createdAt_desc"
     )
   })
 
   it("combines done and sort", () => {
-    expect(buildTasksUrl({ done: true, sort: "updatedAt_desc" })).toBe(
-      "/api/tasks?done=true&sort=updatedAt_desc"
+    expect(buildTasksUrl({ done: true, sort: "createdAt_desc" })).toBe(
+      "/api/tasks?done=true&sort=createdAt_desc"
     )
   })
 

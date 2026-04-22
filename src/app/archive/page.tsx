@@ -13,7 +13,7 @@ export default function ArchivePage() {
   const { status } = useSession()
   const router = useRouter()
   const { tasks, isLoading, error, fetchTasks, deleteTask, restoreTask, clearArchive } =
-    useTasks({ done: true, sort: "updatedAt_desc" })
+    useTasks({ done: true, sort: "createdAt_desc" })
   const [confirmClear, setConfirmClear] = useState(false)
 
   useEffect(() => {

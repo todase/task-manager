@@ -95,11 +95,11 @@ describe("GET /api/tasks", () => {
     )
   })
 
-  it("orders by createdAt desc for sort=updatedAt_desc", async () => {
+  it("orders by createdAt desc for sort=createdAt_desc", async () => {
     mockAuth.mockResolvedValue(session() as never)
     mockPrisma.task.findMany.mockResolvedValue([] as never)
 
-    await GET(req("http://localhost/api/tasks?sort=updatedAt_desc"))
+    await GET(req("http://localhost/api/tasks?sort=createdAt_desc"))
 
     expect(mockPrisma.task.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ orderBy: { createdAt: "desc" } })

@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   const orderBy: Prisma.TaskOrderByWithRelationInput =
     doneFilter === true
       ? { completedAt: { sort: "desc", nulls: "last" } }
-      : sortParam === "updatedAt_desc"
+      : sortParam === "createdAt_desc"
       ? { createdAt: "desc" }
       : { order: "asc" }
 

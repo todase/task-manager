@@ -6,7 +6,7 @@ import type { Task, Subtask, DateFilter, Project } from "@/types"
 export type TaskFilters = {
   done?: boolean
   q?: string
-  sort?: "order" | "updatedAt_desc"
+  sort?: "order" | "createdAt_desc"
 }
 
 export function buildTasksUrl(filters: TaskFilters): string {

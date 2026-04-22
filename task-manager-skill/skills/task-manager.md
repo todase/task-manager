@@ -53,7 +53,7 @@ curl "$TASK_MANAGER_BASE_URL/api/tasks" \
   -H "X-API-Key: $TASK_MANAGER_API_KEY"
 ```
 
-Optional query params: `?done=true|false`, `?sort=updatedAt_desc`, `?q=search`, `?limit=N`
+Optional query params: `?done=true|false`, `?sort=createdAt_desc`, `?q=search`, `?limit=N`
 
 **Create task**
 ```bash
