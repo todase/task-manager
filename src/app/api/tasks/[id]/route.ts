@@ -49,7 +49,10 @@ export async function PATCH(
 
   // Build update data from explicit fields only
   const data: Record<string, unknown> = {}
-  if (done !== undefined) data.done = done
+  if (done !== undefined) {
+    data.done = done
+    data.completedAt = done === true ? new Date() : null
+  }
   if (title !== undefined) data.title = title
   if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null
   if (recurrence !== undefined) data.recurrence = recurrence

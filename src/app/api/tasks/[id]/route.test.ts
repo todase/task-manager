@@ -136,6 +136,49 @@ describe("PATCH /api/tasks/[id]", () => {
       })
     )
   })
+
+  it("sets completedAt when marking done=true (non-recurring)", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockTask.findUnique.mockResolvedValue({ id: "task-1", recurrence: null, dueDate: null } as never)
+    mockTask.update.mockResolvedValue({ ...dbTask, done: true, completedAt: new Date() } as never)
+
+    await PATCH(jsonReq("PATCH", { done: true }), params())
+
+    expect(mockTask.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ done: true, completedAt: expect.any(Date) }),
+      })
+    )
+  })
+
+  it("clears completedAt when marking done=false", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockTask.findUnique.mockResolvedValue({ id: "task-1", recurrence: null, dueDate: null } as never)
+    mockTask.update.mockResolvedValue({ ...dbTask, done: false, completedAt: null } as never)
+
+    await PATCH(jsonReq("PATCH", { done: false }), params())
+
+    expect(mockTask.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ done: false, completedAt: null }),
+      })
+    )
+  })
+
+  it("does not set completedAt when advancing recurring task date", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const dueDate = new Date("2026-04-01T00:00:00.000Z")
+    mockTask.findUnique.mockResolvedValue({ id: "task-1", recurrence: "daily", dueDate } as never)
+    mockTask.update.mockResolvedValue({ ...dbTask, dueDate: new Date("2026-04-02"), done: false } as never)
+
+    await PATCH(jsonReq("PATCH", { done: true }), params())
+
+    expect(mockTask.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.objectContaining({ completedAt: expect.anything() }),
+      })
+    )
+  })
 })
 
 describe("DELETE /api/tasks/[id]", () => {
