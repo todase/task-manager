@@ -25,6 +25,7 @@ model Task {
   id          String    @id @default(cuid())
   title       String
   done        Boolean   @default(false)
+  completedAt DateTime?
   dueDate     DateTime?
   recurrence  String?
   description String?
