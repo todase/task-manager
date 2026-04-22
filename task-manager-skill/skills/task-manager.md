@@ -53,38 +53,50 @@ curl "$TASK_MANAGER_BASE_URL/api/tasks" \
   -H "X-API-Key: $TASK_MANAGER_API_KEY"
 ```
 
-Optional query params: `?done=true|false`, `?sort=dueDate|createdAt`, `?q=search`, `?limit=N`
+Optional query params: `?done=true|false`, `?sort=updatedAt_desc`, `?q=search`, `?limit=N`
 
 **Create task**
 ```bash
+cat > /tmp/tm_payload.json << 'ENDJSON'
+{
+  "title": "Task title",
+  "dueDate": "2026-05-01T00:00:00.000Z",
+  "recurrence": "daily|weekly|monthly|null",
+  "description": "Optional description",
+  "projectId": "optional-project-id"
+}
+ENDJSON
+
 curl -X POST "$TASK_MANAGER_BASE_URL/api/tasks" \
   -H "X-API-Key: $TASK_MANAGER_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{
-    "title": "Task title",
-    "dueDate": "2026-05-01T00:00:00.000Z",
-    "recurrence": "daily|weekly|monthly|null",
-    "description": "Optional description",
-    "projectId": "optional-project-id"
-  }'
+  --data-binary @/tmp/tm_payload.json
+
+rm /tmp/tm_payload.json
 ```
 
 Required: `title`. All others optional. `dueDate` is ISO 8601.
 
 **Update task**
 ```bash
+cat > /tmp/tm_payload.json << 'ENDJSON'
+{
+  "title": "Updated title",
+  "done": true,
+  "dueDate": "2026-05-01T00:00:00.000Z",
+  "recurrence": "weekly",
+  "description": "Updated description",
+  "projectId": "project-id",
+  "tagIds": ["tag-id-1", "tag-id-2"]
+}
+ENDJSON
+
 curl -X PATCH "$TASK_MANAGER_BASE_URL/api/tasks/{id}" \
   -H "X-API-Key: $TASK_MANAGER_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{
-    "title": "Updated title",
-    "done": true,
-    "dueDate": "2026-05-01T00:00:00.000Z",
-    "recurrence": "weekly",
-    "description": "Updated description",
-    "projectId": "project-id",
-    "tagIds": ["tag-id-1", "tag-id-2"]
-  }'
+  --data-binary @/tmp/tm_payload.json
+
+rm /tmp/tm_payload.json
 ```
 
 Send only the fields to update. Recurring tasks: marking `done: true` advances `dueDate` instead of archiving.

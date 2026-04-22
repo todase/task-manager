@@ -1,7 +1,9 @@
 import { auth } from "@/auth"
 
 export async function getUserId(req: Request): Promise<string | null> {
+  // Fast path: middleware validated the API key and injected this header
+  const injected = req.headers.get("x-api-user-id")
+  if (injected) return injected
   const session = await auth()
-  if (session?.user?.id) return session.user.id
-  return req.headers.get("x-api-user-id")
+  return session?.user?.id ?? null
 }

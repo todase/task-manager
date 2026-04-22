@@ -54,8 +54,8 @@ export function ProjectTabs({
           {projects.length}
         </span>
         {activeProjectId !== null && (
-          <span
-            role="button"
+          <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation()
               onSelect(null)
@@ -64,7 +64,7 @@ export function ProjectTabs({
             aria-label="Сбросить проект"
           >
             ×
-          </span>
+          </button>
         )}
         {isOpen ? (
           <ChevronUp className="w-4 h-4 text-gray-400" />

@@ -21,10 +21,12 @@ describe("getUserId", () => {
     expect(result).toBe("u1")
   })
 
-  it("returns x-api-user-id header when session is null", async () => {
+  it("returns x-api-user-id header when header is present (API key path)", async () => {
     mockAuth.mockResolvedValue(null as never)
     const result = await getUserId(req({ "x-api-user-id": "u2" }))
     expect(result).toBe("u2")
+    // auth() should not be called — fast path short-circuits
+    expect(mockAuth).not.toHaveBeenCalled()
   })
 
   it("returns null when both session and header are absent", async () => {
@@ -33,9 +35,9 @@ describe("getUserId", () => {
     expect(result).toBeNull()
   })
 
-  it("prefers session over header", async () => {
+  it("prefers injected header over session (middleware always strips external header)", async () => {
     mockAuth.mockResolvedValue({ user: { id: "session-user" } } as never)
     const result = await getUserId(req({ "x-api-user-id": "header-user" }))
-    expect(result).toBe("session-user")
+    expect(result).toBe("header-user")
   })
 })

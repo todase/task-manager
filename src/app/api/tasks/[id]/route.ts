@@ -25,7 +25,8 @@ export async function PATCH(
     }
   }
 
-  // Если повторяющаяся задача отмечается выполненной — сдвигаем дату вместо done=true
+  // Повторяющаяся задача — сдвигаем дату вместо архивирования.
+  // completedAt намеренно не записывается: задача не завершается, а переносится.
   if (done === true) {
     const existing = await prisma.task.findUnique({ where: { id } })
     if (existing?.recurrence && existing.dueDate) {

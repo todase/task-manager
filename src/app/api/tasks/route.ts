@@ -65,6 +65,10 @@ export async function POST(req: Request) {
 
   const { title, projectId, dueDate, recurrence, tagIds } = await req.json()
 
+  if (!title || typeof title !== "string" || !title.trim()) {
+    return NextResponse.json({ error: "title is required" }, { status: 400 })
+  }
+
   if (projectId) {
     const project = await prisma.project.findFirst({
       where: { id: projectId, userId },
