@@ -1,6 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { apiFetch } from "@/lib/apiFetch"
 import type { Tag } from "@/types"
 
 const TAG_COLORS = [
@@ -18,7 +19,7 @@ export function useTags() {
   const { data: tags = [] } = useQuery<Tag[]>({
     queryKey: ["tags"],
     queryFn: async () => {
-      const res = await fetch("/api/tags")
+      const res = await apiFetch("/api/tags")
       if (!res.ok) throw new Error("Не удалось загрузить метки")
       const data = await res.json()
       return Array.isArray(data) ? data : []
@@ -28,7 +29,7 @@ export function useTags() {
   const { mutateAsync: createTag } = useMutation({
     networkMode: "online",
     mutationFn: async ({ name, color }: { name: string; color: string }) => {
-      const res = await fetch("/api/tags", {
+      const res = await apiFetch("/api/tags", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, color }),
@@ -47,7 +48,7 @@ export function useTags() {
   const { mutateAsync: updateTag } = useMutation({
     networkMode: "online",
     mutationFn: async ({ id, updates }: { id: string; updates: { name?: string; color?: string } }) => {
-      const res = await fetch(`/api/tags/${id}`, {
+      const res = await apiFetch(`/api/tags/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -66,7 +67,7 @@ export function useTags() {
   const { mutateAsync: deleteTag } = useMutation({
     networkMode: "online",
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/tags/${id}`, { method: "DELETE" })
+      const res = await apiFetch(`/api/tags/${id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Не удалось удалить метку")
     },
     onSuccess: (_, id) => {

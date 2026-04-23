@@ -1,6 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { apiFetch } from "@/lib/apiFetch"
 import type { Project } from "@/types"
 
 export function useProjects() {
@@ -9,7 +10,7 @@ export function useProjects() {
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["projects"],
     queryFn: async () => {
-      const res = await fetch("/api/projects")
+      const res = await apiFetch("/api/projects")
       if (!res.ok) throw new Error("Не удалось загрузить проекты")
       return res.json()
     },
@@ -18,7 +19,7 @@ export function useProjects() {
   const { mutateAsync: createProject } = useMutation({
     networkMode: "online",
     mutationFn: async ({ title, icon }: { title: string; icon: string }) => {
-      const res = await fetch("/api/projects", {
+      const res = await apiFetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, icon }),
@@ -35,7 +36,7 @@ export function useProjects() {
   const { mutateAsync: deleteProject } = useMutation({
     networkMode: "online",
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/projects/${id}`, { method: "DELETE" })
+      const res = await apiFetch(`/api/projects/${id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Не удалось удалить проект")
     },
     onSuccess: (_, id) => {
@@ -47,7 +48,7 @@ export function useProjects() {
   const { mutateAsync: updateProject } = useMutation({
     networkMode: "online",
     mutationFn: async ({ id, updates }: { id: string; updates: { title?: string; icon?: string } }) => {
-      const res = await fetch(`/api/projects/${id}`, {
+      const res = await apiFetch(`/api/projects/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),

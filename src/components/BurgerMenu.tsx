@@ -5,6 +5,8 @@ import Link from "next/link"
 import { signOut } from "next-auth/react"
 import { Archive, LogOut, Menu, Search, X } from "lucide-react"
 import { useClickOutside } from "@/hooks/useClickOutside"
+import { queryClient } from "@/lib/queryClient"
+import { persister } from "@/lib/persister"
 
 interface BurgerMenuProps {
   onSearch?: () => void
@@ -56,7 +58,11 @@ export function BurgerMenu({ onSearch }: BurgerMenuProps) {
           </Link>
           <div className="my-1 border-t border-gray-100" />
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={async () => {
+                queryClient.clear()
+                await persister.removeClient()
+                signOut({ callbackUrl: "/login" })
+              }}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
           >
             <LogOut className="w-4 h-4 text-gray-400" />

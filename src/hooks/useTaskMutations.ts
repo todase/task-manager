@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { withPriorityScores, type CreateTaskInput, type TaskFilters } from "./taskUtils"
 import { remapMutationQueue } from "@/lib/mutationQueue"
+import { apiFetch } from "@/lib/apiFetch"
 import type { Task, Subtask, Project } from "@/types"
 
 import type { QueryKey, QueryClient } from "@tanstack/react-query"
@@ -25,7 +26,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: createTask } = useMutation({
     mutationKey: ["createTask"],
     mutationFn: async ({ input }: { input: CreateTaskInput; projects: Project[] }) => {
-      const res = await fetch("/api/tasks", {
+      const res = await apiFetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -70,7 +71,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: toggleTask } = useMutation({
     mutationKey: ["toggleTask"],
     mutationFn: async (task: Task) => {
-      const res = await fetch(`/api/tasks/${task.id}`, {
+      const res = await apiFetch(`/api/tasks/${task.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ done: !task.done }),
@@ -94,7 +95,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: deleteTask } = useMutation({
     mutationKey: ["deleteTask"],
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" })
+      const res = await apiFetch(`/api/tasks/${id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Не удалось удалить задачу")
     },
     onMutate: async (id) => {
@@ -113,7 +114,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: renameTask } = useMutation({
     mutationKey: ["renameTask"],
     mutationFn: async ({ id, title }: { id: string; title: string }) => {
-      const res = await fetch(`/api/tasks/${id}`, {
+      const res = await apiFetch(`/api/tasks/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title }),
@@ -137,7 +138,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: updateDueDate } = useMutation({
     mutationKey: ["updateDueDate"],
     mutationFn: async ({ taskId, value }: { taskId: string; value: string }) => {
-      const res = await fetch(`/api/tasks/${taskId}`, {
+      const res = await apiFetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dueDate: value ? new Date(value).toISOString() : null }),
@@ -163,7 +164,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: reorderTasks } = useMutation({
     mutationKey: ["reorderTasks"],
     mutationFn: async (newTasks: Task[]) => {
-      const res = await fetch("/api/tasks/reorder", {
+      const res = await apiFetch("/api/tasks/reorder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTasks.map((t, i) => ({ id: t.id, order: i }))),
@@ -186,7 +187,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: assignProject } = useMutation({
     mutationKey: ["assignProject"],
     mutationFn: async ({ taskId, projectId }: { taskId: string; projectId: string | null; newProject: { id: string; title: string; icon: string } | null }) => {
-      const res = await fetch(`/api/tasks/${taskId}`, {
+      const res = await apiFetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId }),
@@ -210,7 +211,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: updateDescription } = useMutation({
     mutationKey: ["updateDescription"],
     mutationFn: async ({ id, description }: { id: string; description: string }) => {
-      const res = await fetch(`/api/tasks/${id}`, {
+      const res = await apiFetch(`/api/tasks/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ description }),
@@ -234,7 +235,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: updateTagsMutation } = useMutation({
     mutationKey: ["updateTags"],
     mutationFn: async ({ id, tagIds }: { id: string; tagIds: string[] }) => {
-      const res = await fetch(`/api/tasks/${id}`, {
+      const res = await apiFetch(`/api/tasks/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tagIds }),
@@ -260,7 +261,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: restoreTask } = useMutation({
     mutationKey: ["restoreTask"],
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/tasks/${id}`, {
+      const res = await apiFetch(`/api/tasks/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ done: false }),
@@ -283,7 +284,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: clearArchive } = useMutation({
     mutationKey: ["clearArchive"],
     mutationFn: async () => {
-      const res = await fetch("/api/tasks?done=true", { method: "DELETE" })
+      const res = await apiFetch("/api/tasks?done=true", { method: "DELETE" })
       if (!res.ok) throw new Error("Не удалось очистить архив")
     },
     onMutate: async () => {
@@ -300,7 +301,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: addSubtask } = useMutation({
     mutationKey: ["addSubtask"],
     mutationFn: async ({ taskId, title }: { taskId: string; title: string }) => {
-      const res = await fetch(`/api/tasks/${taskId}/subtasks`, {
+      const res = await apiFetch(`/api/tasks/${taskId}/subtasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title }),
@@ -322,7 +323,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: toggleSubtask } = useMutation({
     mutationKey: ["toggleSubtask"],
     mutationFn: async ({ taskId, subtask }: { taskId: string; subtask: Subtask }) => {
-      const res = await fetch(`/api/tasks/${taskId}/subtasks/${subtask.id}`, {
+      const res = await apiFetch(`/api/tasks/${taskId}/subtasks/${subtask.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ done: !subtask.done }),
@@ -350,7 +351,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   const { mutateAsync: deleteSubtask } = useMutation({
     mutationKey: ["deleteSubtask"],
     mutationFn: async ({ taskId, subtaskId }: { taskId: string; subtaskId: string }) => {
-      const res = await fetch(`/api/tasks/${taskId}/subtasks/${subtaskId}`, { method: "DELETE" })
+      const res = await apiFetch(`/api/tasks/${taskId}/subtasks/${subtaskId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Не удалось удалить подзадачу")
     },
     onMutate: async ({ taskId, subtaskId }) => {

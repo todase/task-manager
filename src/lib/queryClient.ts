@@ -1,6 +1,13 @@
-import { QueryClient } from "@tanstack/react-query"
+import { QueryClient, MutationCache } from "@tanstack/react-query"
 
 export const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      if (error instanceof Error && error.message.includes("401")) {
+        window.dispatchEvent(new Event("session-expired"))
+      }
+    },
+  }),
   defaultOptions: {
     queries: {
       networkMode: "offlineFirst",
