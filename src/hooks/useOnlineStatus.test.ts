@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, afterEach } from "vitest"
 import { renderHook, act } from "@testing-library/react"
 import { useOnlineStatus } from "./useOnlineStatus"
+
+afterEach(() => {
+  Object.defineProperty(navigator, "onLine", { value: true, configurable: true })
+})
 
 describe("useOnlineStatus", () => {
   it("returns true when navigator.onLine is true", () => {
