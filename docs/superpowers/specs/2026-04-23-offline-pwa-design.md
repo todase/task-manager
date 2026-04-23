@@ -10,7 +10,7 @@ The app requires an internet connection at all times: no network means a blank s
 ## Scope
 
 - **In scope:** offline read + write for tasks (including subtasks); offline read for projects and tags; automatic background sync on reconnect; offline UI indicator
-- **Out of scope:** offline create/edit for projects and tags (rarely done on mobile without connectivity)
+- **Out of scope:** offline create/edit/delete for projects and tags — mutations fail immediately offline and UI controls are disabled
 - **Component changes:** components that explicitly call `fetchTasks()` today will need a one-line change to `queryClient.invalidateQueries(['tasks'])` instead; all other component code is untouched
 
 ## Conflict Resolution
@@ -89,6 +89,22 @@ When offline:
 - On reconnect, TQ automatically resumes all paused mutations in order, then refetches
 
 Operations with existing rollback logic (`reorderTasks`, `clearArchive`) map cleanly to the `onMutate`/`onError` pattern.
+
+### Project and tag mutations offline
+
+The global QueryClient uses `networkMode: 'offlineFirst'`, which would silently queue project and tag mutations offline — creating the same temp ID complexity as tasks but without any resolution logic. To prevent this, all mutations in `useProjectMutations` and `useTagMutations` explicitly override the global default:
+
+```ts
+useMutation({
+  networkMode: 'online',  // overrides global 'offlineFirst'
+  ...
+})
+```
+
+With `networkMode: 'online'`, the mutation immediately returns an error when offline instead of queuing. Combined with disabled UI controls, the user never reaches the error path:
+
+- When `useOnlineStatus()` returns `false`, all create/edit/delete buttons for projects and tags are disabled with a tooltip: **«Недоступно без подключения»**
+- Read access (list projects, list tags) continues to work via the IndexedDB-persisted query cache
 
 ### Temporary ID remapping
 
