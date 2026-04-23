@@ -9,7 +9,7 @@ import type { Tag } from "@/types"
 interface TaskTagPickerProps {
   assignedTags: Tag[]
   allTags: Tag[]
-  onUpdateTags: (tagIds: string[]) => Promise<unknown>
+  onUpdateTags: (tags: Tag[]) => Promise<unknown>
   onCreateTag: (name: string) => Promise<Tag>
 }
 
@@ -36,11 +36,12 @@ export function TaskTagPicker({
   useClickOutside(pickerRef, closePicker, showPicker)
 
   async function toggleTag(tagId: string) {
-    const newIds = assignedTagIds.includes(tagId)
-      ? assignedTagIds.filter((id) => id !== tagId)
-      : [...assignedTagIds, tagId]
+    const found = allTags.find((t) => t.id === tagId)
+    const newTags = assignedTagIds.includes(tagId)
+      ? assignedTags.filter((t) => t.id !== tagId)
+      : found ? [...assignedTags, found] : assignedTags
     try {
-      await onUpdateTags(newIds)
+      await onUpdateTags(newTags)
     } catch {
       setTagError("Не удалось обновить метки")
     }
@@ -53,7 +54,7 @@ export function TaskTagPicker({
       const tag = await onCreateTag(tagInput.trim())
       setTagInput("")
       closePicker()
-      await onUpdateTags([...assignedTagIds, tag.id])
+      await onUpdateTags([...assignedTags, tag])
     } catch {
       setTagError("Не удалось создать метку")
     }

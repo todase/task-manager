@@ -31,8 +31,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                 Сессия истекла. Несохранённые изменения будут потеряны.
               </p>
               <button
-                onClick={() => {
+                onClick={async () => {
                   queryClient.clear()
+                  await persister.removeClient()
                   signOut({ callbackUrl: "/login" })
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"

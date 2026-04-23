@@ -20,7 +20,7 @@ interface TaskListProps {
   onRename: (id: string, title: string) => Promise<unknown>
   onUpdateDueDate: (id: string, value: string) => Promise<unknown>
   onUpdateDescription: (id: string, description: string) => Promise<unknown>
-  onUpdateTags: (id: string, tagIds: string[]) => Promise<unknown>
+  onUpdateTags: (id: string, tags: Tag[]) => Promise<unknown>
   tags: Tag[]
   onCreateTag: (name: string) => Promise<Tag>
   onAddSubtask: (taskId: string, title: string) => Promise<unknown>
