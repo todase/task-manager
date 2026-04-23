@@ -1,0 +1,89 @@
+{
+  "planPath": "docs/superpowers/plans/2026-04-23-offline-pwa.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 1: Install dependencies and create lib files",
+      "status": "pending",
+      "description": "**Goal:** Add TanStack Query packages, create queryClient.ts and persister.ts, add NEXT_PUBLIC_CACHE_VERSION env var.\n\n**Files:**\n- Modify: package.json (via npm install)\n- Create: src/lib/queryClient.ts\n- Create: src/lib/persister.ts\n- Modify: .env.local\n\n**Acceptance Criteria:**\n- [ ] @tanstack/react-query, @tanstack/react-query-persist-client, @tanstack/query-async-storage-persister, idb-keyval installed\n- [ ] queryClient.ts exports QueryClient with networkMode: offlineFirst, staleTime: 30_000, gcTime: 86_400_000\n- [ ] persister.ts exports persister backed by idb-keyval\n- [ ] NEXT_PUBLIC_CACHE_VERSION=1 in .env.local\n\n**Verify:** `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/lib/queryClient.ts\", \"src/lib/persister.ts\", \".env.local\"], \"verifyCommand\": \"npx tsc --noEmit\", \"acceptanceCriteria\": [\"TanStack Query packages installed\", \"queryClient.ts exports singleton with offlineFirst config\", \"persister.ts exports idb-keyval backed persister\", \"NEXT_PUBLIC_CACHE_VERSION=1 in .env.local\"]}\n```"
+    },
+    {
+      "id": 1,
+      "subject": "Task 2: Providers setup and SW NetworkOnly config",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "**Goal:** Wrap app in PersistQueryClientProvider and configure SW to bypass /api/* routes.\n\n**Files:**\n- Modify: src/app/providers.tsx\n- Modify: next.config.ts\n\n**Acceptance Criteria:**\n- [ ] providers.tsx wraps children in PersistQueryClientProvider with singleton queryClient and persister\n- [ ] next.config.ts has NetworkOnly rule for /api/\n- [ ] npx tsc --noEmit passes\n\n**Verify:** `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/app/providers.tsx\", \"next.config.ts\"], \"verifyCommand\": \"npx tsc --noEmit\", \"acceptanceCriteria\": [\"PersistQueryClientProvider wraps app\", \"SW excludes /api/ from cache\"]}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 3: useOnlineStatus hook",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "**Goal:** Hook tracking navigator.onLine with online/offline events.\n\n**Files:**\n- Create: src/hooks/useOnlineStatus.ts\n- Create: src/hooks/useOnlineStatus.test.ts\n\n**Acceptance Criteria:**\n- [ ] Returns true when online, false when offline\n- [ ] Updates reactively on online/offline events\n- [ ] 3 tests pass\n\n**Verify:** `npx vitest run src/hooks/useOnlineStatus.test.ts` → 3 passed\n\n```json:metadata\n{\"files\": [\"src/hooks/useOnlineStatus.ts\", \"src/hooks/useOnlineStatus.test.ts\"], \"verifyCommand\": \"npx vitest run src/hooks/useOnlineStatus.test.ts\", \"acceptanceCriteria\": [\"Returns correct online state\", \"Reacts to online/offline events\", \"3 tests pass\"]}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 4: mutationQueue utility (temp ID remapping)",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "**Goal:** remapMutationQueue(tempId, realId) replaces temp IDs in persisted IndexedDB mutation cache.\n\n**Files:**\n- Create: src/lib/mutationQueue.ts\n- Create: src/lib/mutationQueue.test.ts\n\n**Acceptance Criteria:**\n- [ ] Replaces all occurrences of tempId with realId in cached JSON\n- [ ] No-op when cache is empty or tempId not present\n- [ ] 3 tests pass\n\n**Verify:** `npx vitest run src/lib/mutationQueue.test.ts` → 3 passed\n\n```json:metadata\n{\"files\": [\"src/lib/mutationQueue.ts\", \"src/lib/mutationQueue.test.ts\"], \"verifyCommand\": \"npx vitest run src/lib/mutationQueue.test.ts\", \"acceptanceCriteria\": [\"Replaces tempId with realId everywhere\", \"No-op on empty cache\", \"3 tests pass\"]}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "Task 5: Extract taskUtils and create useTaskQueries",
+      "status": "pending",
+      "blockedBy": [1, 2, 3],
+      "description": "**Goal:** Move pure utilities from useTasks.ts to taskUtils.ts; create useTaskQueries backed by useQuery.\n\n**Files:**\n- Create: src/hooks/taskUtils.ts\n- Create: src/hooks/useTaskQueries.ts\n- Create: src/hooks/useTaskQueries.test.ts\n\n**Acceptance Criteria:**\n- [ ] taskUtils.ts exports buildTasksUrl, withPriorityScores, filterTasks, TaskFilters, CreateTaskInput\n- [ ] useTaskQueries returns { tasks, isLoading, error } from useQuery\n- [ ] useTasks.test.ts still passes\n- [ ] 2 new tests pass\n\n**Verify:** `npx vitest run src/hooks/useTaskQueries.test.ts src/hooks/useTasks.test.ts` → all pass\n\n```json:metadata\n{\"files\": [\"src/hooks/taskUtils.ts\", \"src/hooks/useTaskQueries.ts\", \"src/hooks/useTaskQueries.test.ts\"], \"verifyCommand\": \"npx vitest run src/hooks/useTaskQueries.test.ts src/hooks/useTasks.test.ts\", \"acceptanceCriteria\": [\"taskUtils.ts exports all utilities\", \"useTaskQueries returns tasks from useQuery\", \"existing useTasks tests pass\"]}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "Task 6: useTaskMutations",
+      "status": "pending",
+      "blockedBy": [4],
+      "description": "**Goal:** All 14 task mutation functions with optimistic updates, rollback, and temp ID handling for createTask.\n\n**Files:**\n- Create: src/hooks/useTaskMutations.ts\n- Create: src/hooks/useTaskMutations.test.ts\n\n**Acceptance Criteria:**\n- [ ] All 14 mutation functions with correct signatures\n- [ ] createTask generates temp ID, optimistic update, remapMutationQueue on success\n- [ ] toggleTask optimistically flips, rolls back on error\n- [ ] reorderTasks optimistically reorders, rolls back on error\n- [ ] 4 tests pass\n\n**Verify:** `npx vitest run src/hooks/useTaskMutations.test.ts` → 4 passed\n\n```json:metadata\n{\"files\": [\"src/hooks/useTaskMutations.ts\", \"src/hooks/useTaskMutations.test.ts\"], \"verifyCommand\": \"npx vitest run src/hooks/useTaskMutations.test.ts\", \"acceptanceCriteria\": [\"All 14 mutations exist\", \"createTask temp ID + remap\", \"optimistic updates + rollback\", \"4 tests pass\"]}\n```"
+    },
+    {
+      "id": 6,
+      "subject": "Task 7: Rewrite useTasks wrapper and update pages",
+      "status": "pending",
+      "blockedBy": [5],
+      "description": "**Goal:** useTasks becomes a thin wrapper; tasks/page.tsx and archive/page.tsx drop manual fetch calls.\n\n**Files:**\n- Modify: src/hooks/useTasks.ts\n- Modify: src/app/tasks/page.tsx\n- Modify: src/app/archive/page.tsx\n\n**Acceptance Criteria:**\n- [ ] useTasks.ts is ≤30 lines, re-exports from taskUtils.ts\n- [ ] tasks/page.tsx has no fetchTasks/fetchProjects/fetchTags calls\n- [ ] archive/page.tsx has no fetchTasks call\n- [ ] useTasks.test.ts still passes\n\n**Verify:** `npx vitest run src/hooks/useTasks.test.ts` → all pass; `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/hooks/useTasks.ts\", \"src/app/tasks/page.tsx\", \"src/app/archive/page.tsx\"], \"verifyCommand\": \"npx vitest run src/hooks/useTasks.test.ts\", \"acceptanceCriteria\": [\"useTasks thin wrapper\", \"no manual fetch calls in pages\", \"existing tests pass\"]}\n```"
+    },
+    {
+      "id": 7,
+      "subject": "Task 8: Refactor useProjects with TanStack Query",
+      "status": "pending",
+      "blockedBy": [6],
+      "description": "**Goal:** Replace useProjects internals with useQuery + useMutation; project mutations use networkMode: online.\n\n**Files:**\n- Modify: src/hooks/useProjects.ts\n- Modify: src/hooks/useProjects.test.ts\n\n**Acceptance Criteria:**\n- [ ] fetchProjects is a no-op\n- [ ] createProject, deleteProject, updateProject use networkMode: online\n- [ ] Projects read from useQuery(['projects'])\n- [ ] All tests pass\n\n**Verify:** `npx vitest run src/hooks/useProjects.test.ts` → all pass\n\n```json:metadata\n{\"files\": [\"src/hooks/useProjects.ts\", \"src/hooks/useProjects.test.ts\"], \"verifyCommand\": \"npx vitest run src/hooks/useProjects.test.ts\", \"acceptanceCriteria\": [\"useQuery for reads\", \"networkMode: online on mutations\", \"tests pass\"]}\n```"
+    },
+    {
+      "id": 8,
+      "subject": "Task 9: Refactor useTags with TanStack Query",
+      "status": "pending",
+      "blockedBy": [6],
+      "description": "**Goal:** Same pattern as Task 8 for tags.\n\n**Files:**\n- Modify: src/hooks/useTags.ts\n- Modify: src/hooks/useTags.test.ts\n\n**Acceptance Criteria:**\n- [ ] fetchTags is a no-op\n- [ ] All tag mutations use networkMode: online\n- [ ] Tags read from useQuery(['tags'])\n- [ ] Tests pass\n\n**Verify:** `npx vitest run src/hooks/useTags.test.ts` → all pass\n\n```json:metadata\n{\"files\": [\"src/hooks/useTags.ts\", \"src/hooks/useTags.test.ts\"], \"verifyCommand\": \"npx vitest run src/hooks/useTags.test.ts\", \"acceptanceCriteria\": [\"useQuery for reads\", \"networkMode: online on mutations\", \"tests pass\"]}\n```"
+    },
+    {
+      "id": 9,
+      "subject": "Task 10: OfflineBanner component and layout integration",
+      "status": "pending",
+      "blockedBy": [2, 6],
+      "description": "**Goal:** Slim banner showing offline state and pending mutation count. Added to root layout.\n\n**Files:**\n- Create: src/components/OfflineBanner.tsx\n- Create: src/components/OfflineBanner.test.tsx\n- Modify: src/app/layout.tsx\n\n**Acceptance Criteria:**\n- [ ] Banner renders when offline, absent when online\n- [ ] Shows count of isPaused mutations\n- [ ] 2 tests pass\n\n**Verify:** `npx vitest run src/components/OfflineBanner.test.tsx` → 2 passed\n\n```json:metadata\n{\"files\": [\"src/components/OfflineBanner.tsx\", \"src/components/OfflineBanner.test.tsx\", \"src/app/layout.tsx\"], \"verifyCommand\": \"npx vitest run src/components/OfflineBanner.test.tsx\", \"acceptanceCriteria\": [\"Banner visible when offline\", \"Absent when online\", \"2 tests pass\"]}\n```"
+    },
+    {
+      "id": 10,
+      "subject": "Task 11: Disable project/tag UI when offline",
+      "status": "pending",
+      "blockedBy": [7, 8, 9],
+      "description": "**Goal:** Disable create/edit/delete buttons for projects and tags when offline with tooltip.\n\n**Files:**\n- Modify: src/app/tasks/page.tsx (and any component files found by grep)\n\n**Acceptance Criteria:**\n- [ ] All project create/edit/delete buttons disabled when offline\n- [ ] All tag create/edit/delete buttons disabled when offline\n- [ ] title tooltip says 'Недоступно без подключения'\n- [ ] npx tsc --noEmit passes\n\n**Verify:** `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/app/tasks/page.tsx\"], \"verifyCommand\": \"npx tsc --noEmit\", \"acceptanceCriteria\": [\"Project mutation buttons disabled offline\", \"Tag mutation buttons disabled offline\", \"Tooltip present\"]}\n```"
+    },
+    {
+      "id": 11,
+      "subject": "Task 12: Logout cache clear and session expiry handling",
+      "status": "pending",
+      "blockedBy": [10],
+      "description": "**Goal:** Clear IndexedDB on logout; global 401 handler shows re-login modal.\n\n**Files:**\n- Modify: src/components/BurgerMenu.tsx\n- Modify: src/lib/queryClient.ts\n- Modify: src/app/providers.tsx\n- Create: src/lib/apiFetch.ts\n\n**Acceptance Criteria:**\n- [ ] Sign out calls queryClient.clear() + persister.removeClient() before signOut()\n- [ ] 401 on any mutation triggers session-expired event\n- [ ] providers.tsx shows re-login modal on session-expired\n- [ ] npx tsc --noEmit passes\n\n**Verify:** `npx vitest run` → all pass; `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/components/BurgerMenu.tsx\", \"src/lib/queryClient.ts\", \"src/app/providers.tsx\", \"src/lib/apiFetch.ts\"], \"verifyCommand\": \"npx vitest run\", \"acceptanceCriteria\": [\"Cache cleared on logout\", \"401 triggers session-expired event\", \"Re-login modal shown\", \"All tests pass\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-04-23T00:00:00.000Z"
+}
