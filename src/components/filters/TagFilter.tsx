@@ -2,6 +2,7 @@
 
 import { Tag, ChevronDown, ChevronUp, Pencil } from "lucide-react"
 import { useTagEditing } from "@/hooks/useTagEditing"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import type { Tag as TagType } from "@/types"
 
 interface TagFilterProps {
@@ -24,6 +25,7 @@ export function TagFilter({
   onDelete,
 }: TagFilterProps) {
   const edit = useTagEditing({ onUpdate, onDelete })
+  const isOnline = useOnlineStatus()
 
   function toggle(id: string) {
     onChange(
@@ -137,7 +139,9 @@ export function TagFilter({
                     </button>
                     <button
                       onClick={() => edit.startEditing(tag)}
-                      className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600"
+                      disabled={!isOnline}
+                      title={!isOnline ? "Недоступно без подключения" : undefined}
+                      className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
                       aria-label="Редактировать метку"
                     >
                       <Pencil className="w-3 h-3" />
