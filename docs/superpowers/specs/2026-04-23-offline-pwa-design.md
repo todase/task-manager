@@ -41,10 +41,11 @@ Three layers:
 
 | File | Change |
 |------|--------|
-| `src/app/providers.tsx` | Add `PersistQueryClient` wrapper + `QueryClientProvider` |
+| `src/app/providers.tsx` | Add `PersistQueryClient` wrapper + `QueryClientProvider`; call `queryClient.clear()` + `persister.removeClient()` on logout |
 | `src/hooks/useTasks.ts` | Thin wrapper combining useTaskQueries + useTaskMutations |
 | `src/hooks/useProjects.ts` | Replace useState/fetch internals with useQuery + useMutation |
 | `src/hooks/useTags.ts` | Replace useState/fetch internals with useQuery + useMutation |
+| `next.config.ts` | Add `NetworkOnly` runtime cache rule for `/api/*` routes |
 
 ### New dependencies
 
@@ -91,13 +92,44 @@ Operations with existing rollback logic (`reorderTasks`, `clearArchive`) map cle
 
 ### Temporary ID remapping
 
-When a task is created offline it receives a client-generated temporary ID (`tmp_<uuid>`). Subsequent offline mutations on that task (toggle, rename, delete) reference this temp ID. On reconnect:
+When a task is created offline it receives a client-generated temporary ID (`tmp_<uuid>`). Subsequent offline mutations on that task (toggle, rename, delete, add subtask, toggle subtask, delete subtask) reference this temp ID — both in the request body and in the URL path (e.g. `/api/tasks/tmp_xxx/subtasks`). On reconnect:
 
 1. The `createTask` mutation fires first and receives the real server ID in its response.
-2. `onSuccess` of `createTask` calls a `remapMutationQueue(tempId, realId)` utility that iterates the persisted mutation queue and rewrites any matching IDs before TQ replays them.
-3. Tasks with a temp ID are displayed with a subtle "syncing" indicator and the toggle/delete actions are disabled until the real ID arrives.
+2. `onSuccess` of `createTask` calls a `remapMutationQueue(tempId, realId)` utility that iterates the persisted mutation queue and rewrites any matching IDs — in request bodies, query keys, and URL path segments — before TQ replays them.
+3. Tasks with a temp ID are displayed with a subtle "syncing" indicator; toggle, delete, and subtask actions are disabled until the real ID arrives.
 
-`remapMutationQueue` is a utility in `src/lib/mutationQueue.ts` that reads the persisted mutation cache from IndexedDB, rewrites IDs in-place, and writes it back before TQ resumes.
+`remapMutationQueue` is a utility in `src/lib/mutationQueue.ts` that reads the persisted mutation cache from IndexedDB, rewrites IDs in-place (covering both body fields and URL paths via regex replacement of the temp ID string), and writes it back before TQ resumes.
+
+## Cache Invalidation on Logout
+
+When the user signs out, the IndexedDB cache must be cleared to prevent another user on the same device from seeing stale data. The sign-out flow (currently handled by NextAuth `signOut()`) is extended to:
+
+1. Call `queryClient.clear()` — removes all in-memory query and mutation cache.
+2. Call `persister.removeClient()` — wipes the IndexedDB store entirely.
+3. Proceed with `signOut()` redirect.
+
+This guarantees a clean slate for the next login session.
+
+## Cache Versioning (Schema Buster)
+
+When the Prisma schema changes (new fields, renamed fields), old IndexedDB-cached data may have a different shape and cause runtime errors on the next app load. The `persistQueryClient` `buster` option handles this: when the buster string changes, the persister silently discards the old cache and starts fresh.
+
+The buster is set to a `NEXT_PUBLIC_CACHE_VERSION` env var (e.g. `"1"`). It is incremented manually after any migration that changes the shape of cached data. A mismatch causes a cold start — the app fetches fresh data from the server on first load, with no error shown to the user.
+
+## Service Worker + TanStack Query Interaction
+
+The existing `next-pwa` service worker is configured to cache front-end navigation. Without additional config it may also intercept and cache `/api/*` responses, causing TQ to receive stale SW-cached data instead of making real network requests.
+
+To prevent this, `next.config.ts` is updated to add an explicit SW runtime cache rule that excludes all `/api/` routes:
+
+```ts
+runtimeCaching: [
+  { urlPattern: /^\/api\//, handler: 'NetworkOnly' },
+  // existing rules follow...
+]
+```
+
+`NetworkOnly` tells the SW to always pass API requests through to the network, handing full caching responsibility to TQ + IndexedDB. The SW continues to cache the app shell (HTML, JS, CSS) for fast load.
 
 ## Session Expiry Handling
 
@@ -139,3 +171,5 @@ Banner is placed at the top of the main layout, visible on all pages.
 - `useTasks` wrapper tested as integration of the two
 - `remapMutationQueue` utility unit-tested independently (pure IndexedDB read-modify-write)
 - Manual testing: load app → go offline → create task → toggle it done → rename it → reconnect → verify server state matches expected sequence
+- Manual testing: logout → login as different user → verify no previous user's data is visible
+- Manual testing: bump `NEXT_PUBLIC_CACHE_VERSION` → reload → verify stale cache is discarded and fresh data loads
