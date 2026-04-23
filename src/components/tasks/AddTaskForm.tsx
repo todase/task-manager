@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import {
   Plus,
   X,
@@ -17,7 +18,7 @@ interface AddTaskFormProps {
   activeProjectId: string | null
   projects: Project[]
   tags: Tag[]
-  onSubmit: (input: CreateTaskInput) => Promise<void>
+  onSubmit: (input: CreateTaskInput) => Promise<unknown>
   onCreateTag: (name: string) => Promise<Tag>
   defaultDueDate?: string
 }
@@ -43,6 +44,7 @@ export function AddTaskForm({
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [showProjectDropdown, setShowProjectDropdown] = useState(false)
 
+  const isOnline = useOnlineStatus()
   const titleInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -353,7 +355,8 @@ export function AddTaskForm({
                               {tag.name}
                             </button>
                           ))}
-                          {tagInput.trim() &&
+                          {isOnline &&
+                            tagInput.trim() &&
                             !tags.some(
                               (t) =>
                                 t.name.toLowerCase() === tagInput.trim().toLowerCase()

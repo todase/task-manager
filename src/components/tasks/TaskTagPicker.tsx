@@ -3,12 +3,13 @@
 import { useState, useRef } from "react"
 import { Tag as TagIcon } from "lucide-react"
 import { useClickOutside } from "@/hooks/useClickOutside"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import type { Tag } from "@/types"
 
 interface TaskTagPickerProps {
   assignedTags: Tag[]
   allTags: Tag[]
-  onUpdateTags: (tagIds: string[]) => Promise<void>
+  onUpdateTags: (tagIds: string[]) => Promise<unknown>
   onCreateTag: (name: string) => Promise<Tag>
 }
 
@@ -23,6 +24,7 @@ export function TaskTagPicker({
   const [tagError, setTagError] = useState<string | null>(null)
   const pickerRef = useRef<HTMLDivElement>(null)
 
+  const isOnline = useOnlineStatus()
   const assignedTagIds = assignedTags.map((t) => t.id)
   const availableTags = allTags.filter((t) => !assignedTagIds.includes(t.id))
 
@@ -123,39 +125,45 @@ export function TaskTagPicker({
             </p>
           )}
           <div className="border-t border-gray-100 p-2">
-            <input
-              type="text"
-              placeholder="Новая метка..."
-              value={tagInput}
-              onChange={(e) => {
-                setTagInput(e.target.value)
-                setTagError(null)
-              }}
-              onKeyDown={async (e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault()
-                  await handleCreateTag()
-                }
-                if (e.key === "Escape") closePicker()
-              }}
-              className="w-full text-xs border border-gray-200 rounded px-2 py-1 outline-none focus:border-blue-400"
-              style={{ fontSize: "16px" }}
-              autoFocus
-              onClick={(e) => e.stopPropagation()}
-            />
-            {tagError && <p className="mt-1 text-xs text-red-500">{tagError}</p>}
-            {tagInput.trim() &&
-              !allTags.some(
-                (t) => t.name.toLowerCase() === tagInput.trim().toLowerCase()
-              ) && (
-                <button
-                  type="button"
-                  onMouseDown={handleCreateTag}
-                  className="mt-1 w-full text-left text-xs text-blue-600 px-1 hover:underline"
-                >
-                  + Создать «{tagInput.trim()}»
-                </button>
-              )}
+            {isOnline ? (
+              <>
+                <input
+                  type="text"
+                  placeholder="Новая метка..."
+                  value={tagInput}
+                  onChange={(e) => {
+                    setTagInput(e.target.value)
+                    setTagError(null)
+                  }}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault()
+                      await handleCreateTag()
+                    }
+                    if (e.key === "Escape") closePicker()
+                  }}
+                  className="w-full text-xs border border-gray-200 rounded px-2 py-1 outline-none focus:border-blue-400"
+                  style={{ fontSize: "16px" }}
+                  autoFocus
+                  onClick={(e) => e.stopPropagation()}
+                />
+                {tagError && <p className="mt-1 text-xs text-red-500">{tagError}</p>}
+                {tagInput.trim() &&
+                  !allTags.some(
+                    (t) => t.name.toLowerCase() === tagInput.trim().toLowerCase()
+                  ) && (
+                    <button
+                      type="button"
+                      onMouseDown={handleCreateTag}
+                      className="mt-1 w-full text-left text-xs text-blue-600 px-1 hover:underline"
+                    >
+                      + Создать «{tagInput.trim()}»
+                    </button>
+                  )}
+              </>
+            ) : (
+              <p className="text-xs text-gray-400 italic">Создание меток недоступно офлайн</p>
+            )}
           </div>
         </div>
       )}

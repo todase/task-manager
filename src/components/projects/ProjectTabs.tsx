@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useProjectEditing } from "@/hooks/useProjectEditing"
+import { useOnlineStatus } from "@/hooks/useOnlineStatus"
 import { FolderOpen, ChevronDown, ChevronUp, Pencil } from "lucide-react"
 import { DroppableProject } from "@/components/DroppableProject"
 import { ProjectIconPicker, ProjectIcon } from "@/components/projects/ProjectIconPicker"
@@ -30,6 +31,7 @@ export function ProjectTabs({
   onToggle,
 }: ProjectTabsProps) {
   const edit = useProjectEditing({ onCreate, onDelete, onUpdate })
+  const isOnline = useOnlineStatus()
   const activeProject = projects.find((p) => p.id === activeProjectId)
 
   return (
@@ -163,7 +165,9 @@ export function ProjectTabs({
                       {activeProjectId === project.id && (
                         <button
                           onClick={() => edit.startEditing(project)}
-                          className="flex items-center justify-center w-8 min-h-[36px] bg-blue-500 text-white border border-l-0 border-blue-500 rounded-r-full hover:bg-blue-600 transition-colors"
+                          disabled={!isOnline}
+                          title={!isOnline ? "Недоступно без подключения" : undefined}
+                          className="flex items-center justify-center w-8 min-h-[36px] bg-blue-500 text-white border border-l-0 border-blue-500 rounded-r-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Редактировать проект"
                         >
                           <Pencil className="w-3 h-3" />
@@ -219,7 +223,9 @@ export function ProjectTabs({
           ) : (
             <button
               onClick={() => edit.setShowNew(true)}
-              className="text-sm px-3 py-1 rounded-full border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 self-start"
+              disabled={!isOnline}
+              title={!isOnline ? "Недоступно без подключения" : undefined}
+              className="text-sm px-3 py-1 rounded-full border border-dashed border-gray-300 text-gray-400 hover:text-gray-600 self-start disabled:opacity-50 disabled:cursor-not-allowed"
             >
               + проект
             </button>

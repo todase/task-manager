@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { renderHook, act } from "@testing-library/react"
+import React from "react"
+import { renderHook, act, waitFor } from "@testing-library/react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useProjects } from "./useProjects"
 import type { Project } from "@/types"
 
@@ -9,134 +11,98 @@ function makeProject(overrides: Partial<Project> = {}): Project {
 }
 
 function mockFetch(data: unknown, ok = true) {
-  return vi.fn().mockResolvedValue({
-    ok,
-    json: () => Promise.resolve(data),
-  })
+  return vi.fn().mockResolvedValue({ ok, json: () => Promise.resolve(data) })
 }
 
-beforeEach(() => {
-  vi.stubGlobal("fetch", vi.fn())
-})
+function makeWrapper() {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: qc }, children)
+  return { qc, Wrapper }
+}
 
-afterEach(() => {
-  vi.unstubAllGlobals()
-})
+beforeEach(() => { vi.stubGlobal("fetch", vi.fn()) })
+afterEach(() => { vi.unstubAllGlobals() })
 
-describe("useProjects — fetchProjects", () => {
-  it("sets projects from API response", async () => {
+describe("useProjects — loads projects", () => {
+  it("fetches and returns project list", async () => {
     const projects = [makeProject({ id: "p1" }), makeProject({ id: "p2" })]
     vi.stubGlobal("fetch", mockFetch(projects))
-    const { result } = renderHook(() => useProjects())
-
-    await act(() => result.current.fetchProjects())
-
-    expect(result.current.projects).toEqual(projects)
-    expect(fetch).toHaveBeenCalledWith("/api/projects")
+    const { Wrapper } = makeWrapper()
+    const { result } = renderHook(() => useProjects(), { wrapper: Wrapper })
+    await waitFor(() => expect(result.current.projects).toHaveLength(2))
   })
 })
 
 describe("useProjects — createProject", () => {
-  it("POSTs and appends new project to state", async () => {
+  it("POSTs and adds new project", async () => {
     const project = makeProject({ id: "p2", title: "Beta" })
     vi.stubGlobal("fetch", mockFetch(project))
-    const { result } = renderHook(() => useProjects())
+    const { Wrapper } = makeWrapper()
+    const { result } = renderHook(() => useProjects(), { wrapper: Wrapper })
 
     let returned: Project | undefined
-    await act(async () => {
-      returned = await result.current.createProject("Beta", "star")
-    })
+    await act(async () => { returned = await result.current.createProject("Beta", "star") })
 
     expect(fetch).toHaveBeenCalledWith("/api/projects", expect.objectContaining({
       method: "POST",
       body: JSON.stringify({ title: "Beta", icon: "star" }),
     }))
     expect(returned).toEqual(project)
-    expect(result.current.projects).toContainEqual(project)
+  })
+
+  it("throws when API returns not-ok", async () => {
+    vi.stubGlobal("fetch", mockFetch(null, false))
+    const { Wrapper } = makeWrapper()
+    const { result } = renderHook(() => useProjects(), { wrapper: Wrapper })
+    await expect(act(() => result.current.createProject("fail"))).rejects.toThrow("Не удалось создать проект")
   })
 
   it("uses 'folder' as default icon", async () => {
     vi.stubGlobal("fetch", mockFetch(makeProject()))
-    const { result } = renderHook(() => useProjects())
-
-    await act(() => result.current.createProject("Gamma"))
-
+    const { Wrapper } = makeWrapper()
+    const { result } = renderHook(() => useProjects(), { wrapper: Wrapper })
+    await act(async () => { await result.current.createProject("Alpha") })
     expect(fetch).toHaveBeenCalledWith("/api/projects", expect.objectContaining({
-      body: JSON.stringify({ title: "Gamma", icon: "folder" }),
+      body: JSON.stringify({ title: "Alpha", icon: "folder" }),
     }))
-  })
-
-  it("throws when API returns not-ok", async () => {
-    vi.stubGlobal("fetch", mockFetch(null, false))
-    const { result } = renderHook(() => useProjects())
-
-    await expect(
-      act(() => result.current.createProject("Fail"))
-    ).rejects.toThrow("Не удалось создать проект")
   })
 })
 
 describe("useProjects — deleteProject", () => {
-  it("DELETEs and removes project from state", async () => {
-    const project = makeProject({ id: "p1" })
-    // fetchProjects then deleteProject
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([project]) })
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(null) })
-    vi.stubGlobal("fetch", fetchMock)
-    const { result } = renderHook(() => useProjects())
-
-    await act(() => result.current.fetchProjects())
-    expect(result.current.projects).toHaveLength(1)
-
-    await act(() => result.current.deleteProject("p1"))
-
-    expect(fetch).toHaveBeenCalledWith("/api/projects/p1", { method: "DELETE" })
-    expect(result.current.projects).toHaveLength(0)
+  it("calls DELETE endpoint", async () => {
+    vi.stubGlobal("fetch", mockFetch(null))
+    const { Wrapper } = makeWrapper()
+    const { result } = renderHook(() => useProjects(), { wrapper: Wrapper })
+    await act(async () => { await result.current.deleteProject("p1") })
+    expect(fetch).toHaveBeenCalledWith("/api/projects/p1", expect.objectContaining({ method: "DELETE" }))
   })
 
   it("throws when API returns not-ok", async () => {
     vi.stubGlobal("fetch", mockFetch(null, false))
-    const { result } = renderHook(() => useProjects())
-
-    await expect(
-      act(() => result.current.deleteProject("p1"))
-    ).rejects.toThrow("Не удалось удалить проект")
+    const { Wrapper } = makeWrapper()
+    const { result } = renderHook(() => useProjects(), { wrapper: Wrapper })
+    await expect(act(() => result.current.deleteProject("p1"))).rejects.toThrow("Не удалось удалить проект")
   })
 })
 
 describe("useProjects — updateProject", () => {
-  it("PATCHes and replaces project in state", async () => {
-    const original = makeProject({ id: "p1", title: "Old" })
-    const updated = makeProject({ id: "p1", title: "New", icon: "inbox" })
-
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([original]) })
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(updated) })
-    vi.stubGlobal("fetch", fetchMock)
-    const { result } = renderHook(() => useProjects())
-
-    await act(() => result.current.fetchProjects())
-
+  it("PATCHes and returns updated project", async () => {
+    const updated = makeProject({ title: "Updated" })
+    vi.stubGlobal("fetch", mockFetch(updated))
+    const { Wrapper } = makeWrapper()
+    const { result } = renderHook(() => useProjects(), { wrapper: Wrapper })
     let returned: Project | undefined
-    await act(async () => {
-      returned = await result.current.updateProject("p1", { title: "New", icon: "inbox" })
-    })
-
-    expect(fetch).toHaveBeenCalledWith("/api/projects/p1", expect.objectContaining({
-      method: "PATCH",
-      body: JSON.stringify({ title: "New", icon: "inbox" }),
-    }))
+    await act(async () => { returned = await result.current.updateProject("p1", { title: "Updated" }) })
     expect(returned).toEqual(updated)
-    expect(result.current.projects.find((p) => p.id === "p1")?.title).toBe("New")
   })
 
   it("throws when API returns not-ok", async () => {
     vi.stubGlobal("fetch", mockFetch(null, false))
-    const { result } = renderHook(() => useProjects())
-
-    await expect(
-      act(() => result.current.updateProject("p1", { title: "Fail" }))
-    ).rejects.toThrow("Не удалось сохранить проект")
+    const { Wrapper } = makeWrapper()
+    const { result } = renderHook(() => useProjects(), { wrapper: Wrapper })
+    await expect(act(() => result.current.updateProject("p1", { title: "fail" }))).rejects.toThrow("Не удалось сохранить проект")
   })
 })

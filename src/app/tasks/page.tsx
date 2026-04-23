@@ -38,10 +38,11 @@ export default function TasksPage() {
   const [draggingTask, setDraggingTask] = useState<Task | null>(null)
   const [searchMode, setSearchMode] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedQuery, setDebouncedQuery] = useState("")
   const [tagsOpen, setTagsOpen] = useState(false)
   const [projectsOpen, setProjectsOpen] = useState(false)
 
-  const taskHook = useTasks({ done: false })
+  const taskHook = useTasks({ done: false, q: searchMode && debouncedQuery ? debouncedQuery : undefined })
   const projectHook = useProjects()
   const tagHook = useTags()
 
@@ -55,25 +56,18 @@ export default function TasksPage() {
   }, [status, router])
 
   useEffect(() => {
-    if (status === "authenticated") {
-      taskHook.fetchTasks()
-      projectHook.fetchProjects()
-      tagHook.fetchTags()
+    if (!searchMode) {
+      setDebouncedQuery("")
+      return
     }
-  }, [status, taskHook.fetchTasks, projectHook.fetchProjects, tagHook.fetchTags])
-
-  useEffect(() => {
-    if (!searchMode || status !== "authenticated") return
-    const timer = setTimeout(() => {
-      taskHook.fetchTasks({ q: searchQuery || undefined })
-    }, 300)
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300)
     return () => clearTimeout(timer)
-  }, [searchQuery, searchMode, status, taskHook.fetchTasks])
+  }, [searchQuery, searchMode])
 
   function exitSearch() {
     setSearchMode(false)
     setSearchQuery("")
-    taskHook.fetchTasks()
+    setDebouncedQuery("")
   }
 
   function handleDragStart(event: DragStartEvent) {
