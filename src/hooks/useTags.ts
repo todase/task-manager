@@ -57,7 +57,7 @@ export function useTags() {
     },
     onSuccess: (tag) => {
       qc.setQueryData<Tag[]>(["tags"], (old) =>
-        old?.map((t) => (t.id === tag.id ? tag : t))
+        Array.isArray(old) ? old.map((t) => (t.id === tag.id ? tag : t)) : []
       )
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["tags"] }),
@@ -70,7 +70,7 @@ export function useTags() {
       if (!res.ok) throw new Error("Не удалось удалить метку")
     },
     onSuccess: (_, id) => {
-      qc.setQueryData<Tag[]>(["tags"], (old) => old?.filter((t) => t.id !== id))
+      qc.setQueryData<Tag[]>(["tags"], (old) => Array.isArray(old) ? old.filter((t) => t.id !== id) : [])
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["tags"] }),
   })

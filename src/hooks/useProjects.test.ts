@@ -46,8 +46,18 @@ describe("useProjects — createProject", () => {
     let returned: Project | undefined
     await act(async () => { returned = await result.current.createProject("Beta", "star") })
 
-    expect(fetch).toHaveBeenCalledWith("/api/projects", expect.objectContaining({ method: "POST" }))
+    expect(fetch).toHaveBeenCalledWith("/api/projects", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ title: "Beta", icon: "star" }),
+    }))
     expect(returned).toEqual(project)
+  })
+
+  it("throws when API returns not-ok", async () => {
+    vi.stubGlobal("fetch", mockFetch(null, false))
+    const { Wrapper } = makeWrapper()
+    const { result } = renderHook(() => useProjects(), { wrapper: Wrapper })
+    await expect(act(() => result.current.createProject("fail"))).rejects.toThrow("Не удалось создать проект")
   })
 
   it("uses 'folder' as default icon", async () => {
@@ -69,6 +79,13 @@ describe("useProjects — deleteProject", () => {
     await act(async () => { await result.current.deleteProject("p1") })
     expect(fetch).toHaveBeenCalledWith("/api/projects/p1", expect.objectContaining({ method: "DELETE" }))
   })
+
+  it("throws when API returns not-ok", async () => {
+    vi.stubGlobal("fetch", mockFetch(null, false))
+    const { Wrapper } = makeWrapper()
+    const { result } = renderHook(() => useProjects(), { wrapper: Wrapper })
+    await expect(act(() => result.current.deleteProject("p1"))).rejects.toThrow("Не удалось удалить проект")
+  })
 })
 
 describe("useProjects — updateProject", () => {
@@ -80,5 +97,12 @@ describe("useProjects — updateProject", () => {
     let returned: Project | undefined
     await act(async () => { returned = await result.current.updateProject("p1", { title: "Updated" }) })
     expect(returned).toEqual(updated)
+  })
+
+  it("throws when API returns not-ok", async () => {
+    vi.stubGlobal("fetch", mockFetch(null, false))
+    const { Wrapper } = makeWrapper()
+    const { result } = renderHook(() => useProjects(), { wrapper: Wrapper })
+    await expect(act(() => result.current.updateProject("p1", { title: "fail" }))).rejects.toThrow("Не удалось сохранить проект")
   })
 })

@@ -83,6 +83,12 @@ describe("useTags — updateTag", () => {
     expect(fetch).toHaveBeenCalledWith("/api/tags/t1", expect.objectContaining({ method: "PATCH" }))
     expect(returned).toEqual(updated)
   })
+
+  it("throws when API returns not-ok", async () => {
+    vi.stubGlobal("fetch", mockFetch(null, false))
+    const { result } = renderHook(() => useTags(), { wrapper: makeWrapper() })
+    await expect(act(() => result.current.updateTag("t1", { name: "fail" }))).rejects.toThrow("Не удалось обновить метку")
+  })
 })
 
 describe("useTags — deleteTag", () => {
