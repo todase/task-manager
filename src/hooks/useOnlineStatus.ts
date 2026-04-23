@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react"
 
 export function useOnlineStatus(): boolean {
-  const [isOnline, setIsOnline] = useState(
-    () => (typeof navigator !== "undefined" ? navigator.onLine : true)
-  )
+  const [isOnline, setIsOnline] = useState(true)
 
   useEffect(() => {
+    // sync once on mount, then track events
+    setIsOnline(navigator.onLine)
     const up = () => setIsOnline(true)
     const down = () => setIsOnline(false)
     window.addEventListener("online", up)
