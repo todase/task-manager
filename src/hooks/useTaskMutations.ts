@@ -68,6 +68,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── toggleTask ───────────────────────────────────────────────
   const { mutateAsync: toggleTask } = useMutation({
+    mutationKey: ["toggleTask"],
     mutationFn: async (task: Task) => {
       const res = await fetch(`/api/tasks/${task.id}`, {
         method: "PATCH",
@@ -91,6 +92,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── deleteTask ───────────────────────────────────────────────
   const { mutateAsync: deleteTask } = useMutation({
+    mutationKey: ["deleteTask"],
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Не удалось удалить задачу")
@@ -109,6 +111,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── renameTask ───────────────────────────────────────────────
   const { mutateAsync: renameTask } = useMutation({
+    mutationKey: ["renameTask"],
     mutationFn: async ({ id, title }: { id: string; title: string }) => {
       const res = await fetch(`/api/tasks/${id}`, {
         method: "PATCH",
@@ -132,6 +135,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── updateDueDate ────────────────────────────────────────────
   const { mutateAsync: updateDueDate } = useMutation({
+    mutationKey: ["updateDueDate"],
     mutationFn: async ({ taskId, value }: { taskId: string; value: string }) => {
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
@@ -157,6 +161,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── reorderTasks ─────────────────────────────────────────────
   const { mutateAsync: reorderTasks } = useMutation({
+    mutationKey: ["reorderTasks"],
     mutationFn: async (newTasks: Task[]) => {
       const res = await fetch("/api/tasks/reorder", {
         method: "POST",
@@ -179,6 +184,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── assignProject ────────────────────────────────────────────
   const { mutateAsync: assignProject } = useMutation({
+    mutationKey: ["assignProject"],
     mutationFn: async ({ taskId, projectId }: { taskId: string; projectId: string | null; newProject: { id: string; title: string; icon: string } | null }) => {
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
@@ -202,6 +208,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── updateDescription ────────────────────────────────────────
   const { mutateAsync: updateDescription } = useMutation({
+    mutationKey: ["updateDescription"],
     mutationFn: async ({ id, description }: { id: string; description: string }) => {
       const res = await fetch(`/api/tasks/${id}`, {
         method: "PATCH",
@@ -225,6 +232,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── updateTags ───────────────────────────────────────────────
   const { mutateAsync: updateTagsMutation } = useMutation({
+    mutationKey: ["updateTags"],
     mutationFn: async ({ id, tagIds }: { id: string; tagIds: string[] }) => {
       const res = await fetch(`/api/tasks/${id}`, {
         method: "PATCH",
@@ -250,6 +258,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── restoreTask ──────────────────────────────────────────────
   const { mutateAsync: restoreTask } = useMutation({
+    mutationKey: ["restoreTask"],
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/tasks/${id}`, {
         method: "PATCH",
@@ -272,6 +281,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── clearArchive ─────────────────────────────────────────────
   const { mutateAsync: clearArchive } = useMutation({
+    mutationKey: ["clearArchive"],
     mutationFn: async () => {
       const res = await fetch("/api/tasks?done=true", { method: "DELETE" })
       if (!res.ok) throw new Error("Не удалось очистить архив")
@@ -310,6 +320,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── toggleSubtask ────────────────────────────────────────────
   const { mutateAsync: toggleSubtask } = useMutation({
+    mutationKey: ["toggleSubtask"],
     mutationFn: async ({ taskId, subtask }: { taskId: string; subtask: Subtask }) => {
       const res = await fetch(`/api/tasks/${taskId}/subtasks/${subtask.id}`, {
         method: "PATCH",
@@ -337,6 +348,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 
   // ─── deleteSubtask ────────────────────────────────────────────
   const { mutateAsync: deleteSubtask } = useMutation({
+    mutationKey: ["deleteSubtask"],
     mutationFn: async ({ taskId, subtaskId }: { taskId: string; subtaskId: string }) => {
       const res = await fetch(`/api/tasks/${taskId}/subtasks/${subtaskId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Не удалось удалить подзадачу")
