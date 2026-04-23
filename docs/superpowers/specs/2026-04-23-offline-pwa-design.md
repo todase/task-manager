@@ -25,7 +25,7 @@ Three layers:
 
 2. **IndexedDB persister** — `@tanstack/react-query-persist-client` + `idb-keyval` persist both the query cache and the mutation queue to IndexedDB. On next app open, data loads instantly from IndexedDB without waiting for the server; queued mutations that survived a page reload are replayed automatically.
 
-3. **Hooks (useTasks, useProjects, useTags)** — internals replaced with `useQuery` + `useMutation`; public interface (returned functions and values) stays identical so no component changes are needed.
+3. **Hooks** — `useTasks` is split into `useTaskQueries` (read) and `useTaskMutations` (write); `useProjects` and `useProjectMutations` likewise; `useTags` similarly. All internals use `useQuery` + `useMutation`. A thin `useTasks` wrapper re-exports the combined interface so existing component call-sites are unchanged.
 
 ### New files
 
@@ -34,13 +34,15 @@ Three layers:
 | `src/lib/queryClient.ts` | Creates and exports the singleton QueryClient with offline config |
 | `src/lib/persister.ts` | Creates the idb-keyval-backed async storage persister |
 | `src/hooks/useOnlineStatus.ts` | `navigator.onLine` + `online`/`offline` events → boolean |
+| `src/hooks/useTaskQueries.ts` | `useQuery` hooks for reading tasks |
+| `src/hooks/useTaskMutations.ts` | `useMutation` hooks for all task writes |
 
 ### Modified files
 
 | File | Change |
 |------|--------|
 | `src/app/providers.tsx` | Add `PersistQueryClient` wrapper + `QueryClientProvider` |
-| `src/hooks/useTasks.ts` | Replace useState/fetch internals with useQuery + useMutation |
+| `src/hooks/useTasks.ts` | Thin wrapper combining useTaskQueries + useTaskMutations |
 | `src/hooks/useProjects.ts` | Replace useState/fetch internals with useQuery + useMutation |
 | `src/hooks/useTags.ts` | Replace useState/fetch internals with useQuery + useMutation |
 
@@ -87,6 +89,36 @@ When offline:
 
 Operations with existing rollback logic (`reorderTasks`, `clearArchive`) map cleanly to the `onMutate`/`onError` pattern.
 
+### Temporary ID remapping
+
+When a task is created offline it receives a client-generated temporary ID (`tmp_<uuid>`). Subsequent offline mutations on that task (toggle, rename, delete) reference this temp ID. On reconnect:
+
+1. The `createTask` mutation fires first and receives the real server ID in its response.
+2. `onSuccess` of `createTask` calls a `remapMutationQueue(tempId, realId)` utility that iterates the persisted mutation queue and rewrites any matching IDs before TQ replays them.
+3. Tasks with a temp ID are displayed with a subtle "syncing" indicator and the toggle/delete actions are disabled until the real ID arrives.
+
+`remapMutationQueue` is a utility in `src/lib/mutationQueue.ts` that reads the persisted mutation cache from IndexedDB, rewrites IDs in-place, and writes it back before TQ resumes.
+
+## Session Expiry Handling
+
+If the auth session expires while the device is offline, replayed mutations will receive a `401` response. The `QueryClient` global `onError` handler inspects every mutation error:
+
+- If `status === 401`: mark the entire pending queue as failed, clear it from IndexedDB, and dispatch a global `session-expired` event.
+- A top-level listener catches `session-expired` and shows a modal: "Сессия истекла. Войдите снова — несохранённые изменения будут потеряны."
+- After re-login, TQ starts fresh (no stale queue to replay, which is safe since the server state is authoritative).
+
+This is the safe fallback: data loss is surfaced clearly rather than silently ignored.
+
+## Hook Split: useTasks → useTaskQueries + useTaskMutations
+
+The current `useTasks` is ~400 lines with 20+ functions mixing read and write concerns. It is split into:
+
+- **`useTaskQueries`** — owns `useQuery` for the task list, exposes `tasks`, `isLoading`, `error`. Also exposes `filterTasks` and `withPriorityScores` as pure helpers (unchanged).
+- **`useTaskMutations`** — owns all `useMutation` calls: `createTask`, `toggleTask`, `deleteTask`, `renameTask`, `updateDueDate`, `reorderTasks`, `assignProject`, `addSubtask`, `toggleSubtask`, `deleteSubtask`, `updateDescription`, `updateTags`, `restoreTask`, `clearArchive`.
+- **`useTasks`** — thin re-export wrapper: `return { ...useTaskQueries(filters), ...useTaskMutations(filters) }`. Existing component imports are unchanged.
+
+`useProjects` and `useTags` are smaller and each split into a query hook + mutation hook in the same pattern, without a wrapper (they have fewer call-sites).
+
 ## Offline Indicator
 
 A slim banner shown when `navigator.onLine === false`:
@@ -103,5 +135,7 @@ Banner is placed at the top of the main layout, visible on all pages.
 
 ## Testing
 
-- Existing unit tests for `useTasks`, `useProjects`, `useTags` need to be updated to mock `useQuery`/`useMutation` instead of `fetch`
-- Manual testing: load app → go offline → create/toggle/delete tasks → reconnect → verify server state matches
+- Unit tests for `useTaskQueries` and `useTaskMutations` written separately; mock `useQuery`/`useMutation` via `@tanstack/react-query` test utilities
+- `useTasks` wrapper tested as integration of the two
+- `remapMutationQueue` utility unit-tested independently (pure IndexedDB read-modify-write)
+- Manual testing: load app → go offline → create task → toggle it done → rename it → reconnect → verify server state matches expected sequence
