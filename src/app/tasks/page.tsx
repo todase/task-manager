@@ -56,7 +56,10 @@ export default function TasksPage() {
   }, [status, router])
 
   useEffect(() => {
-    if (!searchMode) return
+    if (!searchMode) {
+      setDebouncedQuery("")
+      return
+    }
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300)
     return () => clearTimeout(timer)
   }, [searchQuery, searchMode])
