@@ -78,7 +78,9 @@ describe("TaskTagPicker", () => {
     )
     fireEvent.click(screen.getByRole("button", { name: /\+ тег/i }))
     fireEvent.mouseDown(screen.getByText("work"))
-    await waitFor(() => expect(onUpdateTags).toHaveBeenCalledWith(["t1", "t2"]))
+    await waitFor(() =>
+      expect(onUpdateTags).toHaveBeenCalledWith([t1, t2])
+    )
   })
 
   it("removes tag when remove button clicked", async () => {
@@ -94,7 +96,7 @@ describe("TaskTagPicker", () => {
       />
     )
     fireEvent.click(screen.getByRole("button", { name: /снять метку urgent/i }))
-    await waitFor(() => expect(onUpdateTags).toHaveBeenCalledWith(["t2"]))
+    await waitFor(() => expect(onUpdateTags).toHaveBeenCalledWith([t2]))
   })
 
   it("shows create button when typing a new tag name", () => {
@@ -134,7 +136,7 @@ describe("TaskTagPicker", () => {
     })
     fireEvent.keyDown(screen.getByPlaceholderText(/новая метка/i), { key: "Enter" })
     await waitFor(() => expect(onCreateTag).toHaveBeenCalledWith("brandnew"))
-    await waitFor(() => expect(onUpdateTags).toHaveBeenCalledWith(["new-1"]))
+    await waitFor(() => expect(onUpdateTags).toHaveBeenCalledWith([newTag]))
   })
 
   it("closes picker on Escape key", () => {

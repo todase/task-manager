@@ -13,6 +13,5 @@ export function useTasks(baseFilters: TaskFilters = {}) {
   return {
     ...queries,
     ...mutations,
-    fetchTasks: () => {},
   }
 }

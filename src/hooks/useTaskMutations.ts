@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { withPriorityScores, type CreateTaskInput, type TaskFilters } from "./taskUtils"
 import { remapMutationQueue } from "@/lib/mutationQueue"
 import { apiFetch } from "@/lib/apiFetch"
-import type { Task, Subtask, Project } from "@/types"
+import type { Task, Subtask, Project, Tag } from "@/types"
 
 import type { QueryKey, QueryClient } from "@tanstack/react-query"
 type Snapshot = [QueryKey, Task[] | undefined][]
@@ -234,24 +234,22 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
   // ─── updateTags ───────────────────────────────────────────────
   const { mutateAsync: updateTagsMutation } = useMutation({
     mutationKey: ["updateTags"],
-    mutationFn: async ({ id, tagIds }: { id: string; tagIds: string[] }) => {
+    mutationFn: async ({ id, tags }: { id: string; tags: Tag[] }) => {
       const res = await apiFetch(`/api/tasks/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tagIds }),
+        body: JSON.stringify({ tagIds: tags.map((t) => t.id) }),
       })
       if (!res.ok) throw new Error("Не удалось обновить метки")
       return res.json() as Promise<Task>
     },
-    onMutate: async ({ id }) => {
+    onMutate: async ({ id, tags }) => {
       await qc.cancelQueries({ queryKey: ["tasks"] })
       const snap = snapshot(qc)
-      return { snap, id }
-    },
-    onSuccess: (updated, { id }) => {
       qc.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) =>
-        old?.map((t) => (t.id === id ? { ...t, tags: updated.tags } : t))
+        old?.map((t) => (t.id === id ? { ...t, tags } : t))
       )
+      return { snap }
     },
     onError: (_, __, ctx) => { if (ctx) restore(qc, ctx.snap) },
     onSettled: invalidate,
@@ -290,7 +288,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
     onMutate: async () => {
       await qc.cancelQueries({ queryKey: ["tasks"] })
       const snap = snapshot(qc)
-      qc.setQueriesData<Task[]>({ queryKey: ["tasks"] }, () => [])
+      qc.setQueriesData<Task[]>({ queryKey: ["tasks", { done: true }] }, () => [])
       return { snap }
     },
     onError: (_, __, ctx) => { if (ctx) restore(qc, ctx.snap) },
@@ -395,7 +393,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
       newProject: { id: string; title: string; icon: string } | null
     ) => assignProject({ taskId, projectId, newProject }),
     updateDescription: (id: string, description: string) => updateDescription({ id, description }),
-    updateTags: (id: string, tagIds: string[]) => updateTagsMutation({ id, tagIds }),
+    updateTags: (id: string, tags: Tag[]) => updateTagsMutation({ id, tags }),
     restoreTask: (id: string) => restoreTask(id),
     clearArchive: () => clearArchive(),
     addSubtask: (taskId: string, title: string) => addSubtask({ taskId, title }),
