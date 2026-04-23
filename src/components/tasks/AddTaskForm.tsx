@@ -17,7 +17,7 @@ interface AddTaskFormProps {
   activeProjectId: string | null
   projects: Project[]
   tags: Tag[]
-  onSubmit: (input: CreateTaskInput) => Promise<void>
+  onSubmit: (input: CreateTaskInput) => Promise<unknown>
   onCreateTag: (name: string) => Promise<Tag>
   defaultDueDate?: string
 }

@@ -14,18 +14,18 @@ interface TaskListProps {
   dateFilter: DateFilter
   isLoading?: boolean
   projects: Project[]
-  onAssignProject: (taskId: string, projectId: string | null, project: Project | null) => Promise<void>
-  onToggle: (task: Task) => Promise<void>
-  onDelete: (id: string) => Promise<void>
-  onRename: (id: string, title: string) => Promise<void>
-  onUpdateDueDate: (id: string, value: string) => Promise<void>
-  onUpdateDescription: (id: string, description: string) => Promise<void>
-  onUpdateTags: (id: string, tagIds: string[]) => Promise<void>
+  onAssignProject: (taskId: string, projectId: string | null, project: Project | null) => Promise<unknown>
+  onToggle: (task: Task) => Promise<unknown>
+  onDelete: (id: string) => Promise<unknown>
+  onRename: (id: string, title: string) => Promise<unknown>
+  onUpdateDueDate: (id: string, value: string) => Promise<unknown>
+  onUpdateDescription: (id: string, description: string) => Promise<unknown>
+  onUpdateTags: (id: string, tagIds: string[]) => Promise<unknown>
   tags: Tag[]
   onCreateTag: (name: string) => Promise<Tag>
-  onAddSubtask: (taskId: string, title: string) => Promise<void>
-  onToggleSubtask: (taskId: string, subtask: Subtask) => Promise<void>
-  onDeleteSubtask: (taskId: string, subtaskId: string) => Promise<void>
+  onAddSubtask: (taskId: string, title: string) => Promise<unknown>
+  onToggleSubtask: (taskId: string, subtask: Subtask) => Promise<unknown>
+  onDeleteSubtask: (taskId: string, subtaskId: string) => Promise<unknown>
 }
 
 function emptyMessage(

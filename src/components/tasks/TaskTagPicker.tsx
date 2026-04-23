@@ -8,7 +8,7 @@ import type { Tag } from "@/types"
 interface TaskTagPickerProps {
   assignedTags: Tag[]
   allTags: Tag[]
-  onUpdateTags: (tagIds: string[]) => Promise<void>
+  onUpdateTags: (tagIds: string[]) => Promise<unknown>
   onCreateTag: (name: string) => Promise<Tag>
 }
 

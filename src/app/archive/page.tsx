@@ -12,17 +12,13 @@ import { BurgerMenu } from "@/components/BurgerMenu"
 export default function ArchivePage() {
   const { status } = useSession()
   const router = useRouter()
-  const { tasks, isLoading, error, fetchTasks, deleteTask, restoreTask, clearArchive } =
+  const { tasks, isLoading, error, deleteTask, restoreTask, clearArchive } =
     useTasks({ done: true, sort: "createdAt_desc" })
   const [confirmClear, setConfirmClear] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
   }, [status, router])
-
-  useEffect(() => {
-    if (status === "authenticated") fetchTasks()
-  }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (status === "loading") {
     return <p className="p-8">Загрузка...</p>

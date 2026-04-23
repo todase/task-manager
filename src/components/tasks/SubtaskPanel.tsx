@@ -7,9 +7,9 @@ import type { Subtask } from "@/types"
 interface SubtaskPanelProps {
   taskId: string
   subtasks: Subtask[]
-  onAdd: (taskId: string, title: string) => Promise<void>
-  onToggle: (taskId: string, subtask: Subtask) => Promise<void>
-  onDelete: (taskId: string, subtaskId: string) => Promise<void>
+  onAdd: (taskId: string, title: string) => Promise<unknown>
+  onToggle: (taskId: string, subtask: Subtask) => Promise<unknown>
+  onDelete: (taskId: string, subtaskId: string) => Promise<unknown>
 }
 
 export function SubtaskPanel({
