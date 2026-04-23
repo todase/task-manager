@@ -1,6 +1,6 @@
 # Offline PWA Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers-extended-cc:subagent-driven-development (recommended) or superpowers-extended-cc:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers-extended-cc:subagent-driven-development (recommended) or superpowers-extended-cc:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add full offline support via TanStack Query v5 + IndexedDB — tasks readable and writable without a network connection, with automatic background sync on reconnect.
 
@@ -24,22 +24,22 @@
 - Modify: `.env.example` (if it exists — add the same var)
 
 **Acceptance Criteria:**
-- [ ] `@tanstack/react-query`, `@tanstack/react-query-persist-client`, `@tanstack/query-async-storage-persister`, `idb-keyval` present in `node_modules`
-- [ ] `queryClient.ts` exports a singleton `QueryClient` with `networkMode: 'offlineFirst'`, `staleTime: 30_000`, `gcTime: 86_400_000`
-- [ ] `persister.ts` exports a `persister` backed by `idb-keyval`
-- [ ] `NEXT_PUBLIC_CACHE_VERSION=1` in `.env.local`
+- [x] `@tanstack/react-query`, `@tanstack/react-query-persist-client`, `@tanstack/query-async-storage-persister`, `idb-keyval` present in `node_modules`
+- [x] `queryClient.ts` exports a singleton `QueryClient` with `networkMode: 'offlineFirst'`, `staleTime: 30_000`, `gcTime: 86_400_000`
+- [x] `persister.ts` exports a `persister` backed by `idb-keyval`
+- [x] `NEXT_PUBLIC_CACHE_VERSION=1` in `.env.local`
 
 **Verify:** `npx tsc --noEmit` → no errors
 
 **Steps:**
 
-- [ ] **Step 1: Install packages**
+- [x] **Step 1: Install packages**
 
 ```bash
 npm install @tanstack/react-query @tanstack/react-query-persist-client @tanstack/query-async-storage-persister idb-keyval
 ```
 
-- [ ] **Step 2: Create `src/lib/queryClient.ts`**
+- [x] **Step 2: Create `src/lib/queryClient.ts`**
 
 ```ts
 import { QueryClient } from "@tanstack/react-query"
@@ -59,7 +59,7 @@ export const queryClient = new QueryClient({
 })
 ```
 
-- [ ] **Step 3: Create `src/lib/persister.ts`**
+- [x] **Step 3: Create `src/lib/persister.ts`**
 
 ```ts
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister"
@@ -77,7 +77,7 @@ export const persister = createAsyncStoragePersister({
 })
 ```
 
-- [ ] **Step 4: Add env var**
+- [x] **Step 4: Add env var**
 
 In `.env.local` add:
 ```
@@ -86,7 +86,7 @@ NEXT_PUBLIC_CACHE_VERSION=1
 
 If `.env.example` exists, add the same line there.
 
-- [ ] **Step 5: Type-check**
+- [x] **Step 5: Type-check**
 
 ```bash
 npx tsc --noEmit
@@ -94,7 +94,7 @@ npx tsc --noEmit
 
 Expected: no errors.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/lib/queryClient.ts src/lib/persister.ts .env.local package.json package-lock.json
@@ -112,15 +112,15 @@ git commit -m "feat: add TanStack Query + IndexedDB persister lib"
 - Modify: `next.config.ts`
 
 **Acceptance Criteria:**
-- [ ] `providers.tsx` wraps children in `PersistQueryClientProvider` with the singleton `queryClient` and `persister`
-- [ ] `next.config.ts` has a `runtimeCaching` rule for `/api/` with handler `'NetworkOnly'`
-- [ ] `npx tsc --noEmit` passes
+- [x] `providers.tsx` wraps children in `PersistQueryClientProvider` with the singleton `queryClient` and `persister`
+- [x] `next.config.ts` has a `runtimeCaching` rule for `/api/` with handler `'NetworkOnly'`
+- [x] `npx tsc --noEmit` passes
 
 **Verify:** `npx tsc --noEmit` → no errors
 
 **Steps:**
 
-- [ ] **Step 1: Update `src/app/providers.tsx`**
+- [x] **Step 1: Update `src/app/providers.tsx`**
 
 ```tsx
 "use client"
@@ -144,7 +144,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-- [ ] **Step 2: Update `next.config.ts`**
+- [x] **Step 2: Update `next.config.ts`**
 
 ```ts
 import type { NextConfig } from "next"
@@ -167,13 +167,13 @@ export default withPWA({
 })(nextConfig)
 ```
 
-- [ ] **Step 3: Type-check**
+- [x] **Step 3: Type-check**
 
 ```bash
 npx tsc --noEmit
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/app/providers.tsx next.config.ts
@@ -191,16 +191,16 @@ git commit -m "feat: wrap app in PersistQueryClientProvider, exclude /api/ from 
 - Create: `src/hooks/useOnlineStatus.test.ts`
 
 **Acceptance Criteria:**
-- [ ] Returns `true` when online, `false` when offline
-- [ ] Updates reactively when `online`/`offline` events fire
-- [ ] Handles SSR (no `navigator` available) by defaulting to `true`
-- [ ] 3 tests pass
+- [x] Returns `true` when online, `false` when offline
+- [x] Updates reactively when `online`/`offline` events fire
+- [x] Handles SSR (no `navigator` available) by defaulting to `true`
+- [x] 3 tests pass
 
 **Verify:** `npx vitest run src/hooks/useOnlineStatus.test.ts` → 3 passed
 
 **Steps:**
 
-- [ ] **Step 1: Write tests first**
+- [x] **Step 1: Write tests first**
 
 Create `src/hooks/useOnlineStatus.test.ts`:
 
@@ -233,7 +233,7 @@ describe("useOnlineStatus", () => {
 })
 ```
 
-- [ ] **Step 2: Run tests — expect FAIL**
+- [x] **Step 2: Run tests — expect FAIL**
 
 ```bash
 npx vitest run src/hooks/useOnlineStatus.test.ts
@@ -241,7 +241,7 @@ npx vitest run src/hooks/useOnlineStatus.test.ts
 
 Expected: fails with "Cannot find module './useOnlineStatus'"
 
-- [ ] **Step 3: Implement `src/hooks/useOnlineStatus.ts`**
+- [x] **Step 3: Implement `src/hooks/useOnlineStatus.ts`**
 
 ```ts
 "use client"
@@ -268,7 +268,7 @@ export function useOnlineStatus(): boolean {
 }
 ```
 
-- [ ] **Step 4: Run tests — expect PASS**
+- [x] **Step 4: Run tests — expect PASS**
 
 ```bash
 npx vitest run src/hooks/useOnlineStatus.test.ts
@@ -276,7 +276,7 @@ npx vitest run src/hooks/useOnlineStatus.test.ts
 
 Expected: 3 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/hooks/useOnlineStatus.ts src/hooks/useOnlineStatus.test.ts
@@ -294,15 +294,15 @@ git commit -m "feat: add useOnlineStatus hook"
 - Create: `src/lib/mutationQueue.test.ts`
 
 **Acceptance Criteria:**
-- [ ] Replaces all occurrences of `tempId` with `realId` in the cached JSON string
-- [ ] Is a no-op when cache is empty or doesn't contain `tempId`
-- [ ] 3 tests pass
+- [x] Replaces all occurrences of `tempId` with `realId` in the cached JSON string
+- [x] Is a no-op when cache is empty or doesn't contain `tempId`
+- [x] 3 tests pass
 
 **Verify:** `npx vitest run src/lib/mutationQueue.test.ts` → 3 passed
 
 **Steps:**
 
-- [ ] **Step 1: Write tests first**
+- [x] **Step 1: Write tests first**
 
 Create `src/lib/mutationQueue.test.ts`:
 
@@ -355,7 +355,7 @@ describe("remapMutationQueue", () => {
 })
 ```
 
-- [ ] **Step 2: Run tests — expect FAIL**
+- [x] **Step 2: Run tests — expect FAIL**
 
 ```bash
 npx vitest run src/lib/mutationQueue.test.ts
@@ -363,7 +363,7 @@ npx vitest run src/lib/mutationQueue.test.ts
 
 Expected: fails with "Cannot find module './mutationQueue'"
 
-- [ ] **Step 3: Implement `src/lib/mutationQueue.ts`**
+- [x] **Step 3: Implement `src/lib/mutationQueue.ts`**
 
 ```ts
 import { get, set } from "idb-keyval"
@@ -377,7 +377,7 @@ export async function remapMutationQueue(tempId: string, realId: string): Promis
 }
 ```
 
-- [ ] **Step 4: Run tests — expect PASS**
+- [x] **Step 4: Run tests — expect PASS**
 
 ```bash
 npx vitest run src/lib/mutationQueue.test.ts
@@ -385,7 +385,7 @@ npx vitest run src/lib/mutationQueue.test.ts
 
 Expected: 3 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/mutationQueue.ts src/lib/mutationQueue.test.ts
@@ -404,16 +404,16 @@ git commit -m "feat: add remapMutationQueue utility for offline temp ID remappin
 - Create: `src/hooks/useTaskQueries.test.ts`
 
 **Acceptance Criteria:**
-- [ ] `taskUtils.ts` exports `buildTasksUrl`, `withPriorityScores`, `filterTasks`, `TaskFilters`, `CreateTaskInput`
-- [ ] `useTaskQueries` returns `{ tasks, isLoading, error }` from `useQuery`
-- [ ] Existing `useTasks.test.ts` still passes (it imports from `useTasks` which will re-export from `taskUtils`)
-- [ ] 2 new tests pass for `useTaskQueries`
+- [x] `taskUtils.ts` exports `buildTasksUrl`, `withPriorityScores`, `filterTasks`, `TaskFilters`, `CreateTaskInput`
+- [x] `useTaskQueries` returns `{ tasks, isLoading, error }` from `useQuery`
+- [x] Existing `useTasks.test.ts` still passes (it imports from `useTasks` which will re-export from `taskUtils`)
+- [x] 2 new tests pass for `useTaskQueries`
 
 **Verify:** `npx vitest run src/hooks/useTaskQueries.test.ts src/hooks/useTasks.test.ts` → all pass
 
 **Steps:**
 
-- [ ] **Step 1: Create `src/hooks/taskUtils.ts`**
+- [x] **Step 1: Create `src/hooks/taskUtils.ts`**
 
 Copy these exports verbatim from the current `src/hooks/useTasks.ts`:
 
@@ -484,7 +484,7 @@ export function filterTasks(
 }
 ```
 
-- [ ] **Step 2: Write tests for `useTaskQueries`**
+- [x] **Step 2: Write tests for `useTaskQueries`**
 
 Create `src/hooks/useTaskQueries.test.ts`:
 
@@ -535,7 +535,7 @@ describe("useTaskQueries", () => {
 })
 ```
 
-- [ ] **Step 3: Run tests — expect FAIL**
+- [x] **Step 3: Run tests — expect FAIL**
 
 ```bash
 npx vitest run src/hooks/useTaskQueries.test.ts
@@ -543,7 +543,7 @@ npx vitest run src/hooks/useTaskQueries.test.ts
 
 Expected: fails with "Cannot find module './useTaskQueries'"
 
-- [ ] **Step 4: Implement `src/hooks/useTaskQueries.ts`**
+- [x] **Step 4: Implement `src/hooks/useTaskQueries.ts`**
 
 ```ts
 "use client"
@@ -569,7 +569,7 @@ export function useTaskQueries(filters: TaskFilters = {}) {
 }
 ```
 
-- [ ] **Step 5: Run all relevant tests — expect PASS**
+- [x] **Step 5: Run all relevant tests — expect PASS**
 
 ```bash
 npx vitest run src/hooks/useTaskQueries.test.ts src/hooks/useTasks.test.ts
@@ -579,7 +579,7 @@ Note: `useTasks.test.ts` imports `filterTasks`, `buildTasksUrl`, `withPrioritySc
 
 Expected: all pass
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/hooks/taskUtils.ts src/hooks/useTaskQueries.ts src/hooks/useTaskQueries.test.ts
@@ -597,17 +597,17 @@ git commit -m "feat: extract taskUtils, add useTaskQueries backed by TanStack Qu
 - Create: `src/hooks/useTaskMutations.test.ts`
 
 **Acceptance Criteria:**
-- [ ] All 14 mutation functions exist with correct signatures matching current `useTasks` return
-- [ ] `createTask` generates a temp ID, applies optimistic update, calls `remapMutationQueue` on success
-- [ ] `toggleTask` applies optimistic toggle, rolls back on error
-- [ ] `reorderTasks` applies optimistic reorder, rolls back on error
-- [ ] 4 tests pass
+- [x] All 14 mutation functions exist with correct signatures matching current `useTasks` return
+- [x] `createTask` generates a temp ID, applies optimistic update, calls `remapMutationQueue` on success
+- [x] `toggleTask` applies optimistic toggle, rolls back on error
+- [x] `reorderTasks` applies optimistic reorder, rolls back on error
+- [x] 4 tests pass
 
 **Verify:** `npx vitest run src/hooks/useTaskMutations.test.ts` → 4 passed
 
 **Steps:**
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Create `src/hooks/useTaskMutations.test.ts`:
 
@@ -711,7 +711,7 @@ describe("useTaskMutations — reorderTasks", () => {
 })
 ```
 
-- [ ] **Step 2: Run tests — expect FAIL**
+- [x] **Step 2: Run tests — expect FAIL**
 
 ```bash
 npx vitest run src/hooks/useTaskMutations.test.ts
@@ -719,7 +719,7 @@ npx vitest run src/hooks/useTaskMutations.test.ts
 
 Expected: fails with "Cannot find module './useTaskMutations'"
 
-- [ ] **Step 3: Implement `src/hooks/useTaskMutations.ts`**
+- [x] **Step 3: Implement `src/hooks/useTaskMutations.ts`**
 
 ```ts
 "use client"
@@ -1118,7 +1118,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
 }
 ```
 
-- [ ] **Step 4: Run tests — expect PASS**
+- [x] **Step 4: Run tests — expect PASS**
 
 ```bash
 npx vitest run src/hooks/useTaskMutations.test.ts
@@ -1126,7 +1126,7 @@ npx vitest run src/hooks/useTaskMutations.test.ts
 
 Expected: 4 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/hooks/useTaskMutations.ts src/hooks/useTaskMutations.test.ts
@@ -1145,16 +1145,16 @@ git commit -m "feat: add useTaskMutations with optimistic updates and offline te
 - Modify: `src/app/archive/page.tsx`
 
 **Acceptance Criteria:**
-- [ ] `useTasks.ts` is ≤ 30 lines, re-exports utilities from `taskUtils.ts`
-- [ ] `tasks/page.tsx` has no `fetchTasks()`, `fetchProjects()`, `fetchTags()` calls
-- [ ] `archive/page.tsx` has no `fetchTasks()` call
-- [ ] `npx vitest run src/hooks/useTasks.test.ts` → all pass (pure function tests unchanged)
+- [x] `useTasks.ts` is ≤ 30 lines, re-exports utilities from `taskUtils.ts`
+- [x] `tasks/page.tsx` has no `fetchTasks()`, `fetchProjects()`, `fetchTags()` calls
+- [x] `archive/page.tsx` has no `fetchTasks()` call
+- [x] `npx vitest run src/hooks/useTasks.test.ts` → all pass (pure function tests unchanged)
 
 **Verify:** `npx vitest run src/hooks/useTasks.test.ts` → all pass; `npx tsc --noEmit` → no errors
 
 **Steps:**
 
-- [ ] **Step 1: Rewrite `src/hooks/useTasks.ts`**
+- [x] **Step 1: Rewrite `src/hooks/useTasks.ts`**
 
 Replace the entire file content:
 
@@ -1202,7 +1202,7 @@ export function useTasks(baseFilters: TaskFilters = {}) {
 }
 ```
 
-- [ ] **Step 2: Run useTasks tests — expect PASS**
+- [x] **Step 2: Run useTasks tests — expect PASS**
 
 ```bash
 npx vitest run src/hooks/useTasks.test.ts
@@ -1210,7 +1210,7 @@ npx vitest run src/hooks/useTasks.test.ts
 
 Expected: all pass (they only test pure functions imported from the module)
 
-- [ ] **Step 3: Update `src/app/tasks/page.tsx`**
+- [x] **Step 3: Update `src/app/tasks/page.tsx`**
 
 Remove the three `useEffect` blocks that call `fetchTasks`, `fetchProjects`, `fetchTags` explicitly. TQ handles fetching automatically when the query mounts. Keep only the auth redirect effect.
 
@@ -1269,7 +1269,7 @@ const taskHook = useTasks({ done: false, q: searchMode && debouncedQuery ? debou
 
 When `exitSearch()` is called, reset `debouncedQuery` back to `""` alongside `setSearchQuery("")`.
 
-- [ ] **Step 4: Update `src/app/archive/page.tsx`**
+- [x] **Step 4: Update `src/app/archive/page.tsx`**
 
 Remove the manual `fetchTasks()` call:
 
@@ -1289,7 +1289,7 @@ const { tasks, isLoading, error, fetchTasks, deleteTask, restoreTask, clearArchi
 const { tasks, isLoading, error, deleteTask, restoreTask, clearArchive } = ...
 ```
 
-- [ ] **Step 5: Type-check**
+- [x] **Step 5: Type-check**
 
 ```bash
 npx tsc --noEmit
@@ -1297,7 +1297,7 @@ npx tsc --noEmit
 
 Expected: no errors
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/hooks/useTasks.ts src/app/tasks/page.tsx src/app/archive/page.tsx
@@ -1315,16 +1315,16 @@ git commit -m "refactor: useTasks → thin wrapper over useTaskQueries + useTask
 - Modify: `src/hooks/useProjects.test.ts`
 
 **Acceptance Criteria:**
-- [ ] `fetchProjects` is a no-op (kept for backward compat)
-- [ ] `createProject`, `deleteProject`, `updateProject` use `networkMode: 'online'`
-- [ ] Projects are read from `useQuery(['projects'])`
-- [ ] Existing test assertions still pass with updated test setup (QueryClientProvider wrapper)
+- [x] `fetchProjects` is a no-op (kept for backward compat)
+- [x] `createProject`, `deleteProject`, `updateProject` use `networkMode: 'online'`
+- [x] Projects are read from `useQuery(['projects'])`
+- [x] Existing test assertions still pass with updated test setup (QueryClientProvider wrapper)
 
 **Verify:** `npx vitest run src/hooks/useProjects.test.ts` → all pass
 
 **Steps:**
 
-- [ ] **Step 1: Rewrite `src/hooks/useProjects.ts`**
+- [x] **Step 1: Rewrite `src/hooks/useProjects.ts`**
 
 ```ts
 "use client"
@@ -1403,7 +1403,7 @@ export function useProjects() {
 }
 ```
 
-- [ ] **Step 2: Update `src/hooks/useProjects.test.ts`**
+- [x] **Step 2: Update `src/hooks/useProjects.test.ts`**
 
 Add a `QueryClientProvider` wrapper to every `renderHook` call. The assertions stay the same.
 
@@ -1492,7 +1492,7 @@ describe("useProjects — updateProject", () => {
 })
 ```
 
-- [ ] **Step 3: Run tests — expect PASS**
+- [x] **Step 3: Run tests — expect PASS**
 
 ```bash
 npx vitest run src/hooks/useProjects.test.ts
@@ -1500,7 +1500,7 @@ npx vitest run src/hooks/useProjects.test.ts
 
 Expected: all pass
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/hooks/useProjects.ts src/hooks/useProjects.test.ts
@@ -1518,16 +1518,16 @@ git commit -m "refactor: useProjects → TanStack Query; project mutations use n
 - Modify: `src/hooks/useTags.test.ts`
 
 **Acceptance Criteria:**
-- [ ] `fetchTags` is a no-op
-- [ ] All tag mutations use `networkMode: 'online'`
-- [ ] Tags read from `useQuery(['tags'])`
-- [ ] Tests pass
+- [x] `fetchTags` is a no-op
+- [x] All tag mutations use `networkMode: 'online'`
+- [x] Tags read from `useQuery(['tags'])`
+- [x] Tests pass
 
 **Verify:** `npx vitest run src/hooks/useTags.test.ts` → all pass
 
 **Steps:**
 
-- [ ] **Step 1: Rewrite `src/hooks/useTags.ts`**
+- [x] **Step 1: Rewrite `src/hooks/useTags.ts`**
 
 ```ts
 "use client"
@@ -1617,7 +1617,7 @@ export function useTags() {
 }
 ```
 
-- [ ] **Step 2: Update `src/hooks/useTags.test.ts`**
+- [x] **Step 2: Update `src/hooks/useTags.test.ts`**
 
 Replace the file. Tests that previously called `fetchTags()` explicitly now verify the hook auto-fetches via TQ. The `fetchTags()` no-op is tested implicitly (it's present, does nothing). Core mutation assertions are preserved.
 
@@ -1721,7 +1721,7 @@ describe("useTags — deleteTag", () => {
 })
 ```
 
-- [ ] **Step 3: Run tests — expect PASS**
+- [x] **Step 3: Run tests — expect PASS**
 
 ```bash
 npx vitest run src/hooks/useTags.test.ts
@@ -1729,7 +1729,7 @@ npx vitest run src/hooks/useTags.test.ts
 
 Expected: all pass
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/hooks/useTags.ts src/hooks/useTags.test.ts
@@ -1748,16 +1748,16 @@ git commit -m "refactor: useTags → TanStack Query; tag mutations use networkMo
 - Modify: `src/app/layout.tsx`
 
 **Acceptance Criteria:**
-- [ ] Banner renders when `useOnlineStatus()` returns false
-- [ ] Banner shows count of `isPaused` mutations from `useMutationState`
-- [ ] Banner is absent when online
-- [ ] 2 tests pass
+- [x] Banner renders when `useOnlineStatus()` returns false
+- [x] Banner shows count of `isPaused` mutations from `useMutationState`
+- [x] Banner is absent when online
+- [x] 2 tests pass
 
 **Verify:** `npx vitest run src/components/OfflineBanner.test.tsx` → 2 passed
 
 **Steps:**
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Create `src/components/OfflineBanner.test.tsx`:
 
@@ -1790,7 +1790,7 @@ describe("OfflineBanner", () => {
 })
 ```
 
-- [ ] **Step 2: Run tests — expect FAIL**
+- [x] **Step 2: Run tests — expect FAIL**
 
 ```bash
 npx vitest run src/components/OfflineBanner.test.tsx
@@ -1798,7 +1798,7 @@ npx vitest run src/components/OfflineBanner.test.tsx
 
 Expected: fails with "Cannot find module './OfflineBanner'"
 
-- [ ] **Step 3: Implement `src/components/OfflineBanner.tsx`**
+- [x] **Step 3: Implement `src/components/OfflineBanner.tsx`**
 
 ```tsx
 "use client"
@@ -1824,7 +1824,7 @@ export function OfflineBanner() {
 }
 ```
 
-- [ ] **Step 4: Run tests — expect PASS**
+- [x] **Step 4: Run tests — expect PASS**
 
 ```bash
 npx vitest run src/components/OfflineBanner.test.tsx
@@ -1832,7 +1832,7 @@ npx vitest run src/components/OfflineBanner.test.tsx
 
 Expected: 2 passed
 
-- [ ] **Step 5: Add to layout**
+- [x] **Step 5: Add to layout**
 
 In `src/app/layout.tsx`, import and render `OfflineBanner` inside `<Providers>` before `{children}`:
 
@@ -1846,7 +1846,7 @@ import { OfflineBanner } from "@/components/OfflineBanner"
 </Providers>
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/OfflineBanner.tsx src/components/OfflineBanner.test.tsx src/app/layout.tsx
@@ -1864,16 +1864,16 @@ git commit -m "feat: add OfflineBanner — shows offline state and pending mutat
 - Modify any components that render project/tag create/edit/delete buttons (found by grep)
 
 **Acceptance Criteria:**
-- [ ] All project create/edit/delete buttons are `disabled` when offline
-- [ ] All tag create/edit/delete buttons are `disabled` when offline
-- [ ] A `title` tooltip attribute explains why (e.g. `"Недоступно без подключения"`)
-- [ ] `npx tsc --noEmit` → no errors
+- [x] All project create/edit/delete buttons are `disabled` when offline
+- [x] All tag create/edit/delete buttons are `disabled` when offline
+- [x] A `title` tooltip attribute explains why (e.g. `"Недоступно без подключения"`)
+- [x] `npx tsc --noEmit` → no errors
 
 **Verify:** `npx tsc --noEmit` → no errors
 
 **Steps:**
 
-- [ ] **Step 1: Find all project/tag mutation call-sites**
+- [x] **Step 1: Find all project/tag mutation call-sites**
 
 ```bash
 grep -rn "createProject\|deleteProject\|updateProject\|createTag\|deleteTag\|updateTag" src/ --include="*.tsx"
@@ -1881,7 +1881,7 @@ grep -rn "createProject\|deleteProject\|updateProject\|createTag\|deleteTag\|upd
 
 Note every file and line number that calls a mutation.
 
-- [ ] **Step 2: Add `useOnlineStatus` to `tasks/page.tsx`**
+- [x] **Step 2: Add `useOnlineStatus` to `tasks/page.tsx`**
 
 ```ts
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
@@ -1891,7 +1891,7 @@ const isOnline = useOnlineStatus()
 
 Pass `isOnline` as a prop to any child components that render the buttons, or consume `useOnlineStatus` directly inside those components.
 
-- [ ] **Step 3: Disable buttons**
+- [x] **Step 3: Disable buttons**
 
 For every button that calls a project or tag mutation, add:
 ```tsx
@@ -1904,13 +1904,13 @@ For every button that calls a project or tag mutation, add:
 
 Apply this to: create project button, delete project button, edit project button (icon/title), create tag button, delete tag button, edit tag button.
 
-- [ ] **Step 4: Type-check**
+- [x] **Step 4: Type-check**
 
 ```bash
 npx tsc --noEmit
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/app/tasks/page.tsx
@@ -1929,16 +1929,16 @@ git commit -m "feat: disable project/tag mutation buttons when offline"
 - Modify: `src/app/providers.tsx`
 
 **Acceptance Criteria:**
-- [ ] Clicking sign out calls `queryClient.clear()` before `signOut()`
-- [ ] A `401` on any mutation error triggers a `session-expired` custom event
-- [ ] `providers.tsx` listens for `session-expired` and shows a modal prompting re-login
-- [ ] `npx tsc --noEmit` → no errors
+- [x] Clicking sign out calls `queryClient.clear()` before `signOut()`
+- [x] A `401` on any mutation error triggers a `session-expired` custom event
+- [x] `providers.tsx` listens for `session-expired` and shows a modal prompting re-login
+- [x] `npx tsc --noEmit` → no errors
 
 **Verify:** `npx tsc --noEmit` → no errors
 
 **Steps:**
 
-- [ ] **Step 1: Update `src/components/BurgerMenu.tsx` to clear cache on logout**
+- [x] **Step 1: Update `src/components/BurgerMenu.tsx` to clear cache on logout**
 
 ```ts
 import { queryClient } from "@/lib/queryClient"
@@ -1952,7 +1952,7 @@ onClick={async () => {
 }}
 ```
 
-- [ ] **Step 2: Add global mutation error handler to `src/lib/queryClient.ts`**
+- [x] **Step 2: Add global mutation error handler to `src/lib/queryClient.ts`**
 
 ```ts
 import { QueryClient, MutationCache } from "@tanstack/react-query"
@@ -1992,7 +1992,7 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit): Promise<
 
 Then replace `fetch(` with `apiFetch(` inside `useTaskMutations`, `useProjects`, and `useTags`.
 
-- [ ] **Step 3: Add session-expired modal to `src/app/providers.tsx`**
+- [x] **Step 3: Add session-expired modal to `src/app/providers.tsx`**
 
 ```tsx
 "use client"
@@ -2046,7 +2046,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 }
 ```
 
-- [ ] **Step 4: Type-check**
+- [x] **Step 4: Type-check**
 
 ```bash
 npx tsc --noEmit
@@ -2054,7 +2054,7 @@ npx tsc --noEmit
 
 Expected: no errors
 
-- [ ] **Step 5: Run full test suite**
+- [x] **Step 5: Run full test suite**
 
 ```bash
 npx vitest run
@@ -2062,7 +2062,7 @@ npx vitest run
 
 Expected: all pass
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/BurgerMenu.tsx src/lib/queryClient.ts src/app/providers.tsx src/lib/apiFetch.ts
