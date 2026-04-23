@@ -2068,3 +2068,19 @@ Expected: all pass
 git add src/components/BurgerMenu.tsx src/lib/queryClient.ts src/app/providers.tsx src/lib/apiFetch.ts
 git commit -m "feat: clear IndexedDB on logout, show re-login modal on session expiry"
 ```
+
+---
+
+## Post-merge review fixes (2026-04-23)
+
+After the feature landed, a code review identified 6 issues — all fixed and merged to `main`.
+
+| # | File | Fix |
+|---|------|-----|
+| 1 | `useTaskQueries.ts` | Used raw `fetch` — switched to `apiFetch` so 401 triggers `session-expired` |
+| 1b | `queryClient.ts` | Added `QueryCache` with 401 handler alongside `MutationCache`; extracted `dispatch401()` |
+| 2 | `providers.tsx` | Session-expired modal didn't clear IndexedDB — added `persister.removeClient()` before `signOut` |
+| 3 | `mutationQueue.ts` | `includes(tempId)` check and `replaceAll` now both use quoted form `"tempId"` to avoid false matches |
+| 4 | `useTaskMutations.ts` | `clearArchive` optimistic update scoped to `["tasks", { done: true }]` only (was wiping all task queries) |
+| 5 | `useTaskMutations.ts` + `TaskTagPicker.tsx` + `TaskItem.tsx` + `TaskList.tsx` | `updateTags` signature changed to `Tag[]` — enables proper optimistic update in `onMutate`; non-null assertion replaced with safe find |
+| 6 | `useTasks.ts` | Removed dead `fetchTasks: () => {}` stub |
