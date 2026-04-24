@@ -116,13 +116,11 @@ export function TaskItem({
   }
 
   const borderColor = isOpen ? "#3b82f6" : priorityColor(task.priorityScore)
-  const dateInputRef = useRef<HTMLInputElement>(null)
-
   return (
     <>
       {/* Hidden native date picker */}
       <input
-        ref={dateInputRef}
+        id={`date-${task.id}`}
         type="date"
         value={
           task.dueDate
@@ -195,11 +193,9 @@ export function TaskItem({
           {/* Date badge (only in collapsed) */}
           {task.dueDate && !isOpen && (
             <label
+              htmlFor={`date-${task.id}`}
               className={`text-xs px-2 py-0.5 rounded-full cursor-pointer flex-shrink-0 ${dateBadgeClasses(task)}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                dateInputRef.current?.showPicker()
-              }}
+              onClick={(e) => e.stopPropagation()}
             >
               {formatDueDate(task.dueDate)}
             </label>
@@ -323,15 +319,13 @@ export function TaskItem({
             {/* Date with icon + clear button */}
             <div className="flex items-center gap-2">
               <label
+                htmlFor={`date-${task.id}`}
                 className={`flex items-center gap-1 text-xs cursor-pointer ${
                   task.dueDate
                     ? `${dateBadgeClasses(task)} px-2 py-0.5 rounded-full`
                     : "text-gray-400 hover:text-gray-600"
                 }`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  dateInputRef.current?.showPicker()
-                }}
+                onClick={(e) => e.stopPropagation()}
               >
                 <CalendarDays className="w-3 h-3" />
                 {task.dueDate ? formatDueDate(task.dueDate) : "Добавить дату"}
