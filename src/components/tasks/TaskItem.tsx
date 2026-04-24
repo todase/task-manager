@@ -116,10 +116,22 @@ export function TaskItem({
   }
 
   const borderColor = isOpen ? "#3b82f6" : priorityColor(task.priorityScore)
+  const dateInputRef = useRef<HTMLInputElement>(null)
+
+  function openDatePicker(e: React.MouseEvent) {
+    e.stopPropagation()
+    try {
+      dateInputRef.current?.showPicker()
+    } catch {
+      // showPicker() not supported (iOS Safari) — htmlFor handles it natively
+    }
+  }
+
   return (
     <>
       {/* Hidden native date picker */}
       <input
+        ref={dateInputRef}
         id={`date-${task.id}`}
         type="date"
         value={
@@ -195,7 +207,7 @@ export function TaskItem({
             <label
               htmlFor={`date-${task.id}`}
               className={`text-xs px-2 py-0.5 rounded-full cursor-pointer flex-shrink-0 ${dateBadgeClasses(task)}`}
-              onClick={(e) => e.stopPropagation()}
+              onClick={openDatePicker}
             >
               {formatDueDate(task.dueDate)}
             </label>
@@ -325,7 +337,7 @@ export function TaskItem({
                     ? `${dateBadgeClasses(task)} px-2 py-0.5 rounded-full`
                     : "text-gray-400 hover:text-gray-600"
                 }`}
-                onClick={(e) => e.stopPropagation()}
+                onClick={openDatePicker}
               >
                 <CalendarDays className="w-3 h-3" />
                 {task.dueDate ? formatDueDate(task.dueDate) : "Добавить дату"}
