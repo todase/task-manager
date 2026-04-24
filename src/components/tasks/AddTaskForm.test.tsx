@@ -98,25 +98,14 @@ describe("AddTaskForm", () => {
     await waitFor(() => expect(screen.queryByText(/новая задача/i)).not.toBeInTheDocument())
   })
 
-  it("shows error message when onSubmit rejects", async () => {
+  it("closes modal immediately even when onSubmit rejects (fire-and-forget)", async () => {
     const onSubmit = vi.fn().mockRejectedValue(new Error("Network error"))
     render(<AddTaskForm {...defaultProps} onSubmit={onSubmit} />)
     openModal()
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Bad task" } })
     fireEvent.click(screen.getByRole("button", { name: /создать задачу/i }))
     await waitFor(() =>
-      expect(screen.getByText(/не удалось создать задачу/i)).toBeInTheDocument()
-    )
-  })
-
-  it("modal stays open after failed submit", async () => {
-    const onSubmit = vi.fn().mockRejectedValue(new Error("fail"))
-    render(<AddTaskForm {...defaultProps} onSubmit={onSubmit} />)
-    openModal()
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Task" } })
-    fireEvent.click(screen.getByRole("button", { name: /создать задачу/i }))
-    await waitFor(() =>
-      expect(screen.getByText(/новая задача/i)).toBeInTheDocument()
+      expect(screen.queryByText(/новая задача/i)).not.toBeInTheDocument()
     )
   })
 
@@ -209,16 +198,14 @@ describe("AddTaskForm", () => {
     expect(screen.getByPlaceholderText(/добавить метку/i)).toBeInTheDocument()
   })
 
-  it("prevents double submit — onSubmit called once even if button clicked twice", async () => {
-    let resolve!: () => void
-    const onSubmit = vi.fn().mockReturnValue(new Promise<void>((r) => { resolve = r }))
+  it("prevents double submit — modal closes on first click, second click impossible", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined)
     render(<AddTaskForm {...defaultProps} onSubmit={onSubmit} />)
     openModal()
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Task" } })
     fireEvent.click(screen.getByRole("button", { name: /создать задачу/i }))
-    fireEvent.click(screen.getByRole("button", { name: /создаём/i }))
-    resolve()
-    await waitFor(() => {})
+    // Modal closes immediately — submit button is gone, double-submit is impossible
+    expect(screen.queryByText(/новая задача/i)).not.toBeInTheDocument()
     expect(onSubmit).toHaveBeenCalledTimes(1)
   })
 

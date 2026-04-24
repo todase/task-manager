@@ -9,13 +9,22 @@ export default withPWA({
   dest: "public",
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
-  reloadOnOnline: true,
+  reloadOnOnline: false,
   disable: process.env.NODE_ENV === "development",
   workboxOptions: {
     runtimeCaching: [
       {
         urlPattern: /^\/api\//,
         handler: "NetworkOnly",
+      },
+      {
+        // Cache HTML pages with NetworkFirst so hard reload works offline
+        urlPattern: /^\/(?!_next\/)/,
+        handler: "NetworkFirst",
+        options: {
+          cacheName: "pages",
+          networkTimeoutSeconds: 3,
+        },
       },
     ],
   },

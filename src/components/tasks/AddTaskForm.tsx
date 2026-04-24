@@ -39,8 +39,6 @@ export function AddTaskForm({
   const [tagInput, setTagInput] = useState("")
   const [showTagMenu, setShowTagMenu] = useState(false)
   const [activeField, setActiveField] = useState<"date" | "recurrence" | "tags" | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [showProjectDropdown, setShowProjectDropdown] = useState(false)
 
@@ -74,34 +72,27 @@ export function AddTaskForm({
     setTagInput("")
     setShowTagMenu(false)
     setActiveField(null)
-    setError(null)
     setSelectedProjectId(null)
     setShowProjectDropdown(false)
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!title.trim() || isSubmitting) return
-    setIsSubmitting(true)
-    setError(null)
-    try {
-      await onSubmit({
-        title: title.trim(),
-        ...(dueDate && { dueDate }),
-        ...(recurrence && { recurrence }),
-        ...(activeProjectId
-          ? { projectId: activeProjectId }
-          : selectedProjectId
-          ? { projectId: selectedProjectId }
-          : {}),
-        ...(selectedTagIds.length > 0 && { tagIds: selectedTagIds }),
-      })
-      closeModal()
-    } catch {
-      setError("Не удалось создать задачу. Попробуйте ещё раз.")
-    } finally {
-      setIsSubmitting(false)
-    }
+    if (!title.trim()) return
+    // Fire and forget — onMutate shows the task optimistically;
+    // if it fails (online) the optimistic rollback removes it.
+    void onSubmit({
+      title: title.trim(),
+      ...(dueDate && { dueDate }),
+      ...(recurrence && { recurrence }),
+      ...(activeProjectId
+        ? { projectId: activeProjectId }
+        : selectedProjectId
+        ? { projectId: selectedProjectId }
+        : {}),
+      ...(selectedTagIds.length > 0 && { tagIds: selectedTagIds }),
+    })
+    closeModal()
   }
 
   const placeholder = activeProjectId
@@ -176,10 +167,6 @@ export function AddTaskForm({
               </div>
 
               <form onSubmit={handleSubmit} className="px-4 pb-6 flex flex-col gap-3">
-                {error && (
-                  <p className="text-sm text-red-500">{error}</p>
-                )}
-
                 {/* Title input */}
                 <input
                   ref={titleInputRef}
@@ -404,10 +391,10 @@ export function AddTaskForm({
                 {/* Submit button */}
                 <button
                   type="submit"
-                  disabled={isSubmitting || !title.trim()}
+                  disabled={!title.trim()}
                   className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white font-medium py-3 rounded-xl transition-colors"
                 >
-                  {isSubmitting ? "Создаём..." : "Создать задачу"}
+                  Создать задачу
                 </button>
               </form>
             </div>

@@ -23,7 +23,7 @@ export const queryClient = new QueryClient({
       retry: 1,
     },
     mutations: {
-      networkMode: "offlineFirst",
+      networkMode: "online",
     },
   },
 })
