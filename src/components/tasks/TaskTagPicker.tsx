@@ -125,6 +125,11 @@ export function TaskTagPicker({
               Все метки уже назначены
             </p>
           )}
+          {!isOnline && (
+            <p className="px-3 py-1.5 text-xs text-amber-600 italic border-b border-gray-100">
+              Офлайн — изменения синхронизируются при подключении
+            </p>
+          )}
           <div className="border-t border-gray-100 p-2">
             {isOnline ? (
               <>
