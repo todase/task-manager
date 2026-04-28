@@ -11,6 +11,9 @@ export default withPWA({
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: false,
   disable: process.env.NODE_ENV === "development",
+  fallbacks: {
+    document: "/offline",
+  },
   workboxOptions: {
     runtimeCaching: [
       {
@@ -18,12 +21,10 @@ export default withPWA({
         handler: "NetworkOnly",
       },
       {
-        // Cache HTML pages with NetworkFirst so hard reload works offline
         urlPattern: /^\/(?!_next\/)/,
-        handler: "NetworkFirst",
+        handler: "StaleWhileRevalidate",
         options: {
           cacheName: "pages",
-          networkTimeoutSeconds: 3,
         },
       },
     ],
