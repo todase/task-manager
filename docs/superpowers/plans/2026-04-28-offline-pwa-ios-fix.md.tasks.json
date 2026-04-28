@@ -1,0 +1,19 @@
+{
+  "planPath": "docs/superpowers/plans/2026-04-28-offline-pwa-ios-fix.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 1: Create /offline page",
+      "status": "pending",
+      "description": "**Goal:** Static fallback page that next-pwa precaches and serves when navigation fails offline.\n\n**Files:**\n- Create: `src/app/offline/page.tsx`\n- Create: `src/app/offline/page.test.tsx`\n\n**Acceptance Criteria:**\n- [ ] Page renders \"Нет подключения\" heading\n- [ ] Page renders explanatory text about opening online first\n- [ ] \"Попробовать снова\" button calls `window.location.reload()`\n- [ ] No imports from `@/auth`, `next-auth`, Prisma, or any API\n- [ ] Test file passes\n\n**Verify:** `npx vitest run src/app/offline/page.test.tsx` → 3 tests pass\n\n```json:metadata\n{\"files\": [\"src/app/offline/page.tsx\", \"src/app/offline/page.test.tsx\"], \"verifyCommand\": \"npx vitest run src/app/offline/page.test.tsx\", \"acceptanceCriteria\": [\"Renders Нет подключения heading\", \"Renders hint text\", \"Reload button calls window.location.reload\", \"No server-side imports\"]}\n```"
+    },
+    {
+      "id": 1,
+      "subject": "Task 2: Update next.config.ts — StaleWhileRevalidate + fallbacks",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "**Goal:** Configure the service worker to cache pages eagerly and serve /offline when navigation fails.\n\n**Files:**\n- Modify: `next.config.ts`\n\n**Acceptance Criteria:**\n- [ ] handler for pages rule is `StaleWhileRevalidate` (no networkTimeoutSeconds)\n- [ ] `fallbacks: { document: \"/offline\" }` present\n- [ ] `npm run build` succeeds\n- [ ] `public/sw.js` generated after build\n\n**Verify:** `npm run build` → exits 0, `public/sw.js` exists\n\n```json:metadata\n{\"files\": [\"next.config.ts\"], \"verifyCommand\": \"npm run build && ls public/sw.js\", \"acceptanceCriteria\": [\"StaleWhileRevalidate handler\", \"fallbacks.document = /offline\", \"Build succeeds\", \"sw.js generated\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-04-28T00:00:00.000Z"
+}
