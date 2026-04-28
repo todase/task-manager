@@ -12,6 +12,7 @@ import {
   Pencil,
 } from "lucide-react"
 import type { Task, Subtask, Project, Tag } from "@/types"
+import { ReflectionModal } from "@/components/tasks/ReflectionModal"
 import { SubtaskPanel } from "@/components/tasks/SubtaskPanel"
 import { TaskTagPicker } from "@/components/tasks/TaskTagPicker"
 import { ProjectIcon } from "@/components/projects/ProjectIconPicker"
@@ -72,6 +73,7 @@ export function TaskItem({
   onDeleteSubtask,
 }: TaskItemProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [showReflection, setShowReflection] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState("")
   const [editingDesc, setEditingDesc] = useState(false)
@@ -155,6 +157,7 @@ export function TaskItem({
             onClick={(e) => {
               e.stopPropagation()
               onToggle(task)
+              if (!task.done) setShowReflection(true)
             }}
             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
               task.done
@@ -434,6 +437,12 @@ export function TaskItem({
           </div>
         )}
       </div>
+      {showReflection && (
+        <ReflectionModal
+          taskId={task.id}
+          onClose={() => setShowReflection(false)}
+        />
+      )}
     </>
   )
 }

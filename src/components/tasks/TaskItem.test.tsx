@@ -24,6 +24,14 @@ vi.mock("@/lib/priority", () => ({
   priorityColor: () => "rgb(59, 130, 246)",
 }))
 
+vi.mock("@/components/tasks/ReflectionModal", () => ({
+  ReflectionModal: ({ onClose }: { taskId: string; onClose: () => void }) => (
+    <div data-testid="reflection-modal">
+      <button onClick={onClose}>close-modal</button>
+    </div>
+  ),
+}))
+
 afterEach(cleanup)
 
 const TODAY = "2026-04-18"
@@ -262,5 +270,31 @@ describe("TaskItem", () => {
     await waitFor(() =>
       expect(onUpdateDescription).toHaveBeenCalledWith("t1", "New description")
     )
+  })
+})
+
+describe("ReflectionModal trigger", () => {
+  it("shows ReflectionModal when toggling incomplete task to done", async () => {
+    render(<TaskItem {...defaultProps} task={makeTask({ done: false })} />)
+    fireEvent.click(screen.getByLabelText("Отметить выполненной"))
+    await waitFor(() =>
+      expect(screen.getByTestId("reflection-modal")).toBeInTheDocument()
+    )
+  })
+
+  it("does not show ReflectionModal when toggling done task to undone", () => {
+    render(<TaskItem {...defaultProps} task={makeTask({ done: true })} />)
+    fireEvent.click(screen.getByLabelText("Отметить невыполненной"))
+    expect(screen.queryByTestId("reflection-modal")).not.toBeInTheDocument()
+  })
+
+  it("closes ReflectionModal when onClose is called", async () => {
+    render(<TaskItem {...defaultProps} task={makeTask({ done: false })} />)
+    fireEvent.click(screen.getByLabelText("Отметить выполненной"))
+    await waitFor(() =>
+      expect(screen.getByTestId("reflection-modal")).toBeInTheDocument()
+    )
+    fireEvent.click(screen.getByText("close-modal"))
+    expect(screen.queryByTestId("reflection-modal")).not.toBeInTheDocument()
   })
 })
