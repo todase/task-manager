@@ -33,3 +33,13 @@ export type Project = {
 }
 
 export type DateFilter = "all" | "today" | "week" | "someday"
+
+export type TaskReflection = {
+  id: string
+  taskId: string
+  notes: string | null
+  timeMinutes: number | null
+  difficulty: 1 | 2 | 3 | null
+  mood: "energized" | "neutral" | "tired" | null
+  createdAt: string
+}
