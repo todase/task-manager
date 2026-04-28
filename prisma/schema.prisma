@@ -37,8 +37,20 @@ model Task {
   subtasks    Subtask[]
   tags        TaskTag[]
   createdAt   DateTime  @default(now())
+  reflections TaskReflection[]
 }
 
+
+model TaskReflection {
+  id          String   @id @default(cuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  notes       String?
+  timeMinutes Int?
+  difficulty  Int?
+  mood        String?
+  createdAt   DateTime @default(now())
+}
 
 model Subtask {
   id        String   @id @default(cuid())
