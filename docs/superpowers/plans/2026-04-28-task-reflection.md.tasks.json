@@ -1,0 +1,37 @@
+{
+  "planPath": "docs/superpowers/plans/2026-04-28-task-reflection.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 1: Schema — TaskReflection model",
+      "status": "completed",
+      "lastUpdated": "2026-04-28T22:08:00.000Z",
+      "description": "**Goal:** Add `TaskReflection` Prisma model and apply the migration.\n\n**Files:**\n- Modify: `prisma/schema.prisma`\n\n**Acceptance Criteria:**\n- [ ] `TaskReflection` model exists with all spec fields\n- [ ] `Task` model has `reflections TaskReflection[]`\n- [ ] Migration applied; `npx prisma generate` exits 0\n\n**Verify:** `npx prisma migrate status` → shows migration applied\n\n**Steps:**\n- Add model to schema.prisma\n- Run `npx prisma migrate dev --name add_task_reflection`\n- Run `npx prisma generate`\n- Commit\n\n```json:metadata\n{\"files\": [\"prisma/schema.prisma\"], \"verifyCommand\": \"npx prisma migrate status\", \"acceptanceCriteria\": [\"TaskReflection model exists with all spec fields\", \"Task model has reflections TaskReflection[]\", \"Migration applied; npx prisma generate exits 0\"]}\n```"
+    },
+    {
+      "id": 1,
+      "subject": "Task 2: API route — POST /api/tasks/[id]/reflection",
+      "status": "completed",
+      "lastUpdated": "2026-04-28T22:09:00.000Z",
+      "blockedBy": [0],
+      "description": "**Goal:** Implement the POST endpoint that creates a reflection and optionally a follow-up task in one transaction.\n\n**Files:**\n- Modify: `src/types/index.ts`\n- Create: `src/app/api/tasks/[id]/reflection/route.ts`\n- Create: `src/app/api/tasks/[id]/reflection/route.test.ts`\n\n**Acceptance Criteria:**\n- [ ] Returns 401 for unauthenticated requests\n- [ ] Returns 404 if task not found or belongs to another user\n- [ ] Creates TaskReflection row (all fields optional)\n- [ ] Creates follow-up Task in same project when nextStepTitle is non-empty\n- [ ] Both writes in a single Prisma transaction\n- [ ] All tests pass\n\n**Verify:** `npx vitest run src/app/api/tasks/\\[id\\]/reflection/route.test.ts` → all tests pass\n\n```json:metadata\n{\"files\": [\"src/types/index.ts\", \"src/app/api/tasks/[id]/reflection/route.ts\", \"src/app/api/tasks/[id]/reflection/route.test.ts\"], \"verifyCommand\": \"npx vitest run src/app/api/tasks/\\\\[id\\\\]/reflection/route.test.ts\", \"acceptanceCriteria\": [\"Returns 401 unauthenticated\", \"Returns 404 task not found/wrong user\", \"Creates reflection (all fields optional)\", \"Creates next task in same project when nextStepTitle given\", \"Single transaction\", \"All tests pass\"]}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 3: ReflectionModal component",
+      "status": "completed",
+      "lastUpdated": "2026-04-28T22:10:00.000Z",
+      "blockedBy": [1],
+      "description": "**Goal:** Build the compact full-screen modal with all form fields; POST on save, close without POST on skip/overlay.\n\n**Files:**\n- Create: `src/components/tasks/ReflectionModal.tsx`\n- Create: `src/components/tasks/ReflectionModal.test.tsx`\n\n**Acceptance Criteria:**\n- [ ] Renders notes textarea, time input, 3 difficulty buttons, 3 mood chips, next step input\n- [ ] Skip and overlay click close without POST\n- [ ] Save POSTs, invalidates [\"tasks\"] query, calls onClose\n- [ ] Form values serialized correctly in POST body\n- [ ] All tests pass\n\n**Verify:** `npx vitest run src/components/tasks/ReflectionModal.test.tsx` → all tests pass\n\n```json:metadata\n{\"files\": [\"src/components/tasks/ReflectionModal.tsx\", \"src/components/tasks/ReflectionModal.test.tsx\"], \"verifyCommand\": \"npx vitest run src/components/tasks/ReflectionModal.test.tsx\", \"acceptanceCriteria\": [\"Renders all 5 field controls\", \"Skip/overlay close without POST\", \"Save POSTs and invalidates tasks query\", \"All tests pass\"]}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 4: Wire TaskItem — show modal on task completion",
+      "status": "completed",
+      "lastUpdated": "2026-04-28T22:11:00.000Z",
+      "blockedBy": [2],
+      "description": "**Goal:** Make TaskItem show ReflectionModal when a task is toggled from undone to done.\n\n**Files:**\n- Modify: `src/components/tasks/TaskItem.tsx`\n- Modify: `src/components/tasks/TaskItem.test.tsx`\n\n**Acceptance Criteria:**\n- [ ] Toggling incomplete task to done renders ReflectionModal\n- [ ] Toggling done task to undone does NOT render ReflectionModal\n- [ ] onClose on modal removes it from DOM\n- [ ] All existing tests still pass\n\n**Verify:** `npx vitest run src/components/tasks/TaskItem.test.tsx` → all tests pass\n\n```json:metadata\n{\"files\": [\"src/components/tasks/TaskItem.tsx\", \"src/components/tasks/TaskItem.test.tsx\"], \"verifyCommand\": \"npx vitest run src/components/tasks/TaskItem.test.tsx\", \"acceptanceCriteria\": [\"Modal appears on toggle to done\", \"Modal does not appear on toggle to undone\", \"onClose hides modal\", \"No regressions in existing tests\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-04-28T22:11:00.000Z"
+}

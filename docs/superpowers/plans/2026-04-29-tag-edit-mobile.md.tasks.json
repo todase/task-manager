@@ -1,0 +1,12 @@
+{
+  "planPath": "docs/superpowers/plans/2026-04-29-tag-edit-mobile.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 1: Update TagFilter for mobile-accessible tag editing",
+      "status": "pending",
+      "description": "**Goal:** Replace hover-only pencil button with always-visible pencil on the last-tapped active tag.\n\n**Files:**\n- Modify: `src/components/filters/TagFilter.tsx`\n\n**Acceptance Criteria:**\n- [ ] Pencil icon not visible by default\n- [ ] Tapping a tag activates it and shows pencil on that tag only\n- [ ] Tapping another tag moves the pencil to the new tag\n- [ ] Deactivating a tag removes the pencil\n- [ ] Сбросить clears both selection and pencil\n- [ ] Active tag without pencil: rounded-full\n- [ ] Active tag with pencil: rounded-l-full + rounded-r-full pencil button\n- [ ] Offline: pencil button disabled\n\n**Verify:** `npx vitest run src/components/tasks/TaskTagPicker.test.tsx` → all pass\n\n```json:metadata\n{\"files\": [\"src/components/filters/TagFilter.tsx\"], \"verifyCommand\": \"npx vitest run src/components/tasks/TaskTagPicker.test.tsx\", \"acceptanceCriteria\": [\"Pencil not visible by default\", \"Tapping activates and shows pencil\", \"Pencil moves to last-tapped tag\", \"Deactivating removes pencil\", \"Сбросить clears pencil\", \"Active+pencil: split pill style\", \"Offline: pencil disabled\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-04-29T00:00:00.000Z"
+}

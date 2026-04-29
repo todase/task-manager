@@ -4,69 +4,79 @@
     {
       "id": 0,
       "subject": "Task 0: Install Resend + environment setup + email utility",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-18T18:20:00.000Z",
       "description": "**Goal:** Add the Resend package, document required env vars, and create the email-sending utility.\n\n**Files:**\n- Create: `src/lib/email.ts`\n- Create: `.env.example`\n\n**Acceptance Criteria:**\n- [ ] `resend` package installed\n- [ ] `.env.example` documents all 5 new variables\n- [ ] `src/lib/email.ts` exports `sendVerificationEmail` and `sendPasswordResetEmail`\n\n**Verify:** `npx tsc --noEmit` → no errors in `src/lib/email.ts`\n\n```json:metadata\n{\"files\": [\"src/lib/email.ts\", \".env.example\"], \"verifyCommand\": \"npx tsc --noEmit\", \"acceptanceCriteria\": [\"resend package installed\", \".env.example created\", \"email.ts exports sendVerificationEmail and sendPasswordResetEmail\"]}\n```"
     },
     {
       "id": 1,
       "subject": "Task 1: Database schema migration",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-18T18:25:00.000Z",
       "blockedBy": [0],
       "description": "**Goal:** Extend Prisma schema with new User fields and two token models, then migrate.\n\n**Files:**\n- Modify: `prisma/schema.prisma`\n\n**Acceptance Criteria:**\n- [ ] `User.password` is nullable\n- [ ] User has `emailVerified DateTime?` and `oauthProvider String?`\n- [ ] `EmailVerificationToken` model added\n- [ ] `PasswordResetToken` model added\n- [ ] Migration runs without error\n\n**Verify:** `npx prisma migrate status` → all migrations applied\n\n```json:metadata\n{\"files\": [\"prisma/schema.prisma\"], \"verifyCommand\": \"npx prisma migrate status\", \"acceptanceCriteria\": [\"password nullable\", \"emailVerified and oauthProvider on User\", \"EmailVerificationToken model\", \"PasswordResetToken model\", \"migration applied\"]}\n```"
     },
     {
       "id": 2,
       "subject": "Task 2: Token utilities with tests",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-18T18:35:00.000Z",
       "blockedBy": [1],
       "description": "**Goal:** Create `src/lib/tokens.ts` with token creation functions and full test coverage.\n\n**Files:**\n- Create: `src/lib/tokens.ts`\n- Create: `src/lib/tokens.test.ts`\n\n**Acceptance Criteria:**\n- [ ] `createVerificationToken(userId)` cleans old tokens, creates new with 24h expiry\n- [ ] `createPasswordResetToken(email)` cleans old tokens, creates new with 1h expiry\n- [ ] 4 tests pass\n\n**Verify:** `npx vitest run src/lib/tokens.test.ts` → 4 passed\n\n```json:metadata\n{\"files\": [\"src/lib/tokens.ts\", \"src/lib/tokens.test.ts\"], \"verifyCommand\": \"npx vitest run src/lib/tokens.test.ts\", \"acceptanceCriteria\": [\"createVerificationToken exported\", \"createPasswordResetToken exported\", \"4 tests pass\"]}\n```"
     },
     {
       "id": 3,
       "subject": "Task 3: Update auth.ts — emailVerified in session + nullable password guard",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-18T18:45:00.000Z",
       "blockedBy": [1],
       "description": "**Goal:** Expose `emailVerified` in JWT/session; guard credentials login against Google users.\n\n**Files:**\n- Modify: `src/auth.ts`\n\n**Acceptance Criteria:**\n- [ ] `authorize` returns null when `user.password` is null\n- [ ] `jwt` callback stores `emailVerified`\n- [ ] `session` callback puts `emailVerified` on session.user\n\n**Verify:** `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/auth.ts\"], \"verifyCommand\": \"npx tsc --noEmit\", \"acceptanceCriteria\": [\"password null guard in authorize\", \"emailVerified in jwt\", \"emailVerified in session\"]}\n```"
     },
     {
       "id": 4,
       "subject": "Task 4: Update registration route — create token + send email",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-18T18:50:00.000Z",
       "blockedBy": [2],
       "description": "**Goal:** After user creation, generate verification token and send email. Email failures don't block registration.\n\n**Files:**\n- Modify: `src/app/api/register/route.ts`\n- Modify: `src/app/api/register/route.test.ts`\n\n**Acceptance Criteria:**\n- [ ] On success: `createVerificationToken` and `sendVerificationEmail` called\n- [ ] Email throw → still returns 200\n- [ ] 5 tests pass\n\n**Verify:** `npx vitest run src/app/api/register/route.test.ts` → 5 passed\n\n```json:metadata\n{\"files\": [\"src/app/api/register/route.ts\", \"src/app/api/register/route.test.ts\"], \"verifyCommand\": \"npx vitest run src/app/api/register/route.test.ts\", \"acceptanceCriteria\": [\"token created on registration\", \"email sent on registration\", \"email failure returns 200\", \"5 tests pass\"]}\n```"
     },
     {
       "id": 5,
       "subject": "Task 5: Email verification API routes with tests",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-18T19:00:00.000Z",
       "blockedBy": [4],
       "description": "**Goal:** Create GET /api/verify-email and POST /api/resend-verification.\n\n**Files:**\n- Create: `src/app/api/verify-email/route.ts`\n- Create: `src/app/api/verify-email/route.test.ts`\n- Create: `src/app/api/resend-verification/route.ts`\n- Create: `src/app/api/resend-verification/route.test.ts`\n\n**Acceptance Criteria:**\n- [ ] Valid token → user verified, redirect /tasks\n- [ ] Expired token → redirect /verify-email?error=expired\n- [ ] Resend: 401 without auth\n- [ ] Resend: new token + email sent\n- [ ] 7 tests pass\n\n**Verify:** `npx vitest run src/app/api/verify-email src/app/api/resend-verification` → 7 passed\n\n```json:metadata\n{\"files\": [\"src/app/api/verify-email/route.ts\", \"src/app/api/verify-email/route.test.ts\", \"src/app/api/resend-verification/route.ts\", \"src/app/api/resend-verification/route.test.ts\"], \"verifyCommand\": \"npx vitest run src/app/api/verify-email src/app/api/resend-verification\", \"acceptanceCriteria\": [\"valid token verifies user\", \"expired token redirects with error\", \"resend requires auth\", \"7 tests pass\"]}\n```"
     },
     {
       "id": 6,
       "subject": "Task 6: Email verification UI — page + banner + tasks integration",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-18T19:25:00.000Z",
       "blockedBy": [3, 5],
       "description": "**Goal:** Verification error page, orange banner component, banner wired into /tasks.\n\n**Files:**\n- Create: `src/app/verify-email/page.tsx`\n- Create: `src/components/EmailVerificationBanner.tsx`\n- Modify: `src/app/tasks/page.tsx`\n\n**Acceptance Criteria:**\n- [ ] /verify-email?error=expired shows proper message\n- [ ] Banner shows for unverified users\n- [ ] Resend button works\n- [ ] Dismiss hides banner (state only)\n\n**Verify:** `npm run dev` → register → banner visible on /tasks\n\n```json:metadata\n{\"files\": [\"src/app/verify-email/page.tsx\", \"src/components/EmailVerificationBanner.tsx\", \"src/app/tasks/page.tsx\"], \"verifyCommand\": \"npm run dev\", \"acceptanceCriteria\": [\"verify-email error page works\", \"banner shows for unverified users\", \"resend button sends email\", \"dismiss hides banner\"]}\n```"
     },
     {
       "id": 7,
       "subject": "Task 7: Password reset API routes with tests",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-18T19:15:00.000Z",
       "blockedBy": [2],
       "description": "**Goal:** POST /api/forgot-password and POST /api/reset-password.\n\n**Files:**\n- Create: `src/app/api/forgot-password/route.ts`\n- Create: `src/app/api/forgot-password/route.test.ts`\n- Create: `src/app/api/reset-password/route.ts`\n- Create: `src/app/api/reset-password/route.test.ts`\n\n**Acceptance Criteria:**\n- [ ] Unknown email → 200, no token\n- [ ] Google user → 200, no token\n- [ ] Valid user → token + email sent\n- [ ] Invalid/expired reset token → 400\n- [ ] Valid reset → password updated, token deleted\n- [ ] 7 tests pass\n\n**Verify:** `npx vitest run src/app/api/forgot-password src/app/api/reset-password` → 7 passed\n\n```json:metadata\n{\"files\": [\"src/app/api/forgot-password/route.ts\", \"src/app/api/forgot-password/route.test.ts\", \"src/app/api/reset-password/route.ts\", \"src/app/api/reset-password/route.test.ts\"], \"verifyCommand\": \"npx vitest run src/app/api/forgot-password src/app/api/reset-password\", \"acceptanceCriteria\": [\"unknown email returns 200\", \"google user blocked silently\", \"valid user gets email\", \"7 tests pass\"]}\n```"
     },
     {
       "id": 8,
       "subject": "Task 8: Password reset pages",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-18T19:35:00.000Z",
       "blockedBy": [7],
       "description": "**Goal:** /forgot-password form page and /reset-password page.\n\n**Files:**\n- Create: `src/app/forgot-password/page.tsx`\n- Create: `src/app/reset-password/page.tsx`\n\n**Acceptance Criteria:**\n- [ ] /forgot-password: any email shows success (no enumeration)\n- [ ] /reset-password without token shows invalid message\n- [ ] /reset-password: mismatch → error, success → confirmation\n- [ ] Password < 8 blocked client-side\n\n**Verify:** `npm run dev` → E2E: request reset → use link from Resend dashboard → login with new password\n\n```json:metadata\n{\"files\": [\"src/app/forgot-password/page.tsx\", \"src/app/reset-password/page.tsx\"], \"verifyCommand\": \"npm run dev\", \"acceptanceCriteria\": [\"forgot-password always shows success\", \"reset-password handles missing token\", \"password mismatch error shown\", \"successful reset enables login\"]}\n```"
     },
     {
       "id": 9,
       "subject": "Task 9: Google OAuth — auth + UI",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-18T19:50:00.000Z",
       "blockedBy": [3, 6, 8],
       "description": "**Goal:** Google provider in NextAuth, user creation/linking, Google buttons on login/register, forgot password link.\n\n**Files:**\n- Modify: `src/auth.ts`\n- Modify: `src/app/login/page.tsx`\n- Modify: `src/app/register/page.tsx`\n\n**Acceptance Criteria:**\n- [ ] Google button on login and register pages\n- [ ] New Google user created with emailVerified, no password\n- [ ] Existing credentials user linked on Google sign-in\n- [ ] Забыли пароль? link on login page\n- [ ] All previous tests still pass\n\n**Verify:** `npm run dev` → Google OAuth flow lands on /tasks, no banner; `npx vitest run` → all pass\n\n```json:metadata\n{\"files\": [\"src/auth.ts\", \"src/app/login/page.tsx\", \"src/app/register/page.tsx\"], \"verifyCommand\": \"npx vitest run\", \"acceptanceCriteria\": [\"Google button on login\", \"Google button on register\", \"new Google user created correctly\", \"existing user linked\", \"all tests pass\"]}\n```"
     }

@@ -4,26 +4,30 @@
     {
       "id": 0,
       "subject": "Task 1: API auth helper and middleware",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-21T12:18:00.000Z",
       "description": "**Goal:** Create `getUserId(req)` helper and `src/middleware.ts` so API key requests pass through to route handlers with userId injected.\n\n**Files:**\n- Create: `src/lib/api-auth.ts`\n- Create: `src/lib/api-auth.test.ts`\n- Create: `src/middleware.ts`\n\n**Acceptance Criteria:**\n- [ ] `getUserId` returns session.user.id when NextAuth session present\n- [ ] `getUserId` returns x-api-user-id header when session is null\n- [ ] `getUserId` returns null when both absent\n- [ ] Middleware rejects wrong API key with 401\n- [ ] Middleware forwards correct API key, injecting x-api-user-id\n- [ ] Middleware is no-op for requests without X-API-Key header\n- [ ] Middleware does not apply to /api/auth/* routes\n- [ ] All tests pass\n\n**Verify:** `npx vitest run src/lib/api-auth.test.ts` → all tests pass\n\n```json:metadata\n{\"files\": [\"src/lib/api-auth.ts\", \"src/lib/api-auth.test.ts\", \"src/middleware.ts\"], \"verifyCommand\": \"npx vitest run src/lib/api-auth.test.ts\", \"acceptanceCriteria\": [\"getUserId returns session userId\", \"getUserId returns x-api-user-id header as fallback\", \"getUserId returns null when both absent\", \"Middleware rejects wrong key with 401\", \"Middleware forwards correct key with injected userId\", \"Middleware is no-op without X-API-Key\", \"All tests pass\"]}\n```"
     },
     {
       "id": 1,
       "subject": "Task 2: Update all route handlers to use getUserId",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-21T12:21:00.000Z",
       "blockedBy": [0],
       "description": "**Goal:** Replace auth() + session.user.id with getUserId(req) in all 9 protected route files.\n\n**Files:**\n- Modify: `src/app/api/tasks/route.ts`\n- Modify: `src/app/api/tasks/[id]/route.ts`\n- Modify: `src/app/api/tasks/[id]/subtasks/route.ts`\n- Modify: `src/app/api/tasks/[id]/subtasks/[subtaskId]/route.ts`\n- Modify: `src/app/api/tasks/reorder/route.ts`\n- Modify: `src/app/api/projects/route.ts`\n- Modify: `src/app/api/projects/[id]/route.ts`\n- Modify: `src/app/api/tags/route.ts`\n- Modify: `src/app/api/tags/[id]/route.ts`\n\n**Acceptance Criteria:**\n- [ ] No route handler calls auth() directly\n- [ ] No route handler references session.user.id\n- [ ] auth import removed from all 9 route files\n- [ ] All existing route tests still pass\n- [ ] Route handlers that had no req param on GET now accept req: Request\n\n**Verify:** `npx vitest run` → all tests pass\n\n```json:metadata\n{\"files\": [\"src/app/api/tasks/route.ts\", \"src/app/api/tasks/[id]/route.ts\", \"src/app/api/tasks/[id]/subtasks/route.ts\", \"src/app/api/tasks/[id]/subtasks/[subtaskId]/route.ts\", \"src/app/api/tasks/reorder/route.ts\", \"src/app/api/projects/route.ts\", \"src/app/api/projects/[id]/route.ts\", \"src/app/api/tags/route.ts\", \"src/app/api/tags/[id]/route.ts\"], \"verifyCommand\": \"npx vitest run\", \"acceptanceCriteria\": [\"No direct auth() calls in route files\", \"All existing tests pass\", \"GET handlers accept req: Request\"]}\n```"
     },
     {
       "id": 2,
       "subject": "Task 3: Create task-manager-skill plugin scaffold",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-21T12:24:00.000Z",
       "description": "**Goal:** Create the plugin directory with full skill file and push to a separate GitHub repo.\n\n**Files:**\n- Create: `task-manager-skill/.claude-plugin/plugin.json`\n- Create: `task-manager-skill/skills/task-manager.md`\n- Create: `task-manager-skill/README.md`\n\n**Acceptance Criteria:**\n- [ ] plugin.json is valid JSON with name, description, version, author\n- [ ] Skill covers all 13 CRUD operations with curl examples\n- [ ] Skill references TASK_MANAGER_API_KEY and TASK_MANAGER_BASE_URL env vars\n- [ ] Skill includes behavior rules (confirm before delete, show result, handle errors)\n- [ ] README explains installation and env var setup\n- [ ] Plugin loads: claude --plugin-dir ./task-manager-skill\n\n**Verify:** `claude --plugin-dir ./task-manager-skill` then invoke `/task-manager` — skill loads\n\n```json:metadata\n{\"files\": [\"task-manager-skill/.claude-plugin/plugin.json\", \"task-manager-skill/skills/task-manager.md\", \"task-manager-skill/README.md\"], \"verifyCommand\": \"claude --plugin-dir ./task-manager-skill\", \"acceptanceCriteria\": [\"plugin.json valid\", \"13 CRUD operations documented\", \"env var references correct\", \"behavior rules present\", \"README complete\"]}\n```"
     },
     {
       "id": 3,
       "subject": "Task 4: Configure env vars and verify end-to-end",
-      "status": "pending",
+      "status": "completed",
+      "lastUpdated": "2026-04-21T14:10:00.000Z",
       "blockedBy": [1, 2],
       "description": "**Goal:** Set Vercel env vars, find owner userId, and verify full flow with real curl against production.\n\n**Files:** No code changes — configuration only.\n\n**Acceptance Criteria:**\n- [ ] CLAUDE_API_KEY set in Vercel production env\n- [ ] CLAUDE_API_USER_ID set in Vercel production env\n- [ ] TASK_MANAGER_API_KEY and TASK_MANAGER_BASE_URL set locally\n- [ ] GET /api/tasks with API key returns 200\n- [ ] UI still works (cookie auth unaffected)\n- [ ] Wrong API key returns 401\n\n**Verify:** `curl -s \"$TASK_MANAGER_BASE_URL/api/tasks\" -H \"X-API-Key: $TASK_MANAGER_API_KEY\" | head -c 200` → JSON array\n\n```json:metadata\n{\"files\": [], \"verifyCommand\": \"curl -s \\\"$TASK_MANAGER_BASE_URL/api/tasks\\\" -H \\\"X-API-Key: $TASK_MANAGER_API_KEY\\\" | head -c 200\", \"acceptanceCriteria\": [\"CLAUDE_API_KEY in Vercel\", \"CLAUDE_API_USER_ID in Vercel\", \"GET /api/tasks returns 200 with API key\", \"Wrong key returns 401\", \"UI unaffected\"]}\n```"
     }
