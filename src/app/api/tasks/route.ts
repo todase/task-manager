@@ -48,6 +48,12 @@ export async function GET(req: Request) {
       subtasks: true,
       project: { select: { id: true, title: true, icon: true } },
       tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+      ...(doneFilter === true ? {
+        reflections: {
+          orderBy: { createdAt: "desc" as const },
+          take: 1,
+        },
+      } : {}),
     },
   })
 

@@ -24,6 +24,7 @@ export type Task = {
   subtasks: Subtask[]
   tags: Tag[]
   priorityScore: number
+  reflections?: TaskReflection[]
 }
 
 export type Project = {
