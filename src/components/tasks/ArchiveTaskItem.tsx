@@ -53,11 +53,12 @@ export function ArchiveTaskItem({ task, onRestore, onDelete }: ArchiveTaskItemPr
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {(task.reflections?.length ?? 0) > 0 && (
-            <BookOpen
-              className="w-4 h-4 text-gray-400"
-              aria-label="Есть рефлексия"
-              title="Есть рефлексия"
-            />
+            <span title="Есть рефлексия">
+              <BookOpen
+                className="w-4 h-4 text-gray-400"
+                aria-label="Есть рефлексия"
+              />
+            </span>
           )}
           <button
             onClick={(e) => {
