@@ -154,6 +154,34 @@ curl -X DELETE "$TASK_MANAGER_BASE_URL/api/projects/{id}" \
   -H "X-API-Key: $TASK_MANAGER_API_KEY"
 ```
 
+### Reflections
+
+Reflections are attached to completed tasks. To read them, fetch the archive — each task includes its reflection (if one was saved):
+
+```bash
+curl "$TASK_MANAGER_BASE_URL/api/tasks?done=true" \
+  -H "X-API-Key: $TASK_MANAGER_API_KEY"
+```
+
+Each task object may contain a `reflections` array with one entry (or empty if none was saved). Reflection fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `notes` | string \| null | Free-text retrospective |
+| `timeMinutes` | number \| null | Time spent (0–1440 min) |
+| `difficulty` | 1\|2\|3 \| null | 1 = easy, 2 = medium, 3 = hard |
+| `mood` | "energized"\|"neutral"\|"tired" \| null | Energy level after the task |
+| `createdAt` | ISO 8601 | When the reflection was saved |
+
+To filter by project or search by title, combine with other query params:
+
+```bash
+curl "$TASK_MANAGER_BASE_URL/api/tasks?done=true&q=keyword" \
+  -H "X-API-Key: $TASK_MANAGER_API_KEY"
+```
+
+When presenting reflections, skip null fields and show only what was filled in. If `reflections` is empty, note that no reflection was recorded for that task.
+
 ### Tags
 
 **List tags**
