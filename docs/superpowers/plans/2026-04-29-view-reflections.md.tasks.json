@@ -1,0 +1,26 @@
+{
+  "planPath": "docs/superpowers/plans/2026-04-29-view-reflections.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 1: Data layer — type and API",
+      "status": "pending",
+      "description": "**Goal:** `Task` carries an optional `reflections` field; the archive API endpoint populates it.\n\n**Files:**\n- Modify: `src/types/index.ts`\n- Modify: `src/app/api/tasks/route.ts`\n\n**Acceptance Criteria:**\n- [ ] `Task` type has `reflections?: TaskReflection[]`\n- [ ] `GET /api/tasks?done=true` response includes a `reflections` array on each task (latest first, max 1 entry)\n- [ ] `GET /api/tasks` (without `done=true`) does NOT include reflections\n- [ ] TypeScript build passes: `npx tsc --noEmit`\n\n**Verify:** `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/types/index.ts\", \"src/app/api/tasks/route.ts\"], \"verifyCommand\": \"npx tsc --noEmit\", \"acceptanceCriteria\": [\"Task type has reflections?: TaskReflection[]\", \"GET /api/tasks?done=true includes reflections\", \"GET /api/tasks without done=true does not include reflections\", \"TypeScript build passes\"]}\n```"
+    },
+    {
+      "id": 1,
+      "subject": "Task 2: ArchiveTaskItem component",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "**Goal:** A self-contained component that renders an archived task row with expand-to-see-reflection behaviour, a reflection icon indicator, and icon-only restore/delete buttons.\n\n**Files:**\n- Create: `src/components/tasks/ArchiveTaskItem.tsx`\n- Create: `src/components/tasks/ArchiveTaskItem.test.tsx`\n\n**Acceptance Criteria:**\n- [ ] BookOpen icon visible only when task.reflections has at least one entry\n- [ ] Clicking the row toggles open/closed\n- [ ] Expanded view shows only non-null reflection fields\n- [ ] No reflection section rendered when reflections is empty or undefined\n- [ ] Restore/delete buttons call correct callbacks and do not toggle expand\n- [ ] 7 test cases pass\n\n**Verify:** `npx vitest run src/components/tasks/ArchiveTaskItem.test.tsx` → 7 passed\n\n```json:metadata\n{\"files\": [\"src/components/tasks/ArchiveTaskItem.tsx\", \"src/components/tasks/ArchiveTaskItem.test.tsx\"], \"verifyCommand\": \"npx vitest run src/components/tasks/ArchiveTaskItem.test.tsx\", \"acceptanceCriteria\": [\"BookOpen icon visible only when reflections present\", \"Row click toggles expand\", \"Only non-empty fields render\", \"No reflection section when no reflections\", \"7 tests pass\"]}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 3: Wire ArchiveTaskItem into archive page",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** The archive page uses ArchiveTaskItem instead of the inline <li>, completing the feature end-to-end.\n\n**Files:**\n- Modify: `src/app/archive/page.tsx`\n\n**Acceptance Criteria:**\n- [ ] Archive page renders ArchiveTaskItem for each task\n- [ ] No inline task <li> remains in archive/page.tsx\n- [ ] Full test suite passes\n- [ ] TypeScript build passes\n\n**Verify:** `npx vitest run` → all tests pass, `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/app/archive/page.tsx\"], \"verifyCommand\": \"npx vitest run && npx tsc --noEmit\", \"acceptanceCriteria\": [\"Archive page uses ArchiveTaskItem\", \"No inline li remains\", \"All tests pass\", \"TypeScript clean\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-04-29T00:00:00.000Z"
+}
