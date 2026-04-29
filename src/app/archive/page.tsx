@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react"
 import { useTasks } from "@/hooks/useTasks"
 import { TaskSkeleton } from "@/components/tasks/TaskSkeleton"
 import { BurgerMenu } from "@/components/BurgerMenu"
+import { ArchiveTaskItem } from "@/components/tasks/ArchiveTaskItem"
 
 export default function ArchivePage() {
   const { status } = useSession()
@@ -84,43 +85,12 @@ export default function ArchivePage() {
       ) : (
         <ul className="flex flex-col gap-3">
           {tasks.map((task) => (
-            <li
+            <ArchiveTaskItem
               key={task.id}
-              className="flex items-center justify-between gap-3 p-4 rounded-lg bg-gray-50 border border-gray-200"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-500 line-through truncate">
-                  {task.title}
-                </p>
-                {task.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {task.tags.map((tag) => (
-                      <span
-                        key={tag.id}
-                        className="px-2 py-0.5 rounded-full text-xs text-white"
-                        style={{ backgroundColor: tag.color }}
-                      >
-                        {tag.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <button
-                  onClick={() => restoreTask(task.id)}
-                  className="text-xs text-blue-500 hover:text-blue-700 px-2 py-1 rounded border border-blue-200 hover:border-blue-400"
-                >
-                  Восстановить
-                </button>
-                <button
-                  onClick={() => deleteTask(task.id)}
-                  className="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded border border-red-200 hover:border-red-400"
-                >
-                  Удалить
-                </button>
-              </div>
-            </li>
+              task={task}
+              onRestore={restoreTask}
+              onDelete={deleteTask}
+            />
           ))}
         </ul>
       )}
