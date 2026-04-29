@@ -25,12 +25,17 @@ interface ArchiveTaskItemProps {
 export function ArchiveTaskItem({ task, onRestore, onDelete }: ArchiveTaskItemProps) {
   const [isOpen, setIsOpen] = useState(false)
   const reflection = task.reflections?.[0]
+  const hasReflection = (task.reflections?.length ?? 0) > 0
 
   return (
     <li className="rounded-lg bg-gray-50 border border-gray-200 overflow-hidden">
       <div
-        className="flex items-center gap-3 p-4 cursor-pointer select-none"
-        onClick={() => setIsOpen((o) => !o)}
+        className={`flex items-center gap-3 p-4 select-none ${hasReflection ? "cursor-pointer" : ""}`}
+        onClick={hasReflection ? () => setIsOpen((o) => !o) : undefined}
+        role={hasReflection ? "button" : undefined}
+        aria-expanded={hasReflection ? isOpen : undefined}
+        tabIndex={hasReflection ? 0 : undefined}
+        onKeyDown={hasReflection ? (e) => { if (e.key === "Enter" || e.key === " ") setIsOpen((o) => !o) } : undefined}
       >
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-500 line-through truncate">
@@ -94,12 +99,11 @@ export function ArchiveTaskItem({ task, onRestore, onDelete }: ArchiveTaskItemPr
           {reflection.timeMinutes != null && (
             <p className="text-sm text-gray-500">⏱ {reflection.timeMinutes} мин</p>
           )}
-          {reflection.difficulty != null && (() => {
-            const [emoji, label] = DIFFICULTY_LABEL[reflection.difficulty] ?? []
-            return emoji ? (
-              <p className="text-sm text-gray-500">{emoji} {label}</p>
-            ) : null
-          })()}
+          {reflection.difficulty != null && DIFFICULTY_LABEL[reflection.difficulty]?.[0] && (
+            <p className="text-sm text-gray-500">
+              {DIFFICULTY_LABEL[reflection.difficulty][0]} {DIFFICULTY_LABEL[reflection.difficulty][1]}
+            </p>
+          )}
           {reflection.mood && (
             <span className="self-start text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
               {MOOD_LABEL[reflection.mood] ?? reflection.mood}

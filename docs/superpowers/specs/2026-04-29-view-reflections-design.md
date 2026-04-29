@@ -75,7 +75,7 @@ A "Рефлексия" section rendered below the title. Only non-empty fields a
 | `timeMinutes` | "⏱ 42 мин" |
 | `difficulty` | Emoji + label: 😊 Легко / 😐 Нормально / 😤 Сложно |
 | `mood` | Chip: зарядился / нейтрально / устал |
-| `createdAt` | Formatted date: "28 апр 2026" |
+| `createdAt` | Formatted date via `new Date(r.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" })` → "28 апр. 2026 г." |
 
 If `task.reflections` is empty or undefined, the reflection section is not rendered at all.
 
@@ -98,7 +98,7 @@ Scenarios:
 - Restore button calls `onRestore` with the task id
 - Delete button calls `onDelete` with the task id
 
-No changes to existing API route tests — the Prisma include addition is covered by the existing GET tasks tests indirectly, and the reflection model is already tested.
+Two explicit API tests were added to verify the conditional include: one asserting `reflections` is present when `done=true`, and one asserting it is absent otherwise.
 
 ---
 

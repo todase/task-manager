@@ -130,6 +130,7 @@ export function TagFilter({
                   <span key={tag.id} className="flex items-center">
                     <button
                       onClick={() => toggle(tag.id)}
+                      aria-expanded={showEdit || undefined}
                       className="text-xs px-2.5 py-1 border transition-colors"
                       style={
                         active
