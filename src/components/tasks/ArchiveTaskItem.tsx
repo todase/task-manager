@@ -56,6 +56,7 @@ export function ArchiveTaskItem({ task, onRestore, onDelete }: ArchiveTaskItemPr
             <BookOpen
               className="w-4 h-4 text-gray-400"
               aria-label="Есть рефлексия"
+              title="Есть рефлексия"
             />
           )}
           <button

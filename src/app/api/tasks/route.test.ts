@@ -118,6 +118,29 @@ describe("GET /api/tasks", () => {
       })
     )
   })
+
+  it("includes reflections in include when done=true", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockPrisma.task.findMany.mockResolvedValue([] as never)
+
+    await GET(req("http://localhost/api/tasks?done=true"))
+
+    expect(mockPrisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({ reflections: expect.any(Object) }),
+      })
+    )
+  })
+
+  it("does not include reflections in include when done is not true", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockPrisma.task.findMany.mockResolvedValue([] as never)
+
+    await GET(req("http://localhost/api/tasks"))
+
+    const call = mockPrisma.task.findMany.mock.calls[0][0] as { include: Record<string, unknown> }
+    expect(call.include).not.toHaveProperty("reflections")
+  })
 })
 
 describe("POST /api/tasks", () => {

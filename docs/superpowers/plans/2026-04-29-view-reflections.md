@@ -119,9 +119,9 @@ git commit -m "feat: include latest reflection in done tasks API response"
 - [ ] Expanded view shows only non-null/non-undefined reflection fields
 - [ ] No reflection section rendered when `reflections` is empty or undefined
 - [ ] Restore button calls `onRestore(task.id)`; delete button calls `onDelete(task.id)`; neither button toggles expand
-- [ ] All 7 test cases pass: `npx vitest run src/components/tasks/ArchiveTaskItem.test.tsx`
+- [ ] All 8 test cases pass: `npx vitest run src/components/tasks/ArchiveTaskItem.test.tsx`
 
-**Verify:** `npx vitest run src/components/tasks/ArchiveTaskItem.test.tsx` → 7 passed
+**Verify:** `npx vitest run src/components/tasks/ArchiveTaskItem.test.tsx` → 8 passed
 
 **Steps:**
 
