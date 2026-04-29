@@ -127,4 +127,33 @@ describe("POST /api/tasks/[id]/reflection", () => {
     expect(res.status).toBe(200)
     expect(taskCreate).not.toHaveBeenCalled()
   })
+
+  it("returns 400 for invalid JSON body", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockFindUnique.mockResolvedValue({ id: "task-1", userId: "u1", projectId: null } as never)
+    const req = new Request("http://localhost/api/tasks/task-1/reflection", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "not json",
+    })
+    const res = await POST(req, params())
+    expect(res.status).toBe(400)
+  })
+
+  it("coerces invalid timeMinutes and difficulty to null", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockFindUnique.mockResolvedValue({ id: "task-1", userId: "u1", projectId: null } as never)
+
+    const reflectionCreate = vi.fn().mockResolvedValue(mockReflection)
+    const taskCreate = vi.fn()
+    mockTransaction.mockImplementation(
+      async (fn: (tx: unknown) => Promise<unknown>) =>
+        fn({ taskReflection: { create: reflectionCreate }, task: { create: taskCreate } })
+    )
+
+    await POST(jsonReq({ timeMinutes: "lots", difficulty: 99, mood: "wired" }), params())
+    expect(reflectionCreate).toHaveBeenCalledWith({
+      data: { taskId: "task-1", notes: null, timeMinutes: null, difficulty: null, mood: null },
+    })
+  })
 })

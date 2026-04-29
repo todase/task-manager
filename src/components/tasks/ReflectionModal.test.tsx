@@ -68,6 +68,22 @@ describe("ReflectionModal", () => {
     expect(onClose).toHaveBeenCalled()
   })
 
+  it("shows error and keeps modal open when save returns non-ok", async () => {
+    mockApiFetch.mockResolvedValue({
+      ok: false,
+      json: vi.fn().mockResolvedValue({}),
+    } as unknown as Response)
+
+    render(<ReflectionModal taskId="task-1" onClose={onClose} />)
+    fireEvent.click(screen.getByText("Сохранить рефлексию"))
+
+    await waitFor(() =>
+      expect(screen.getByText(/Не удалось сохранить/)).toBeInTheDocument()
+    )
+    expect(onClose).not.toHaveBeenCalled()
+    expect(invalidateQueries).not.toHaveBeenCalled()
+  })
+
   it("sends form values in POST body", async () => {
     render(<ReflectionModal taskId="task-1" onClose={onClose} />)
 

@@ -28,12 +28,14 @@ export function ReflectionModal({ taskId, onClose }: ReflectionModalProps) {
   const [mood, setMood] = useState<"energized" | "neutral" | "tired" | null>(null)
   const [nextStepTitle, setNextStepTitle] = useState("")
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   async function handleSave() {
     setSaving(true)
+    setSaveError(null)
     try {
-      await apiFetch(`/api/tasks/${taskId}/reflection`, {
+      const res = await apiFetch(`/api/tasks/${taskId}/reflection`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -44,10 +46,16 @@ export function ReflectionModal({ taskId, onClose }: ReflectionModalProps) {
           nextStepTitle: nextStepTitle || undefined,
         }),
       })
+      if (!res.ok) {
+        setSaveError("Не удалось сохранить. Попробуйте ещё раз.")
+        return
+      }
       await queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      onClose()
+    } catch {
+      setSaveError("Не удалось сохранить. Попробуйте ещё раз.")
     } finally {
       setSaving(false)
-      onClose()
     }
   }
 
@@ -78,6 +86,7 @@ export function ReflectionModal({ taskId, onClose }: ReflectionModalProps) {
             onChange={(e) => setTimeMinutes(e.target.value)}
             placeholder="0"
             min={0}
+            max={1440}
             aria-label="мин"
             className="w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-400"
           />
@@ -128,6 +137,10 @@ export function ReflectionModal({ taskId, onClose }: ReflectionModalProps) {
           />
           <p className="text-xs text-gray-400">Появится в том же проекте</p>
         </div>
+
+        {saveError && (
+          <p className="text-xs text-red-500">{saveError}</p>
+        )}
 
         <div className="flex gap-2 pt-1">
           <button

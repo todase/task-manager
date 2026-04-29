@@ -17,16 +17,32 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
 
-  const { notes, timeMinutes, difficulty, mood, nextStepTitle } = await req.json()
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+  }
+
+  const { notes, timeMinutes, difficulty, mood, nextStepTitle } = body
+
+  const safeTime =
+    typeof timeMinutes === "number" && Number.isFinite(timeMinutes) && timeMinutes >= 0 && timeMinutes <= 1440
+      ? timeMinutes
+      : null
+  const safeDifficulty = [1, 2, 3].includes(difficulty as number) ? (difficulty as 1 | 2 | 3) : null
+  const safeMood = ["energized", "neutral", "tired"].includes(mood as string)
+    ? (mood as "energized" | "neutral" | "tired")
+    : null
 
   const result = await prisma.$transaction(async (tx) => {
     const reflection = await tx.taskReflection.create({
       data: {
         taskId: id,
-        notes: notes ?? null,
-        timeMinutes: timeMinutes ?? null,
-        difficulty: difficulty ?? null,
-        mood: mood ?? null,
+        notes: typeof notes === "string" && notes ? notes : null,
+        timeMinutes: safeTime,
+        difficulty: safeDifficulty,
+        mood: safeMood,
       },
     })
 
