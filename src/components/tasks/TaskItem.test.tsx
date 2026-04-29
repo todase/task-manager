@@ -24,13 +24,6 @@ vi.mock("@/lib/priority", () => ({
   priorityColor: () => "rgb(59, 130, 246)",
 }))
 
-vi.mock("@/components/tasks/ReflectionModal", () => ({
-  ReflectionModal: ({ onClose }: { taskId: string; onClose: () => void }) => (
-    <div data-testid="reflection-modal">
-      <button onClick={onClose}>close-modal</button>
-    </div>
-  ),
-}))
 
 afterEach(cleanup)
 
@@ -74,6 +67,7 @@ const defaultProps = {
   onAddSubtask: vi.fn().mockResolvedValue(undefined),
   onToggleSubtask: vi.fn().mockResolvedValue(undefined),
   onDeleteSubtask: vi.fn().mockResolvedValue(undefined),
+  onRequestReflection: vi.fn(),
 }
 
 beforeEach(() => {
@@ -274,27 +268,17 @@ describe("TaskItem", () => {
 })
 
 describe("ReflectionModal trigger", () => {
-  it("shows ReflectionModal when toggling incomplete task to done", async () => {
-    render(<TaskItem {...defaultProps} task={makeTask({ done: false })} />)
+  it("calls onRequestReflection with task id when toggling incomplete task to done", () => {
+    const onRequestReflection = vi.fn()
+    render(<TaskItem {...defaultProps} task={makeTask({ id: "task-1", done: false })} onRequestReflection={onRequestReflection} />)
     fireEvent.click(screen.getByLabelText("Отметить выполненной"))
-    await waitFor(() =>
-      expect(screen.getByTestId("reflection-modal")).toBeInTheDocument()
-    )
+    expect(onRequestReflection).toHaveBeenCalledWith("task-1")
   })
 
-  it("does not show ReflectionModal when toggling done task to undone", () => {
-    render(<TaskItem {...defaultProps} task={makeTask({ done: true })} />)
+  it("does not call onRequestReflection when toggling done task to undone", () => {
+    const onRequestReflection = vi.fn()
+    render(<TaskItem {...defaultProps} task={makeTask({ done: true })} onRequestReflection={onRequestReflection} />)
     fireEvent.click(screen.getByLabelText("Отметить невыполненной"))
-    expect(screen.queryByTestId("reflection-modal")).not.toBeInTheDocument()
-  })
-
-  it("closes ReflectionModal when onClose is called", async () => {
-    render(<TaskItem {...defaultProps} task={makeTask({ done: false })} />)
-    fireEvent.click(screen.getByLabelText("Отметить выполненной"))
-    await waitFor(() =>
-      expect(screen.getByTestId("reflection-modal")).toBeInTheDocument()
-    )
-    fireEvent.click(screen.getByText("close-modal"))
-    expect(screen.queryByTestId("reflection-modal")).not.toBeInTheDocument()
+    expect(onRequestReflection).not.toHaveBeenCalled()
   })
 })

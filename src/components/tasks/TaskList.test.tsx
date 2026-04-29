@@ -21,6 +21,10 @@ vi.mock("@/components/tasks/TaskSkeleton", () => ({
   TaskSkeleton: () => <div data-testid="task-skeleton" />,
 }))
 
+vi.mock("@/components/tasks/ReflectionModal", () => ({
+  ReflectionModal: () => <div data-testid="reflection-modal" />,
+}))
+
 afterEach(cleanup)
 
 const makeTask = (overrides: Partial<Task> = {}): Task => ({

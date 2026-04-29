@@ -1,8 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { SortableTask } from "@/components/SortableTask"
 import { TaskItem } from "@/components/tasks/TaskItem"
+import { ReflectionModal } from "@/components/tasks/ReflectionModal"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { TaskSkeleton } from "@/components/tasks/TaskSkeleton"
 import type { Task, Subtask, DateFilter, Project, Tag } from "@/types"
@@ -58,6 +60,8 @@ export function TaskList({
   onToggleSubtask,
   onDeleteSubtask,
 }: TaskListProps) {
+  const [reflectionTaskId, setReflectionTaskId] = useState<string | null>(null)
+
   if (isLoading) return <TaskSkeleton />
 
   return (
@@ -90,12 +94,19 @@ export function TaskList({
                   onAddSubtask={onAddSubtask}
                   onToggleSubtask={onToggleSubtask}
                   onDeleteSubtask={onDeleteSubtask}
+                  onRequestReflection={setReflectionTaskId}
                 />
               </SortableTask>
             ))
           )}
         </ul>
       </SortableContext>
+      {reflectionTaskId && (
+        <ReflectionModal
+          taskId={reflectionTaskId}
+          onClose={() => setReflectionTaskId(null)}
+        />
+      )}
     </ErrorBoundary>
   )
 }
