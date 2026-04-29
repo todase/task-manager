@@ -47,10 +47,11 @@ export async function POST(
     })
 
     let nextTask: Awaited<ReturnType<typeof tx.task.create>> | undefined
-    if (nextStepTitle?.trim()) {
+    const nextStepStr = typeof nextStepTitle === "string" ? nextStepTitle.trim() : ""
+    if (nextStepStr) {
       nextTask = await tx.task.create({
         data: {
-          title: nextStepTitle.trim(),
+          title: nextStepStr,
           userId,
           projectId: task.projectId,
           done: false,
