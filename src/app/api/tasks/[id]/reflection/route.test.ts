@@ -83,7 +83,7 @@ describe("POST /api/tasks/[id]/reflection", () => {
 
     expect(res.status).toBe(200)
     expect(body.reflection).toMatchObject({ id: "ref-1" })
-    expect(body.nextTask).toBeUndefined()
+    expect(body).not.toHaveProperty("nextTask")
     expect(taskCreate).not.toHaveBeenCalled()
     expect(reflectionCreate).toHaveBeenCalledWith({
       data: { taskId: "task-1", notes: "Went well", timeMinutes: 30, difficulty: 2, mood: "neutral" },

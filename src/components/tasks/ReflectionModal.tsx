@@ -9,10 +9,10 @@ interface ReflectionModalProps {
   onClose: () => void
 }
 
-const DIFFICULTY_OPTIONS: [1 | 2 | 3, string][] = [
-  [1, "😊"],
-  [2, "😐"],
-  [3, "😤"],
+const DIFFICULTY_OPTIONS: [1 | 2 | 3, string, string][] = [
+  [1, "😊", "Легко"],
+  [2, "😐", "Нормально"],
+  [3, "😤", "Сложно"],
 ]
 
 const MOOD_OPTIONS: ["energized" | "neutral" | "tired", string][] = [
@@ -40,7 +40,7 @@ export function ReflectionModal({ taskId, onClose }: ReflectionModalProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           notes: notes || undefined,
-          timeMinutes: timeMinutes ? Number(timeMinutes) : undefined,
+          timeMinutes: (() => { const n = Number(timeMinutes); return timeMinutes && Number.isFinite(n) ? n : undefined })(),
           difficulty: difficulty ?? undefined,
           mood: mood ?? undefined,
           nextStepTitle: nextStepTitle || undefined,
@@ -94,10 +94,11 @@ export function ReflectionModal({ taskId, onClose }: ReflectionModalProps) {
         </div>
 
         <div className="flex gap-2">
-          {DIFFICULTY_OPTIONS.map(([val, emoji]) => (
+          {DIFFICULTY_OPTIONS.map(([val, emoji, label]) => (
             <button
               key={val}
               type="button"
+              aria-label={label}
               onClick={() => setDifficulty(difficulty === val ? null : val)}
               className={`text-xl px-3 py-1.5 rounded-lg border transition-colors ${
                 difficulty === val
