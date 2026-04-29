@@ -127,11 +127,11 @@ export function TagFilter({
                 const showEdit = active && tag.id === lastTappedId
 
                 return (
-                  <span key={tag.id} className="flex items-center">
+                  <span key={tag.id} className="flex items-stretch">
                     <button
                       onClick={() => toggle(tag.id)}
                       aria-expanded={showEdit || undefined}
-                      className="text-xs px-2.5 py-1 border transition-colors"
+                      className="text-xs px-2.5 py-1 border transition-colors flex items-center"
                       style={
                         active
                           ? {
@@ -155,7 +155,7 @@ export function TagFilter({
                         onClick={() => edit.startEditing(tag)}
                         disabled={!isOnline}
                         title={!isOnline ? "Недоступно без подключения" : undefined}
-                        className="flex items-center justify-center px-1.5 py-1 border border-l-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center justify-center px-1.5 border border-l-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
                           backgroundColor: tag.color,
                           borderColor: tag.color,
