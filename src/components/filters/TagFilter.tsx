@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Tag, ChevronDown, ChevronUp, Pencil } from "lucide-react"
 import { useTagEditing } from "@/hooks/useTagEditing"
 import { useOnlineStatus } from "@/hooks/useOnlineStatus"
@@ -26,13 +27,16 @@ export function TagFilter({
 }: TagFilterProps) {
   const edit = useTagEditing({ onUpdate, onDelete })
   const isOnline = useOnlineStatus()
+  const [lastTappedId, setLastTappedId] = useState<string | null>(null)
 
   function toggle(id: string) {
-    onChange(
-      selectedIds.includes(id)
-        ? selectedIds.filter((s) => s !== id)
-        : [...selectedIds, id]
-    )
+    if (selectedIds.includes(id)) {
+      onChange(selectedIds.filter((s) => s !== id))
+      if (lastTappedId === id) setLastTappedId(null)
+    } else {
+      onChange([...selectedIds, id])
+      setLastTappedId(id)
+    }
   }
 
   const badgeCount = selectedIds.length > 0 ? selectedIds.length : tags.length
@@ -120,38 +124,54 @@ export function TagFilter({
                   )
                 }
 
+                const showEdit = active && tag.id === lastTappedId
+
                 return (
-                  <span key={tag.id} className="flex items-center group">
+                  <span key={tag.id} className="flex items-center">
                     <button
                       onClick={() => toggle(tag.id)}
-                      className="text-xs px-2.5 py-1 rounded-full border transition-colors"
+                      className="text-xs px-2.5 py-1 border transition-colors"
                       style={
                         active
-                          ? { backgroundColor: tag.color, borderColor: tag.color, color: "white" }
+                          ? {
+                              backgroundColor: tag.color,
+                              borderColor: tag.color,
+                              color: "white",
+                              borderRadius: showEdit ? "9999px 0 0 9999px" : "9999px",
+                            }
                           : {
                               backgroundColor: `${tag.color}26`,
                               borderColor: `${tag.color}80`,
                               color: tag.color,
+                              borderRadius: "9999px",
                             }
                       }
                     >
                       {tag.name}
                     </button>
-                    <button
-                      onClick={() => edit.startEditing(tag)}
-                      disabled={!isOnline}
-                      title={!isOnline ? "Недоступно без подключения" : undefined}
-                      className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
-                      aria-label="Редактировать метку"
-                    >
-                      <Pencil className="w-3 h-3" />
-                    </button>
+                    {showEdit && (
+                      <button
+                        onClick={() => edit.startEditing(tag)}
+                        disabled={!isOnline}
+                        title={!isOnline ? "Недоступно без подключения" : undefined}
+                        className="flex items-center justify-center px-1.5 py-1 border border-l-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                          backgroundColor: tag.color,
+                          borderColor: tag.color,
+                          color: "white",
+                          borderRadius: "0 9999px 9999px 0",
+                        }}
+                        aria-label="Редактировать метку"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
                   </span>
                 )
               })}
               {selectedIds.length > 0 && (
                 <button
-                  onClick={() => onChange([])}
+                  onClick={() => { onChange([]); setLastTappedId(null) }}
                   className="text-xs text-gray-400 hover:text-gray-600"
                 >
                   Сбросить
