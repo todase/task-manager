@@ -30,16 +30,31 @@ model Task {
   recurrence  String?
   description String?
   order       Int       @default(0)
+  isHabit     Boolean   @default(false)
   userId      String
   user        User      @relation(fields: [userId], references: [id])
   projectId   String?
   project     Project?  @relation(fields: [projectId], references: [id])
   subtasks    Subtask[]
   tags        TaskTag[]
+  habitLogs   HabitLog[]
   createdAt   DateTime  @default(now())
   reflections TaskReflection[]
 }
 
+
+model HabitLog {
+  id           String          @id @default(cuid())
+  taskId       String
+  task         Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  date         DateTime  @db.Date
+  reflectionId String?         @unique
+  reflection   TaskReflection? @relation(fields: [reflectionId], references: [id])
+  createdAt    DateTime        @default(now())
+
+  @@unique([taskId, date])
+  @@index([taskId, date])
+}
 
 model TaskReflection {
   id          String   @id @default(cuid())
@@ -50,6 +65,7 @@ model TaskReflection {
   difficulty  Int?
   mood        String?
   createdAt   DateTime @default(now())
+  habitLog    HabitLog?
 }
 
 model Subtask {

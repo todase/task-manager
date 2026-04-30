@@ -44,7 +44,8 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
       const tempTask: Task = {
         id: tempId, title: input.title, done: false,
         dueDate: input.dueDate ?? null, recurrence: input.recurrence ?? null,
-        description: null, order: 0, project, subtasks: [], tags: [], priorityScore: 1,
+        description: null, order: 0, isHabit: input.isHabit ?? false,
+        createdAt: new Date().toISOString(), project, subtasks: [], tags: [], priorityScore: 1,
       }
       qc.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
         if (!old) return [tempTask]

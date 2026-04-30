@@ -47,16 +47,30 @@ export async function POST(
     })
 
     let nextTask: Awaited<ReturnType<typeof tx.task.create>> | undefined
-    const nextStepStr = typeof nextStepTitle === "string" ? nextStepTitle.trim() : ""
-    if (nextStepStr) {
-      nextTask = await tx.task.create({
-        data: {
-          title: nextStepStr,
-          userId,
-          projectId: task.projectId,
-          done: false,
-        },
+
+    if (task.isHabit) {
+      const latestLog = await tx.habitLog.findFirst({
+        where: { taskId: id, reflectionId: null },
+        orderBy: { date: "desc" },
       })
+      if (latestLog) {
+        await tx.habitLog.update({
+          where: { id: latestLog.id },
+          data: { reflectionId: reflection.id },
+        })
+      }
+    } else {
+      const nextStepStr = typeof nextStepTitle === "string" ? nextStepTitle.trim() : ""
+      if (nextStepStr) {
+        nextTask = await tx.task.create({
+          data: {
+            title: nextStepStr,
+            userId,
+            projectId: task.projectId,
+            done: false,
+          },
+        })
+      }
     }
 
     return { reflection, nextTask }

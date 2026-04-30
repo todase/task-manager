@@ -17,6 +17,8 @@ export async function GET(req: Request) {
   const limitParam = searchParams.get("limit")
   const sortParam = searchParams.get("sort")
   const q = searchParams.get("q") ?? undefined
+  const isHabitParam = searchParams.get("isHabit")
+  const isHabitFilter = isHabitParam === "true" ? true : undefined
 
   const doneFilter =
     doneParam === "true" ? true : doneParam === "false" ? false : undefined
@@ -32,6 +34,7 @@ export async function GET(req: Request) {
   const where: Prisma.TaskWhereInput = {
     userId,
     ...(doneFilter !== undefined && { done: doneFilter }),
+    ...(isHabitFilter !== undefined && { isHabit: true }),
     ...(q && {
       OR: [
         { title: { contains: q, mode: "insensitive" } },
@@ -69,10 +72,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { title, projectId, dueDate, recurrence, tagIds } = await req.json()
+  const { title, projectId, dueDate, recurrence, tagIds, isHabit } = await req.json()
 
   if (!title || typeof title !== "string" || !title.trim()) {
     return NextResponse.json({ error: "title is required" }, { status: 400 })
+  }
+
+  if (isHabit === true && !recurrence) {
+    return NextResponse.json(
+      { error: "isHabit requires recurrence" },
+      { status: 400 }
+    )
   }
 
   if (projectId) {
@@ -108,6 +118,7 @@ export async function POST(req: Request) {
         ...(projectId && { projectId }),
         ...(dueDate && { dueDate: new Date(dueDate) }),
         ...(recurrence && { recurrence }),
+        ...(isHabit === true && { isHabit: true }),
         ...(Array.isArray(tagIds) && tagIds.length > 0 && {
           tags: { create: tagIds.map((tagId: string) => ({ tagId })) },
         }),

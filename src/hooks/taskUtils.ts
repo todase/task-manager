@@ -4,6 +4,7 @@ export type TaskFilters = {
   done?: boolean
   q?: string
   sort?: "order" | "createdAt_desc"
+  isHabit?: boolean
 }
 
 export type CreateTaskInput = {
@@ -12,6 +13,7 @@ export type CreateTaskInput = {
   recurrence?: string
   projectId?: string
   tagIds?: string[]
+  isHabit?: boolean
 }
 
 export function buildTasksUrl(filters: TaskFilters): string {
@@ -19,6 +21,7 @@ export function buildTasksUrl(filters: TaskFilters): string {
   if (filters.done !== undefined) params.set("done", String(filters.done))
   if (filters.q) params.set("q", filters.q)
   if (filters.sort) params.set("sort", filters.sort)
+  if (filters.isHabit) params.set("isHabit", "true")
   const str = params.toString()
   return str ? `/api/tasks?${str}` : "/api/tasks"
 }

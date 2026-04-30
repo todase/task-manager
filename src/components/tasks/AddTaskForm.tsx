@@ -35,6 +35,7 @@ export function AddTaskForm({
   const [title, setTitle] = useState("")
   const [dueDate, setDueDate] = useState(defaultDueDate ?? "")
   const [recurrence, setRecurrence] = useState("")
+  const [isHabit, setIsHabit] = useState(false)
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
   const [showTagMenu, setShowTagMenu] = useState(false)
@@ -68,6 +69,7 @@ export function AddTaskForm({
     setTitle("")
     setDueDate(defaultDueDate ?? "")
     setRecurrence("")
+    setIsHabit(false)
     setSelectedTagIds([])
     setTagInput("")
     setShowTagMenu(false)
@@ -91,6 +93,7 @@ export function AddTaskForm({
         ? { projectId: selectedProjectId }
         : {}),
       ...(selectedTagIds.length > 0 && { tagIds: selectedTagIds }),
+      ...(isHabit && { isHabit: true }),
     })
     closeModal()
   }
@@ -302,7 +305,11 @@ export function AddTaskForm({
                 {activeField === "recurrence" && (
                   <select
                     value={recurrence}
-                    onChange={(e) => setRecurrence(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setRecurrence(val)
+                      if (!val) setIsHabit(false)
+                    }}
                     className="border border-gray-200 rounded-lg p-2 text-sm text-gray-600 outline-none focus:border-blue-400"
                   >
                     <option value="">Не повторять</option>
@@ -310,6 +317,21 @@ export function AddTaskForm({
                     <option value="weekly">Каждую неделю</option>
                     <option value="monthly">Каждый месяц</option>
                   </select>
+                )}
+
+                {/* Habit toggle — only when recurrence is selected */}
+                {recurrence && (
+                  <button
+                    type="button"
+                    onClick={() => setIsHabit((prev) => !prev)}
+                    className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-full border transition-colors ${
+                      isHabit
+                        ? "border-purple-400 bg-purple-50 text-purple-700"
+                        : "border-gray-200 text-gray-500 hover:border-gray-300"
+                    }`}
+                  >
+                    <span>{isHabit ? "✓" : ""} Привычка</span>
+                  </button>
                 )}
 
                 {/* Tag selector */}

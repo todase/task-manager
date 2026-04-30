@@ -3,7 +3,7 @@
 import { useRef, useState } from "react"
 import Link from "next/link"
 import { signOut } from "next-auth/react"
-import { Archive, LogOut, Menu, Search, X } from "lucide-react"
+import { Archive, LogOut, Menu, Search, X, Flame } from "lucide-react"
 import { useClickOutside } from "@/hooks/useClickOutside"
 import { queryClient } from "@/lib/queryClient"
 import { persister } from "@/lib/persister"
@@ -55,6 +55,14 @@ export function BurgerMenu({ onSearch }: BurgerMenuProps) {
           >
             <Archive className="w-4 h-4 text-gray-400" />
             Архив
+          </Link>
+          <Link
+            href="/habits"
+            onClick={close}
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Flame className="w-4 h-4 text-gray-400" />
+            Привычки
           </Link>
           <div className="my-1 border-t border-gray-100" />
           <button
