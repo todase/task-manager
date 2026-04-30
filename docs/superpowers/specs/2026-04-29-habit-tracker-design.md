@@ -1,7 +1,7 @@
 # Habit Tracker — Design Spec
 
 **Date:** 2026-04-29  
-**Status:** Approved (rev 2 — post code review)
+**Status:** Approved (rev 3 — second code review pass)
 
 ## Overview
 
@@ -26,6 +26,9 @@ model HabitLog {
   reflectionId String?         @unique
   reflection   TaskReflection? @relation(fields: [reflectionId], references: [id])
   createdAt    DateTime        @default(now())
+
+  @@unique([taskId, date])  // one log per habit per UTC day; tap-twice is idempotent
+  @@index([taskId, date])
 }
 
 model TaskReflection {
@@ -36,7 +39,9 @@ model TaskReflection {
 
 **Constraint:** `isHabit = true` requires `recurrence IS NOT NULL`. Enforced server-side in `PATCH /api/tasks/[id]` and `POST /api/tasks` — return 400 if `isHabit: true` and `recurrence` is null.
 
-**Note on `date`:** Always stored as UTC midnight (`new Date(Date.UTC(y, m, d))`). Streak and completion-rate logic must compare dates at UTC day granularity, not timestamp precision.
+**Note on `date`:** Always stored as UTC midnight (`new Date(Date.UTC(y, m, d))`). Streak and completion-rate logic must compare dates at UTC day granularity, not timestamp precision. Users in UTC+N timezones completing a habit late at night will see the log attributed to the UTC day — acceptable for v1.
+
+**Note on `TaskReflection` dual-use:** Habit reflections set both `TaskReflection.taskId` (the habit task) and `HabitLog.reflectionId`. A query "all reflections for task X" therefore includes habit-completion reflections. This is intentional — the archive page can display them as before.
 
 ### Types (`src/types/index.ts`)
 
@@ -57,12 +62,17 @@ type HabitLog = {
 
 **`PATCH /api/tasks/[id]`** — when the incoming body includes `done: true` on a task with `isHabit: true`, inside the existing recurring-task early-return branch:
 1. Compute `date` as UTC midnight of today
-2. Create `HabitLog` and update the task's `dueDate` in a single Prisma transaction so a partial failure cannot leave the task rescheduled without a log
-3. Return the updated task as usual — no `requiresReflection` flag needed
+2. Upsert `HabitLog` (key `[taskId, date]` — idempotent on double-tap) and update the task's `dueDate` in a single Prisma transaction
+3. Return the updated task as usual — no extra fields, no `requiresReflection` flag
 
-The client opens `ReflectionModal` unconditionally whenever `isHabit: true && !task.done` (matching the existing pattern for regular task reflections). This is simpler than a server-driven flag.
+The client opens `ReflectionModal` synchronously off the click whenever `isHabit: true && !task.done` (same fire-and-forget pattern as today's regular-task reflection in `TaskItem.tsx:157-160`). The client passes only `taskId` to the modal — no `habitLogId`. This preserves the snappy UX and avoids changing the `onToggle` contract.
 
-**`POST /api/tasks/[id]/reflection`** — accepts optional `habitLogId: string` in the request body. When present, updates `HabitLog.reflectionId = newReflection.id` in the same transaction. Returns 400 if `habitLogId` does not belong to the authenticated user's task.
+**`POST /api/tasks/[id]/reflection`** — server-side resolves the linkage:
+1. Create the `TaskReflection` as today
+2. If the task has `isHabit: true`, find the most recent `HabitLog` for that task (`orderBy: { date: 'desc' }, take: 1`) and set its `reflectionId` to the new reflection. This works because the PATCH that opened the modal already created/upserted the log for today before the modal appeared.
+3. **If `isHabit: true`, ignore `nextStepTitle`** — do not create a next-step task. (Server-enforced, not just client-hidden.)
+
+All three operations run in one transaction.
 
 **`GET /api/tasks`** — includes `isHabit` in task response. Supports `?isHabit=true` query param. Requires updates to:
 - `TaskFilters` type in `src/hooks/taskUtils.ts` — add `isHabit?: boolean`
@@ -106,11 +116,9 @@ Tap to expand details (loads logs lazily via `useHabitLogs`).
 
 **`TaskList.tsx`** — renders `<HabitSection habits={habits} onToggle={onToggle} />` before the sortable task list. `habits` = tasks filtered by `isHabit: true` from the existing cached list. `onToggle` = the same `toggleTask` mutation already used by `TaskItem`.
 
-**`AddTaskForm.tsx`** — adds an "Is a habit" toggle that appears only when a recurrence is selected. Sets `isHabit: true` on submit.
+**`AddTaskForm.tsx`** — adds an "Is a habit" toggle that appears only when a recurrence is selected. If the user clears the recurrence selection, `isHabit` is silently reset to `false` and the toggle is hidden. Sets `isHabit: true` on submit.
 
-**`ReflectionModal.tsx`** — two changes:
-1. Add optional prop `habitLogId?: string`. When present, passes it to the reflection POST endpoint.
-2. Hide the "next step" field when `habitLogId` is present — creating a new task on every habit completion is not useful.
+**`ReflectionModal.tsx`** — one change: add optional prop `isHabit?: boolean`. When `true`, hide the "next step" field. The modal does not need `habitLogId` — server resolves linkage from `taskId` + most-recent log.
 
 ### New page
 
@@ -119,7 +127,7 @@ Tap to expand details (loads logs lazily via `useHabitLogs`).
 ## Hooks
 
 **`useHabits` (`hooks/useHabits.ts`)**  
-Filters `isHabit: true` tasks from the unfiltered `["tasks", {}]` cache entry (the one fetched with no date/project filters). Falls back to a dedicated `GET /api/tasks?isHabit=true` query if that entry is not populated (e.g. user opens `/habits` directly).
+Always runs `useQuery({ queryKey: ["tasks", { isHabit: true }], ... })` and lets TanStack Query dedupe. Don't try to filter from another cache entry — explicit query is simpler and avoids stale-cache edge cases.
 
 **`useHabitLogs` (`hooks/useHabitLogs.ts`)**  
 `useQuery` with key `["habitLogs", taskId]`. Fetches `/api/tasks/[id]/habit-logs`. Called lazily — only on the `/habits` page when a card is opened.
@@ -130,21 +138,21 @@ Pure function (no `use` prefix to avoid React lint warnings). Accepts `HabitLog[
 { streak: number; completionRate: number; moodTrend: Mood[] }
 ```
 - **Streak**: only for `recurrence === "daily"`. Walk dates backward from today (UTC midnight); stop at first day with no matching log. "Today" = current UTC date; if no log exists for today the streak still counts from yesterday.
-- **Completion rate**: count logs in the last 30 calendar days (daily), 12 ISO weeks (weekly), or 12 calendar months (monthly) divided by expected occurrences.
+- **Completion rate**: count logs divided by expected occurrences. Window: last 30 days (daily), 12 ISO weeks (weekly), or 12 calendar months (monthly). Denominator is capped by periods elapsed since `task.createdAt` — a 5-day-old daily habit divides by 5, not 30.
 - **Mood trend**: last 10 `HabitLog` entries that have a non-null `reflection.mood`, in chronological order.
 
-**`useTaskMutations.ts`** (modified)  
-No change to mutation logic. `TaskList` and `HabitSection` open `ReflectionModal` unconditionally in their `onToggle` handlers when `isHabit: true && !task.done`, exactly as today's code opens it for regular tasks. The `habitLogId` for the `ReflectionModal` prop is obtained from the mutation's settled response (the updated task includes the new `HabitLog` id — add it to the PATCH response).
+**`useTaskMutations.ts`** — no changes to mutation logic. `onToggle` contract stays `(task: Task) => void` (fire-and-forget). `TaskItem` and `HabitSection` open `ReflectionModal` synchronously off the click, passing `isHabit={task.isHabit}`.
 
 ## User flows
 
 ### Marking a habit done
 1. User taps checkbox in `HabitSection`
-2. `onToggle(habit)` called — optimistic update marks it done briefly (will revert to `done: false` after server response since it's recurring)
-3. `PATCH /api/tasks/[id]` creates `HabitLog` + reschedules task in one transaction; returns updated task including `latestHabitLogId`
-4. `TaskList`/`HabitSection` opens `ReflectionModal` with `habitLogId={latestHabitLogId}`
-5. User fills in mood/difficulty/notes (or skips)
-6. `POST /api/tasks/[id]/reflection` saves reflection, links it to the `HabitLog`, does NOT create a next-step task
+2. Two things happen on the click, in parallel:
+   - `onToggle(habit)` fires the PATCH (optimistic update flashes `done: true`; reverts to `false` after the recurring-reschedule response, same as any recurring task today)
+   - `ReflectionModal` opens with `taskId={habit.id}` and `isHabit={true}`
+3. Server-side, PATCH upserts `HabitLog` (key `[taskId, today_utc]`) + shifts `dueDate` in one transaction
+4. User fills in mood/difficulty/notes (or skips)
+5. `POST /api/tasks/[id]/reflection` runs — server creates reflection, finds the most recent `HabitLog` for the task, links them, ignores any `nextStepTitle`
 
 ### Creating a habit
 1. User opens `AddTaskForm`, sets a recurrence (daily/weekly/monthly)
