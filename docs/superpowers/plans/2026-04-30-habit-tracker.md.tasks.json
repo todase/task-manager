@@ -1,0 +1,103 @@
+{
+  "planPath": "docs/superpowers/plans/2026-04-30-habit-tracker.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 0: Schema Migration",
+      "status": "pending",
+      "description": "**Goal:** Add `isHabit` to Task, create `HabitLog` model, add `habitLog` backlink to `TaskReflection`.\n\n**Files:**\n- Modify: `prisma/schema.prisma`\n\n**Acceptance Criteria:**\n- Task has isHabit Boolean @default(false) and habitLogs HabitLog[]\n- HabitLog model with @@unique([taskId, date]) and onDelete: Cascade\n- TaskReflection has habitLog HabitLog? backlink\n- Migration runs without errors\n\n**Verify:** `npx prisma validate` → valid\n\n```json:metadata\n{\"files\": [\"prisma/schema.prisma\"], \"verifyCommand\": \"npx prisma validate\", \"acceptanceCriteria\": [\"Task has isHabit field\", \"HabitLog model created\", \"TaskReflection has habitLog backlink\", \"Migration succeeds\"]}\n```"
+    },
+    {
+      "id": 1,
+      "subject": "Task 1: Types and taskUtils",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "**Goal:** Add HabitLog type, extend Task with isHabit and createdAt, update TaskFilters/CreateTaskInput/buildTasksUrl.\n\n**Files:**\n- Modify: `src/types/index.ts`\n- Modify: `src/hooks/taskUtils.ts`\n\n**Acceptance Criteria:**\n- Task type has isHabit: boolean and createdAt: string\n- HabitLog type exported\n- TaskFilters and CreateTaskInput have isHabit?: boolean\n- buildTasksUrl({ isHabit: true }) returns URL with isHabit=true\n\n**Verify:** `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/types/index.ts\", \"src/hooks/taskUtils.ts\"], \"verifyCommand\": \"npx tsc --noEmit\", \"acceptanceCriteria\": [\"Task.isHabit: boolean\", \"Task.createdAt: string\", \"HabitLog type exported\", \"TaskFilters.isHabit added\", \"buildTasksUrl handles isHabit\"]}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: GET /api/tasks — isHabit filter",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Support ?isHabit=true query param in GET /api/tasks.\n\n**Files:**\n- Modify: `src/app/api/tasks/route.ts`\n- Modify: `src/app/api/tasks/route.test.ts`\n\n**Acceptance Criteria:**\n- GET /api/tasks?isHabit=true returns only habit tasks\n- Omitting param returns all tasks (unchanged)\n\n**Verify:** `npx vitest run src/app/api/tasks/route.test.ts` → all pass\n\n```json:metadata\n{\"files\": [\"src/app/api/tasks/route.ts\", \"src/app/api/tasks/route.test.ts\"], \"verifyCommand\": \"npx vitest run src/app/api/tasks/route.test.ts\", \"acceptanceCriteria\": [\"isHabit=true filters where clause\", \"omitting param unchanged\"]}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 3: PATCH /api/tasks/[id] — isHabit validation and habit log upsert",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Upsert HabitLog on habit done; validate isHabit:true requires recurrence (both explicit recurrence:null AND missing recurrence on a task with no recurrence in DB).\n\n**Files:**\n- Modify: `src/app/api/tasks/[id]/route.ts`\n- Modify: `src/app/api/tasks/[id]/route.test.ts`\n\n**Acceptance Criteria:**\n- PATCH { isHabit: true, recurrence: null } → 400 (immediate, no DB call)\n- PATCH { isHabit: true } on task with recurrence:null in DB → 400 (after findUnique)\n- PATCH done:true on habit task upserts HabitLog in $transaction\n- Non-habit recurring tasks unaffected\n- Mock factory must be MERGED (not replaced) — keep tag.count; add habitLog.upsert and $transaction\n\n**Verify:** `npx vitest run src/app/api/tasks/[id]/route.test.ts` → all pass\n\n```json:metadata\n{\"files\": [\"src/app/api/tasks/[id]/route.ts\", \"src/app/api/tasks/[id]/route.test.ts\"], \"verifyCommand\": \"npx vitest run src/app/api/tasks/[id]/route.test.ts\", \"acceptanceCriteria\": [\"400 for isHabit+recurrence:null\", \"400 for isHabit on no-recurrence task\", \"HabitLog upserted in transaction\", \"non-habit recurring unchanged\"]}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "Task 4: POST /api/tasks — isHabit validation",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Accept isHabit in task creation; 400 if isHabit:true without recurrence.\n\n**Files:**\n- Modify: `src/app/api/tasks/route.ts`\n- Modify: `src/app/api/tasks/route.test.ts`\n\n**Acceptance Criteria:**\n- POST { isHabit: true } (no recurrence) → 400\n- POST { isHabit: true, recurrence: 'daily' } → 200 with isHabit: true\n\n**Verify:** `npx vitest run src/app/api/tasks/route.test.ts` → all pass\n\n```json:metadata\n{\"files\": [\"src/app/api/tasks/route.ts\", \"src/app/api/tasks/route.test.ts\"], \"verifyCommand\": \"npx vitest run src/app/api/tasks/route.test.ts\", \"acceptanceCriteria\": [\"400 for isHabit without recurrence\", \"habit task created with isHabit:true\"]}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "Task 5: POST /api/tasks/[id]/reflection — habit log linkage",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Link most-recent HabitLog to new reflection for habit tasks; skip nextStepTitle for habits.\n\n**Files:**\n- Modify: `src/app/api/tasks/[id]/reflection/route.ts`\n- Modify: `src/app/api/tasks/[id]/reflection/route.test.ts`\n\n**Acceptance Criteria:**\n- Habit reflection links HabitLog.reflectionId\n- nextStepTitle ignored for habits\n- Non-habit reflection still creates next-step tasks\n\n**Verify:** `npx vitest run src/app/api/tasks/[id]/reflection/route.test.ts` → all pass\n\n```json:metadata\n{\"files\": [\"src/app/api/tasks/[id]/reflection/route.ts\", \"src/app/api/tasks/[id]/reflection/route.test.ts\"], \"verifyCommand\": \"npx vitest run src/app/api/tasks/[id]/reflection/route.test.ts\", \"acceptanceCriteria\": [\"HabitLog linked to reflection\", \"nextStepTitle ignored for habits\", \"non-habit unchanged\"]}\n```"
+    },
+    {
+      "id": 6,
+      "subject": "Task 6: GET /api/tasks/[id]/habit-logs",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "**Goal:** New endpoint returning last 90 days of HabitLog records with mood/difficulty.\n\n**Files:**\n- Create: `src/app/api/tasks/[id]/habit-logs/route.ts`\n- Create: `src/app/api/tasks/[id]/habit-logs/route.test.ts`\n\n**Acceptance Criteria:**\n- 401 when unauthenticated\n- 403 when task not owned by user\n- Returns { logs: [...] } with reflection data\n\n**Verify:** `npx vitest run src/app/api/tasks/[id]/habit-logs/route.test.ts` → all pass\n\n```json:metadata\n{\"files\": [\"src/app/api/tasks/[id]/habit-logs/route.ts\", \"src/app/api/tasks/[id]/habit-logs/route.test.ts\"], \"verifyCommand\": \"npx vitest run src/app/api/tasks/[id]/habit-logs/route.test.ts\", \"acceptanceCriteria\": [\"401 unauthenticated\", \"403 wrong user\", \"returns logs with reflection\"]}\n```"
+    },
+    {
+      "id": 7,
+      "subject": "Task 7: computeHabitStats",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Pure function: streak (daily), completionRate (daily/weekly/monthly with createdAt cap), moodTrend.\n\n**Files:**\n- Create: `src/hooks/habitStats.ts`\n- Create: `src/hooks/habitStats.test.ts`\n\n**Acceptance Criteria:**\n- Daily streak counts consecutive UTC days ending today/yesterday\n- Completion rate denominator capped by createdAt\n- Mood trend is last 10 logs with non-null mood, chronological\n\n**Verify:** `npx vitest run src/hooks/habitStats.test.ts` → all pass\n\n```json:metadata\n{\"files\": [\"src/hooks/habitStats.ts\", \"src/hooks/habitStats.test.ts\"], \"verifyCommand\": \"npx vitest run src/hooks/habitStats.test.ts\", \"acceptanceCriteria\": [\"streak counts consecutive days\", \"missing day resets streak\", \"completionRate capped by createdAt\", \"moodTrend last 10\"]}\n```"
+    },
+    {
+      "id": 8,
+      "subject": "Task 8: useHabits and useHabitLogs hooks",
+      "status": "pending",
+      "blockedBy": [1, 6],
+      "description": "**Goal:** TanStack Query hooks for habits list and per-habit log history.\n\n**Files:**\n- Create: `src/hooks/useHabits.ts`\n- Create: `src/hooks/useHabitLogs.ts`\n\n**Acceptance Criteria:**\n- useHabits queries ['tasks', { isHabit: true }]\n- useHabitLogs(taskId) queries ['habitLogs', taskId]\n\n**Verify:** `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/hooks/useHabits.ts\", \"src/hooks/useHabitLogs.ts\"], \"verifyCommand\": \"npx tsc --noEmit\", \"acceptanceCriteria\": [\"useHabits returns Task[]\", \"useHabitLogs returns HabitLog[]\"]}\n```"
+    },
+    {
+      "id": 9,
+      "subject": "Task 9: AddTaskForm — isHabit toggle",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Show isHabit toggle only when recurrence selected; auto-reset on recurrence clear.\n\n**Files:**\n- Modify: `src/components/tasks/AddTaskForm.tsx`\n\n**Acceptance Criteria:**\n- Toggle hidden without recurrence\n- Clearing recurrence resets isHabit to false\n- isHabit:true passed in submit payload\n\n**Verify:** `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/components/tasks/AddTaskForm.tsx\"], \"verifyCommand\": \"npx tsc --noEmit\", \"acceptanceCriteria\": [\"toggle visible only with recurrence\", \"clearing recurrence hides toggle\", \"isHabit in submit payload\"]}\n```"
+    },
+    {
+      "id": 10,
+      "subject": "Task 10: ReflectionModal — isHabit prop",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Add optional isHabit prop; hide next-step field when true.\n\n**Files:**\n- Modify: `src/components/tasks/ReflectionModal.tsx`\n\n**Acceptance Criteria:**\n- isHabit prop accepted (optional, default false)\n- Next-step input hidden when isHabit=true\n- Non-habit behaviour unchanged\n\n**Verify:** `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/components/tasks/ReflectionModal.tsx\"], \"verifyCommand\": \"npx tsc --noEmit\", \"acceptanceCriteria\": [\"isHabit prop accepted\", \"next-step hidden for habits\"]}\n```"
+    },
+    {
+      "id": 11,
+      "subject": "Task 11: HabitSection component",
+      "status": "pending",
+      "blockedBy": [7, 8],
+      "description": "**Goal:** Collapsible section with checkbox, 7-day heatmap, streak badge, Details link.\n\n**Files:**\n- Create: `src/components/habits/HabitSection.tsx`\n- Create: `src/components/habits/HabitSection.test.tsx`\n\n**Acceptance Criteria:**\n- Renders null for empty habits\n- Shows Привычки header with count badge\n- Checkbox calls onToggle + onRequestReflection\n- 7-day heatmap colored by log presence\n- Streak badge for daily habits only\n\n**Verify:** `npx vitest run src/components/habits/HabitSection.test.tsx` → all pass\n\n```json:metadata\n{\"files\": [\"src/components/habits/HabitSection.tsx\", \"src/components/habits/HabitSection.test.tsx\"], \"verifyCommand\": \"npx vitest run src/components/habits/HabitSection.test.tsx\", \"acceptanceCriteria\": [\"null for empty list\", \"header with count\", \"checkbox fires onToggle+onRequestReflection\", \"7-day heatmap\", \"streak badge daily only\"]}\n```"
+    },
+    {
+      "id": 12,
+      "subject": "Task 12: TaskList — integrate HabitSection",
+      "status": "pending",
+      "blockedBy": [11],
+      "description": "**Goal:** Render HabitSection above sortable list; exclude habits from sortable list AND from SortableContext items; pass isHabit to ReflectionModal.\n\n**Files:**\n- Modify: `src/components/tasks/TaskList.tsx`\n\n**Acceptance Criteria:**\n- HabitSection rendered at top\n- Habit tasks not in sortable list\n- SortableContext items prop updated to exclude habit IDs: `tasks.filter(t => !t.isHabit).map(t => t.id)`\n- ReflectionModal receives isHabit from task lookup\n\n**Verify:** `npx tsc --noEmit` → no errors\n\n```json:metadata\n{\"files\": [\"src/components/tasks/TaskList.tsx\"], \"verifyCommand\": \"npx tsc --noEmit\", \"acceptanceCriteria\": [\"HabitSection at top\", \"habits excluded from sortable list\", \"SortableContext items excludes habits\", \"ReflectionModal gets isHabit\"]}\n```"
+    },
+    {
+      "id": 13,
+      "subject": "Task 13: HabitCard, /habits page, and BurgerMenu link",
+      "status": "pending",
+      "blockedBy": [7, 8, 11],
+      "description": "**Goal:** Full stat card for /habits page; page listing all habits; BurgerMenu navigation link.\n\n**Files:**\n- Create: `src/components/habits/HabitCard.tsx`\n- Create: `src/app/habits/page.tsx`\n- Modify: `src/components/BurgerMenu.tsx`\n\n**Acceptance Criteria:**\n- HabitCard: 30-day heatmap, streak/rate, mood trend\n- Logs fetched lazily (only when card expanded)\n- /habits page lists all habits via useHabits\n- BurgerMenu Привычки link → /habits\n\n**Verify:** `npx vitest run` → all tests pass (existing + new)\n\n```json:metadata\n{\"files\": [\"src/components/habits/HabitCard.tsx\", \"src/app/habits/page.tsx\", \"src/components/BurgerMenu.tsx\"], \"verifyCommand\": \"npx vitest run\", \"acceptanceCriteria\": [\"HabitCard with 30-day heatmap\", \"lazy log fetch on expand\", \"/habits page\", \"BurgerMenu link\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-04-30T00:00:00.000Z"
+}
