@@ -7,6 +7,7 @@ vi.mock("@/auth")
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     task: { findUnique: vi.fn() },
+    habitLog: { findFirst: vi.fn(), update: vi.fn() },
     $transaction: vi.fn(),
   },
 }))
@@ -155,5 +156,73 @@ describe("POST /api/tasks/[id]/reflection", () => {
     expect(reflectionCreate).toHaveBeenCalledWith({
       data: { taskId: "task-1", notes: null, timeMinutes: null, difficulty: null, mood: null },
     })
+  })
+
+  it("links habit log to reflection and skips nextStep for habit tasks", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockFindUnique.mockResolvedValue({
+      id: "task-1",
+      userId: "u1",
+      projectId: null,
+      isHabit: true,
+    } as never)
+
+    const mockRefl = { id: "ref-1", taskId: "task-1" }
+    const mockLog = { id: "log-1", taskId: "task-1", date: new Date() }
+    const reflectionCreate = vi.fn().mockResolvedValue(mockRefl)
+    const habitLogFindFirst = vi.fn().mockResolvedValue(mockLog)
+    const habitLogUpdate = vi.fn().mockResolvedValue(mockLog)
+    const taskCreate = vi.fn()
+
+    mockTransaction.mockImplementation(
+      async (fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          taskReflection: { create: reflectionCreate },
+          habitLog: { findFirst: habitLogFindFirst, update: habitLogUpdate },
+          task: { create: taskCreate },
+        })
+    )
+
+    const res = await POST(
+      jsonReq({ notes: "Done", nextStepTitle: "Should be ignored" }),
+      params()
+    )
+    expect(res.status).toBe(200)
+    expect(habitLogUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "log-1" },
+        data: { reflectionId: "ref-1" },
+      })
+    )
+    expect(taskCreate).not.toHaveBeenCalled()
+  })
+
+  it("creates next-step task for non-habit tasks as before", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockFindUnique.mockResolvedValue({
+      id: "task-1",
+      userId: "u1",
+      projectId: "p1",
+      isHabit: false,
+    } as never)
+
+    const reflectionCreate = vi.fn().mockResolvedValue({ id: "ref-1" })
+    const taskCreate = vi.fn().mockResolvedValue({ id: "task-2", title: "Next" })
+
+    mockTransaction.mockImplementation(
+      async (fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          taskReflection: { create: reflectionCreate },
+          habitLog: { findFirst: vi.fn(), update: vi.fn() },
+          task: { create: taskCreate },
+        })
+    )
+
+    const res = await POST(
+      jsonReq({ nextStepTitle: "Follow up" }),
+      params()
+    )
+    expect(res.status).toBe(200)
+    expect(taskCreate).toHaveBeenCalled()
   })
 })
