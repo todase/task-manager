@@ -14,12 +14,17 @@ vi.mock("@/lib/prisma", () => ({
     tag: {
       count: vi.fn(),
     },
+    habitLog: {
+      upsert: vi.fn(),
+    },
+    $transaction: vi.fn(),
   },
 }))
 
 const mockAuth = vi.mocked(auth)
 const mockTask = vi.mocked(prisma.task)
 const mockTag = vi.mocked(prisma.tag)
+const mockTransaction = prisma.$transaction as unknown as ReturnType<typeof vi.fn>
 
 function session(userId = "u1") {
   return { user: { id: userId } }
@@ -178,6 +183,53 @@ describe("PATCH /api/tasks/[id]", () => {
         data: expect.not.objectContaining({ completedAt: expect.anything() }),
       })
     )
+  })
+
+  it("returns 400 when isHabit=true and recurrence=null", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const res = await PATCH(
+      jsonReq("PATCH", { isHabit: true, recurrence: null }),
+      params()
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it("upserts HabitLog and shifts dueDate in transaction for habit done", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const dueDate = new Date("2026-04-01T00:00:00.000Z")
+    mockTask.findUnique.mockResolvedValue({
+      id: "task-1",
+      recurrence: "daily",
+      dueDate,
+      isHabit: true,
+    } as never)
+
+    const updatedTask = { ...dbTask, dueDate: new Date("2026-04-02"), done: false }
+    mockTransaction.mockResolvedValue([{}, updatedTask])
+
+    const res = await PATCH(jsonReq("PATCH", { done: true }), params())
+    expect(res.status).toBe(200)
+    expect(mockTransaction).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({}),
+        expect.objectContaining({}),
+      ])
+    )
+  })
+
+  it("does not upsert HabitLog for non-habit recurring task done", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockTask.findUnique.mockResolvedValue({
+      id: "task-1",
+      recurrence: "daily",
+      dueDate: new Date("2026-04-01"),
+      isHabit: false,
+    } as never)
+    mockTask.update.mockResolvedValue({ ...dbTask, dueDate: new Date("2026-04-02"), done: false } as never)
+
+    await PATCH(jsonReq("PATCH", { done: true }), params())
+    expect(mockTransaction).not.toHaveBeenCalled()
+    expect(mockTask.update).toHaveBeenCalled()
   })
 })
 

@@ -12,7 +12,7 @@ export async function PATCH(
   }
 
   const { id } = await params
-  const { tagIds, done, title, dueDate, recurrence, projectId, description } =
+  const { tagIds, done, title, dueDate, recurrence, projectId, description, isHabit } =
     await req.json()
 
   if (recurrence !== undefined && recurrence !== null) {
@@ -22,6 +22,24 @@ export async function PATCH(
         { error: "Invalid recurrence value" },
         { status: 400 }
       )
+    }
+  }
+
+  if (isHabit === true) {
+    if (recurrence === null) {
+      return NextResponse.json(
+        { error: "isHabit requires recurrence" },
+        { status: 400 }
+      )
+    }
+    if (recurrence === undefined) {
+      const existing = await prisma.task.findUnique({ where: { id } })
+      if (!existing?.recurrence) {
+        return NextResponse.json(
+          { error: "isHabit requires recurrence" },
+          { status: 400 }
+        )
+      }
     }
   }
 
@@ -35,14 +53,36 @@ export async function PATCH(
       if (existing.recurrence === "weekly") next.setDate(next.getDate() + 7)
       if (existing.recurrence === "monthly") next.setMonth(next.getMonth() + 1)
 
+      const include = {
+        project: { select: { id: true, title: true } },
+        subtasks: true,
+        tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+      } as const
+
+      if (existing.isHabit) {
+        const now = new Date()
+        const date = new Date(
+          Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+        )
+        const [, task] = await prisma.$transaction([
+          prisma.habitLog.upsert({
+            where: { taskId_date: { taskId: id, date } },
+            create: { taskId: id, date },
+            update: {},
+          }),
+          prisma.task.update({
+            where: { id, userId },
+            data: { dueDate: next, done: false },
+            include,
+          }),
+        ])
+        return NextResponse.json({ ...task, tags: task.tags.map((tt) => tt.tag) })
+      }
+
       const task = await prisma.task.update({
         where: { id, userId },
         data: { dueDate: next, done: false },
-        include: {
-          project: { select: { id: true, title: true } },
-          subtasks: true,
-          tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
-        },
+        include,
       })
       return NextResponse.json({ ...task, tags: task.tags.map((tt) => tt.tag) })
     }
@@ -69,6 +109,7 @@ export async function PATCH(
     data.projectId = projectId
   }
   if (description !== undefined) data.description = description
+  if (isHabit !== undefined) data.isHabit = isHabit
   if (Array.isArray(tagIds)) {
     if (tagIds.length > 0) {
       const ownedCount = await prisma.tag.count({
