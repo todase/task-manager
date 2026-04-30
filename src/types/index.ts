@@ -20,6 +20,8 @@ export type Task = {
   recurrence: string | null
   description: string | null
   order: number
+  isHabit: boolean
+  createdAt: string
   project: { id: string; title: string; icon: string } | null
   subtasks: Subtask[]
   tags: Tag[]
@@ -43,4 +45,11 @@ export type TaskReflection = {
   difficulty: 1 | 2 | 3 | null
   mood: "energized" | "neutral" | "tired" | null
   createdAt: string
+}
+
+export type HabitLog = {
+  id: string
+  taskId: string
+  date: string // ISO date string, UTC midnight
+  reflection?: Pick<TaskReflection, "mood" | "difficulty">
 }
