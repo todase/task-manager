@@ -50,7 +50,7 @@ export async function POST(
 
     if (task.isHabit) {
       const latestLog = await tx.habitLog.findFirst({
-        where: { taskId: id },
+        where: { taskId: id, reflectionId: null },
         orderBy: { date: "desc" },
       })
       if (latestLog) {

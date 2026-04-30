@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { Check, ChevronDown, ChevronRight } from "lucide-react"
 import { useHabitLogs } from "@/hooks/useHabitLogs"
@@ -34,7 +34,10 @@ function HabitRow({
   const { data: logs = [] } = useHabitLogs(habit.id)
   const days = last7UtcDays()
   const logDates = new Set(logs.map((l) => l.date.slice(0, 10)))
-  const stats = computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt))
+  const stats = useMemo(
+    () => computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt)),
+    [logs, habit.recurrence, habit.createdAt]
+  )
 
   return (
     <div className="flex items-center gap-3 py-2">

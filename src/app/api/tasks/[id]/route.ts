@@ -33,7 +33,7 @@ export async function PATCH(
       )
     }
     if (recurrence === undefined) {
-      const existing = await prisma.task.findUnique({ where: { id } })
+      const existing = await prisma.task.findUnique({ where: { id, userId } })
       if (!existing?.recurrence) {
         return NextResponse.json(
           { error: "isHabit requires recurrence" },
@@ -46,7 +46,7 @@ export async function PATCH(
   // Повторяющаяся задача — сдвигаем дату вместо архивирования.
   // completedAt намеренно не записывается: задача не завершается, а переносится.
   if (done === true) {
-    const existing = await prisma.task.findUnique({ where: { id } })
+    const existing = await prisma.task.findUnique({ where: { id, userId } })
     if (existing?.recurrence && existing.dueDate) {
       const next = new Date(existing.dueDate)
       if (existing.recurrence === "daily") next.setDate(next.getDate() + 1)

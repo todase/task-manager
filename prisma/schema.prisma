@@ -47,7 +47,7 @@ model HabitLog {
   id           String          @id @default(cuid())
   taskId       String
   task         Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  date         DateTime
+  date         DateTime  @db.Date
   reflectionId String?         @unique
   reflection   TaskReflection? @relation(fields: [reflectionId], references: [id])
   createdAt    DateTime        @default(now())
