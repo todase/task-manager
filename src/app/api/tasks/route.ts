@@ -17,6 +17,8 @@ export async function GET(req: Request) {
   const limitParam = searchParams.get("limit")
   const sortParam = searchParams.get("sort")
   const q = searchParams.get("q") ?? undefined
+  const isHabitParam = searchParams.get("isHabit")
+  const isHabitFilter = isHabitParam === "true" ? true : undefined
 
   const doneFilter =
     doneParam === "true" ? true : doneParam === "false" ? false : undefined
@@ -32,6 +34,7 @@ export async function GET(req: Request) {
   const where: Prisma.TaskWhereInput = {
     userId,
     ...(doneFilter !== undefined && { done: doneFilter }),
+    ...(isHabitFilter !== undefined && { isHabit: true }),
     ...(q && {
       OR: [
         { title: { contains: q, mode: "insensitive" } },

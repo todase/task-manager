@@ -141,6 +141,21 @@ describe("GET /api/tasks", () => {
     const call = mockPrisma.task.findMany.mock.calls[0][0] as { include: Record<string, unknown> }
     expect(call.include).not.toHaveProperty("reflections")
   })
+
+  it("filters by isHabit=true", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockPrisma.task.findMany.mockResolvedValue([
+      { ...dbTask, isHabit: true, tags: [] },
+    ] as never)
+
+    const res = await GET(req("http://localhost/api/tasks?isHabit=true"))
+    expect(res.status).toBe(200)
+    expect(mockPrisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ isHabit: true }),
+      })
+    )
+  })
 })
 
 describe("POST /api/tasks", () => {
