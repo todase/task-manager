@@ -72,10 +72,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { title, projectId, dueDate, recurrence, tagIds } = await req.json()
+  const { title, projectId, dueDate, recurrence, tagIds, isHabit } = await req.json()
 
   if (!title || typeof title !== "string" || !title.trim()) {
     return NextResponse.json({ error: "title is required" }, { status: 400 })
+  }
+
+  if (isHabit === true && !recurrence) {
+    return NextResponse.json(
+      { error: "isHabit requires recurrence" },
+      { status: 400 }
+    )
   }
 
   if (projectId) {
@@ -111,6 +118,7 @@ export async function POST(req: Request) {
         ...(projectId && { projectId }),
         ...(dueDate && { dueDate: new Date(dueDate) }),
         ...(recurrence && { recurrence }),
+        ...(isHabit === true && { isHabit: true }),
         ...(Array.isArray(tagIds) && tagIds.length > 0 && {
           tags: { create: tagIds.map((tagId: string) => ({ tagId })) },
         }),

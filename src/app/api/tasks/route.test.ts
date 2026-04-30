@@ -180,6 +180,35 @@ describe("POST /api/tasks", () => {
     expect(body.title).toBe("Test")
     expect(body.tags).toEqual([{ id: "tag-1", name: "bug", color: "#60a5fa" }])
   })
+
+  it("returns 400 when isHabit=true and no recurrence", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const res = await POST(
+      jsonReq("http://localhost/api/tasks", "POST", { title: "Morning run", isHabit: true })
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it("creates a habit task when isHabit=true with recurrence", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockPrisma.$transaction.mockImplementation(async (cb: unknown) =>
+      (cb as (tx: typeof prisma) => Promise<unknown>)(prisma)
+    )
+    mockPrisma.task.updateMany.mockResolvedValue({ count: 0 } as never)
+    mockPrisma.task.create.mockResolvedValue({
+      ...dbTask,
+      isHabit: true,
+      recurrence: "daily",
+      tags: [],
+    } as never)
+
+    const res = await POST(
+      jsonReq("http://localhost/api/tasks", "POST", { title: "Morning run", isHabit: true, recurrence: "daily" })
+    )
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.isHabit).toBe(true)
+  })
 })
 
 describe("DELETE /api/tasks", () => {
