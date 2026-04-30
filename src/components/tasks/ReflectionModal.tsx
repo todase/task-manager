@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/apiFetch"
 interface ReflectionModalProps {
   taskId: string
   onClose: () => void
+  isHabit?: boolean
 }
 
 const DIFFICULTY_OPTIONS: [1 | 2 | 3, string, string][] = [
@@ -21,7 +22,7 @@ const MOOD_OPTIONS: ["energized" | "neutral" | "tired", string][] = [
   ["tired", "устал"],
 ]
 
-export function ReflectionModal({ taskId, onClose }: ReflectionModalProps) {
+export function ReflectionModal({ taskId, onClose, isHabit = false }: ReflectionModalProps) {
   const [notes, setNotes] = useState("")
   const [timeMinutes, setTimeMinutes] = useState("")
   const [difficulty, setDifficulty] = useState<1 | 2 | 3 | null>(null)
@@ -128,16 +129,18 @@ export function ReflectionModal({ taskId, onClose }: ReflectionModalProps) {
           ))}
         </div>
 
-        <div className="flex flex-col gap-1">
-          <input
-            type="text"
-            value={nextStepTitle}
-            onChange={(e) => setNextStepTitle(e.target.value)}
-            placeholder="Следующий шаг..."
-            className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-400"
-          />
-          <p className="text-xs text-gray-400">Появится в том же проекте</p>
-        </div>
+        {!isHabit && (
+          <div className="flex flex-col gap-1">
+            <input
+              type="text"
+              value={nextStepTitle}
+              onChange={(e) => setNextStepTitle(e.target.value)}
+              placeholder="Следующий шаг..."
+              className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-400"
+            />
+            <p className="text-xs text-gray-400">Появится в том же проекте</p>
+          </div>
+        )}
 
         {saveError && (
           <p className="text-xs text-red-500">{saveError}</p>
