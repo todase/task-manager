@@ -5,7 +5,6 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { SortableTask } from "@/components/SortableTask"
 import { TaskItem } from "@/components/tasks/TaskItem"
 import { ReflectionModal } from "@/components/tasks/ReflectionModal"
-import { HabitSection } from "@/components/habits/HabitSection"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { TaskSkeleton } from "@/components/tasks/TaskSkeleton"
 import type { Task, Subtask, DateFilter, Project, Tag } from "@/types"
@@ -62,18 +61,12 @@ export function TaskList({
   onDeleteSubtask,
 }: TaskListProps) {
   const [reflectionTaskId, setReflectionTaskId] = useState<string | null>(null)
-  const habits = tasks.filter((t) => t.isHabit)
   const nonHabitFiltered = filteredTasks.filter((t) => !t.isHabit)
 
   if (isLoading) return <TaskSkeleton />
 
   return (
     <ErrorBoundary>
-      <HabitSection
-        habits={habits}
-        onToggle={onToggle}
-        onRequestReflection={setReflectionTaskId}
-      />
       <SortableContext
         items={tasks.filter((t) => !t.isHabit).map((t) => t.id)}
         strategy={verticalListSortingStrategy}
@@ -81,7 +74,7 @@ export function TaskList({
         <ul id="task-list" className="flex flex-col gap-1">
           {nonHabitFiltered.length === 0 ? (
             <li className="text-center text-gray-400 py-8 text-sm">
-              {emptyMessage(dateFilter, activeProjectId, tasks.length === 0)}
+              {emptyMessage(dateFilter, activeProjectId, tasks.filter((t) => !t.isHabit).length === 0)}
             </li>
           ) : (
             nonHabitFiltered.map((task) => (

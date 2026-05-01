@@ -89,7 +89,12 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
       return { snap }
     },
     onError: (_, __, ctx) => { if (ctx) restore(qc, ctx.snap) },
-    onSettled: invalidate,
+    onSettled: (_, __, task) => {
+      invalidate()
+      if (task.isHabit) {
+        qc.invalidateQueries({ queryKey: ["habitLogs", task.id] })
+      }
+    },
   })
 
   // ─── deleteTask ───────────────────────────────────────────────

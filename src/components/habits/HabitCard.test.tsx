@@ -44,9 +44,9 @@ describe("HabitCard", () => {
     expect(screen.queryByLabelText("30-дневный график")).not.toBeInTheDocument()
   })
 
-  it("does not call useHabitLogs with taskId when collapsed", () => {
+  it("always calls useHabitLogs with habitId to show mini heatmap", () => {
     render(<HabitCard habit={habit} />)
-    expect(mockUseHabitLogs).toHaveBeenCalledWith("")
+    expect(mockUseHabitLogs).toHaveBeenCalledWith("h1")
   })
 
   it("expands on click and shows heatmap", () => {

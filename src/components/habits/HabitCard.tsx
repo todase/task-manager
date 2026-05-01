@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import { ChevronDown, ChevronUp } from "lucide-react"
 import { useHabitLogs } from "@/hooks/useHabitLogs"
 import { computeHabitStats } from "@/hooks/habitStats"
 import type { Task } from "@/types"
@@ -10,40 +11,53 @@ const MOOD_EMOJI: Record<string, string> = {
   tired: "😴",
 }
 
-function last30UtcDays(): Date[] {
-  const days: Date[] = []
-  const now = new Date()
-  for (let i = 29; i >= 0; i--) {
-    days.push(
-      new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - i))
-    )
-  }
-  return days
+const RECURRENCE_LABEL: Record<string, string> = {
+  daily: "ежедневно",
+  weekly: "еженедельно",
+  monthly: "ежемесячно",
 }
 
-function Heatmap({ logDates }: { logDates: Set<string> }) {
-  const days = last30UtcDays()
+function utcDays(count: number): string[] {
+  const now = new Date()
+  return Array.from({ length: count }, (_, i) => {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - (count - 1 - i)))
+    return d.toISOString().slice(0, 10)
+  })
+}
+
+function MiniHeatmap({ logDates }: { logDates: Set<string> }) {
+  const days = utcDays(14)
+  return (
+    <div className="flex gap-0.5" aria-label="14-дневный мини-график">
+      {days.map((key) => (
+        <div
+          key={key}
+          title={key}
+          className={`w-3 h-3 rounded-sm ${logDates.has(key) ? "bg-purple-400" : "bg-gray-100"}`}
+        />
+      ))}
+    </div>
+  )
+}
+
+function FullHeatmap({ logDates }: { logDates: Set<string> }) {
+  const days = utcDays(30)
   return (
     <div className="flex flex-wrap gap-0.5" aria-label="30-дневный график">
-      {days.map((d) => {
-        const key = d.toISOString().slice(0, 10)
-        return (
-          <div
-            key={key}
-            title={key}
-            className={`w-3 h-3 rounded-sm ${
-              logDates.has(key) ? "bg-purple-500" : "bg-gray-100"
-            }`}
-          />
-        )
-      })}
+      {days.map((key) => (
+        <div
+          key={key}
+          title={key}
+          className={`w-3 h-3 rounded-sm ${logDates.has(key) ? "bg-purple-500" : "bg-gray-100"}`}
+        />
+      ))}
     </div>
   )
 }
 
 export function HabitCard({ habit }: { habit: Task }) {
   const [expanded, setExpanded] = useState(false)
-  const { data: logs = [] } = useHabitLogs(expanded ? habit.id : "")
+  const { data: logs = [] } = useHabitLogs(habit.id)
 
   const logDates = new Set(logs.map((l) => l.date.slice(0, 10)))
   const stats = expanded
@@ -51,27 +65,33 @@ export function HabitCard({ habit }: { habit: Task }) {
     : null
 
   return (
-    <div className="border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
+    <div className="border border-gray-100 rounded-xl bg-white shadow-sm overflow-hidden">
       <button
         onClick={() => setExpanded((e) => !e)}
-        className="w-full text-left flex items-center justify-between"
+        className="w-full text-left p-4"
       >
-        <span className="font-medium">{habit.title}</span>
-        <span className="text-xs text-gray-400">
-          {habit.recurrence === "daily"
-            ? "ежедневно"
-            : habit.recurrence === "weekly"
-            ? "еженедельно"
-            : "ежемесячно"}
-        </span>
+        <div className="flex items-center justify-between mb-2">
+          <span className="font-medium">{habit.title}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">
+              {RECURRENCE_LABEL[habit.recurrence ?? ""] ?? habit.recurrence}
+            </span>
+            {expanded ? (
+              <ChevronUp className="w-4 h-4 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            )}
+          </div>
+        </div>
+        <MiniHeatmap logDates={logDates} />
       </button>
 
       {expanded && (
-        <div className="mt-3 space-y-3">
-          <Heatmap logDates={logDates} />
+        <div className="px-4 pb-4 space-y-3 border-t border-gray-50 pt-3">
+          <FullHeatmap logDates={logDates} />
 
           <div className="flex items-center gap-4 text-sm">
-            {habit.recurrence === "daily" && stats && (
+            {habit.recurrence === "daily" && stats && stats.streak > 0 && (
               <span className="text-orange-500">🔥 Серия: {stats.streak} дн.</span>
             )}
             {stats && (

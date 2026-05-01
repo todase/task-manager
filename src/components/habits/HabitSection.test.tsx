@@ -13,6 +13,14 @@ vi.mock("next/link", () => ({
   ),
 }))
 
+vi.mock("@/components/tasks/ReflectionModal", () => ({
+  ReflectionModal: ({ onClose }: { onClose: () => void }) => (
+    <div data-testid="reflection-modal">
+      <button onClick={onClose}>Close</button>
+    </div>
+  ),
+}))
+
 const habit = {
   id: "h1",
   title: "Morning run",
@@ -35,53 +43,104 @@ afterEach(cleanup)
 describe("HabitSection", () => {
   it("renders null when habits list is empty", () => {
     const { container } = render(
-      <HabitSection habits={[]} onToggle={vi.fn()} onRequestReflection={vi.fn()} />
+      <HabitSection
+        habits={[]}
+        isOpen={false}
+        onToggle={vi.fn()}
+        onHabitToggle={vi.fn()}
+      />
     )
     expect(container.firstChild).toBeNull()
   })
 
   it("shows Привычки header with count badge", () => {
     render(
-      <HabitSection habits={[habit]} onToggle={vi.fn()} onRequestReflection={vi.fn()} />
+      <HabitSection
+        habits={[habit]}
+        isOpen={false}
+        onToggle={vi.fn()}
+        onHabitToggle={vi.fn()}
+      />
     )
     expect(screen.getByText("Привычки")).toBeInTheDocument()
     expect(screen.getByText("1")).toBeInTheDocument()
   })
 
-  it("toggles collapsed state on header click", () => {
-    render(
-      <HabitSection habits={[habit]} onToggle={vi.fn()} onRequestReflection={vi.fn()} />
-    )
-    expect(screen.getByText("Morning run")).toBeInTheDocument()
-    fireEvent.click(screen.getByText("Привычки"))
-    expect(screen.queryByText("Morning run")).not.toBeInTheDocument()
-  })
-
-  it("calls onToggle and onRequestReflection when checkbox clicked on undone habit", () => {
-    const onToggle = vi.fn()
-    const onRequestReflection = vi.fn()
+  it("hides habit rows when isOpen is false", () => {
     render(
       <HabitSection
         habits={[habit]}
+        isOpen={false}
+        onToggle={vi.fn()}
+        onHabitToggle={vi.fn()}
+      />
+    )
+    expect(screen.queryByText("Morning run")).not.toBeInTheDocument()
+  })
+
+  it("shows habit rows when isOpen is true", () => {
+    render(
+      <HabitSection
+        habits={[habit]}
+        isOpen={true}
+        onToggle={vi.fn()}
+        onHabitToggle={vi.fn()}
+      />
+    )
+    expect(screen.getByText("Morning run")).toBeInTheDocument()
+  })
+
+  it("calls onToggle when header is clicked", () => {
+    const onToggle = vi.fn()
+    render(
+      <HabitSection
+        habits={[habit]}
+        isOpen={false}
         onToggle={onToggle}
-        onRequestReflection={onRequestReflection}
+        onHabitToggle={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByText("Привычки"))
+    expect(onToggle).toHaveBeenCalledTimes(1)
+  })
+
+  it("calls onHabitToggle when checkbox clicked on undone habit", () => {
+    const onHabitToggle = vi.fn()
+    render(
+      <HabitSection
+        habits={[habit]}
+        isOpen={true}
+        onToggle={vi.fn()}
+        onHabitToggle={onHabitToggle}
       />
     )
     fireEvent.click(screen.getByLabelText("Отметить привычку: Morning run"))
-    expect(onToggle).toHaveBeenCalledWith(habit)
-    expect(onRequestReflection).toHaveBeenCalledWith("h1")
+    expect(onHabitToggle).toHaveBeenCalledWith(habit)
   })
 
-  it("does not call onRequestReflection when habit is already done", () => {
-    const onRequestReflection = vi.fn()
+  it("shows reflection modal when undone habit is toggled", () => {
+    render(
+      <HabitSection
+        habits={[habit]}
+        isOpen={true}
+        onToggle={vi.fn()}
+        onHabitToggle={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByLabelText("Отметить привычку: Morning run"))
+    expect(screen.getByTestId("reflection-modal")).toBeInTheDocument()
+  })
+
+  it("does not show reflection modal when already done habit is toggled", () => {
     render(
       <HabitSection
         habits={[{ ...habit, done: true }]}
+        isOpen={true}
         onToggle={vi.fn()}
-        onRequestReflection={onRequestReflection}
+        onHabitToggle={vi.fn()}
       />
     )
     fireEvent.click(screen.getByLabelText("Отметить привычку: Morning run"))
-    expect(onRequestReflection).not.toHaveBeenCalled()
+    expect(screen.queryByTestId("reflection-modal")).not.toBeInTheDocument()
   })
 })

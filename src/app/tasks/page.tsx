@@ -19,11 +19,13 @@ import { arrayMove } from "@dnd-kit/sortable"
 import { useTasks, filterTasks } from "@/hooks/useTasks"
 import { useProjects } from "@/hooks/useProjects"
 import { useTags } from "@/hooks/useTags"
+import { useHabits } from "@/hooks/useHabits"
 import { TaskList } from "@/components/tasks/TaskList"
 import { AddTaskForm } from "@/components/tasks/AddTaskForm"
 import { ProjectTabs } from "@/components/projects/ProjectTabs"
 import { DateFilters } from "@/components/filters/DateFilters"
 import { TagFilter } from "@/components/filters/TagFilter"
+import { HabitSection } from "@/components/habits/HabitSection"
 import type { DateFilter, Task } from "@/types"
 import { TaskDragPreview } from "@/components/tasks/TaskDragPreview"
 import { BurgerMenu } from "@/components/BurgerMenu"
@@ -41,10 +43,12 @@ export default function TasksPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("")
   const [tagsOpen, setTagsOpen] = useState(false)
   const [projectsOpen, setProjectsOpen] = useState(false)
+  const [habitsOpen, setHabitsOpen] = useState(false)
 
   const taskHook = useTasks({ done: false, q: searchMode && debouncedQuery ? debouncedQuery : undefined })
   const projectHook = useProjects()
   const tagHook = useTags()
+  const { data: habits = [] } = useHabits()
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -183,6 +187,13 @@ export default function TasksPage() {
                 await tagHook.deleteTag(id)
                 setSelectedTagIds((prev) => prev.filter((s) => s !== id))
               }}
+            />
+
+            <HabitSection
+              habits={habits}
+              isOpen={habitsOpen}
+              onToggle={() => setHabitsOpen((o) => !o)}
+              onHabitToggle={taskHook.toggleTask}
             />
           </>
         )}
