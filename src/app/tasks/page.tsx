@@ -208,6 +208,7 @@ export default function TasksPage() {
           onClick={() => {
             setProjectsOpen(false)
             setTagsOpen(false)
+            setHabitsOpen(false)
           }}
         >
           <TaskList

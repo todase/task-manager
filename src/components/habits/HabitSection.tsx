@@ -22,8 +22,6 @@ function last7UtcDays(): string[] {
   })
 }
 
-const DAYS = last7UtcDays()
-
 function HabitRow({
   habit,
   onToggle,
@@ -33,6 +31,7 @@ function HabitRow({
   onToggle: (task: Task) => void
   onRequestReflection: (taskId: string) => void
 }) {
+  const days = last7UtcDays()
   const { data: logs = [] } = useHabitLogs(habit.id)
   const logDates = new Set(logs.map((l) => l.date.slice(0, 10)))
   const stats = useMemo(
@@ -60,7 +59,7 @@ function HabitRow({
       <span className="flex-1 text-sm truncate">{habit.title}</span>
 
       <div className="flex gap-0.5 flex-shrink-0" aria-label="Последние 7 дней">
-        {DAYS.map((key) => (
+        {days.map((key) => (
           <div
             key={key}
             className={`w-3 h-3 rounded-sm ${logDates.has(key) ? "bg-purple-400" : "bg-gray-100"}`}

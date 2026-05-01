@@ -69,6 +69,8 @@ export function HabitCard({ habit }: { habit: Task }) {
       <button
         onClick={() => setExpanded((e) => !e)}
         className="w-full text-left p-4"
+        aria-label={habit.title}
+        aria-expanded={expanded}
       >
         <div className="flex items-center justify-between mb-2">
           <span className="font-medium">{habit.title}</span>
