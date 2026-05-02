@@ -51,5 +51,5 @@ export type HabitLog = {
   id: string
   taskId: string
   date: string // ISO date string, UTC midnight
-  reflection?: Pick<TaskReflection, "mood" | "difficulty">
+  reflection: Pick<TaskReflection, "mood" | "difficulty"> | null
 }

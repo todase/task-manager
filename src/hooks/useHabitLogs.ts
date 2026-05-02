@@ -34,7 +34,7 @@ export function useToggleHabitLog(taskId: string) {
         if (isCurrentlyLogged) {
           return old.filter((l) => l.date.slice(0, 10) !== date)
         }
-        return [...old, { id: `tmp_${date}`, taskId, date: `${date}T00:00:00.000Z`, reflection: undefined }]
+        return [...old, { id: `tmp_${date}`, taskId, date: `${date}T00:00:00.000Z`, reflection: null }]
       })
       return { prev }
     },

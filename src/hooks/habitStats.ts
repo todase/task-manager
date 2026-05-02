@@ -49,9 +49,13 @@ export function computeHabitStats(
     const windowStart = new Date(today)
     windowStart.setUTCDate(windowStart.getUTCDate() - 29) // 30-day window
     const effectiveStart = createdDay > windowStart ? createdDay : windowStart
-    const expectedDays =
-      Math.round((today.getTime() - effectiveStart.getTime()) / 86_400_000) + 1
-    const logged = logs.filter((l) => new Date(l.date) >= effectiveStart).length
+    const logsInWindow = logs.filter((l) => new Date(l.date) >= effectiveStart)
+    const logged = logsInWindow.length
+    const todayStr = today.toISOString().slice(0, 10)
+    const totalDays = Math.round((today.getTime() - effectiveStart.getTime()) / 86_400_000)
+    // Only count today in denominator if it has been logged (avoid penalising mid-day checks)
+    const todayLogged = logsInWindow.some((l) => l.date.slice(0, 10) === todayStr)
+    const expectedDays = todayLogged ? totalDays + 1 : totalDays
     completionRate = expectedDays > 0 ? logged / expectedDays : 0
   } else if (recurrence === "weekly") {
     const thisMonday = getMondayOf(today)

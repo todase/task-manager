@@ -7,7 +7,7 @@ function makeLog(dateStr: string, mood?: "energized" | "neutral" | "tired"): Hab
     id: dateStr,
     taskId: "task-1",
     date: `${dateStr}T00:00:00.000Z`,
-    reflection: mood ? { mood, difficulty: 1 } : undefined,
+    reflection: mood ? { mood, difficulty: 1 } : null,
   }
 }
 
@@ -68,8 +68,16 @@ describe("computeHabitStats — completion rate", () => {
     const recentCreated = new Date("2026-04-28T00:00:00.000Z")
     const logs = [makeLog("2026-04-28")]
     const { completionRate } = computeHabitStats(logs, "daily", recentCreated)
-    // 1 log out of 3 expected days
-    expect(completionRate).toBeCloseTo(1 / 3)
+    // 1 log out of 2 past days (today Apr 30 not logged → excluded from denominator)
+    expect(completionRate).toBeCloseTo(1 / 2)
+  })
+
+  it("includes today in denominator when today is logged", () => {
+    const recentCreated = new Date("2026-04-28T00:00:00.000Z")
+    const logs = [makeLog("2026-04-28"), makeLog("2026-04-30")]
+    const { completionRate } = computeHabitStats(logs, "daily", recentCreated)
+    // 2 logged out of 3 days (Apr 28, 29, 30 — today logged so counts in denominator)
+    expect(completionRate).toBeCloseTo(2 / 3)
   })
 
   it("caps weekly denominator by createdAt (less than 12 weeks)", () => {
