@@ -193,7 +193,6 @@ export default function TasksPage() {
               habits={habits}
               isOpen={habitsOpen}
               onToggle={() => setHabitsOpen((o) => !o)}
-              onHabitToggle={taskHook.toggleTask}
             />
           </>
         )}

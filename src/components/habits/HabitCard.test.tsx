@@ -7,6 +7,7 @@ const mockUseHabitLogs = vi.fn()
 
 vi.mock("@/hooks/useHabitLogs", () => ({
   useHabitLogs: (taskId: string) => mockUseHabitLogs(taskId),
+  useToggleHabitLog: vi.fn().mockReturnValue({ mutate: vi.fn() }),
 }))
 
 const TODAY = new Date()

@@ -31,3 +31,59 @@ export async function GET(
 
   return NextResponse.json({ logs })
 }
+
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const userId = await getUserId(req)
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const { id } = await params
+  const task = await prisma.task.findUnique({ where: { id } })
+  if (!task || task.userId !== userId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const body = await req.json()
+  const dateStr: string = body.date
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return NextResponse.json({ error: "Invalid date" }, { status: 400 })
+  }
+
+  const [y, m, d] = dateStr.split("-").map(Number)
+  const date = new Date(Date.UTC(y, m - 1, d))
+
+  const existing = await prisma.habitLog.findUnique({
+    where: { taskId_date: { taskId: id, date } },
+  })
+
+  if (existing) {
+    await prisma.habitLog.delete({ where: { id: existing.id } })
+    return NextResponse.json({ created: false })
+  }
+
+  const now = new Date()
+  const todayStr = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  )
+    .toISOString()
+    .slice(0, 10)
+  const isToday = dateStr === todayStr
+
+  if (isToday && task.recurrence && task.dueDate) {
+    const next = new Date(task.dueDate)
+    if (task.recurrence === "daily") next.setDate(next.getDate() + 1)
+    if (task.recurrence === "weekly") next.setDate(next.getDate() + 7)
+    if (task.recurrence === "monthly") next.setMonth(next.getMonth() + 1)
+
+    await prisma.$transaction([
+      prisma.habitLog.create({ data: { taskId: id, date } }),
+      prisma.task.update({ where: { id }, data: { dueDate: next, done: false } }),
+    ])
+  } else {
+    await prisma.habitLog.create({ data: { taskId: id, date } })
+  }
+
+  return NextResponse.json({ created: true })
+}

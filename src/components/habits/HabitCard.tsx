@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { ChevronDown, ChevronUp } from "lucide-react"
-import { useHabitLogs } from "@/hooks/useHabitLogs"
+import { useHabitLogs, useToggleHabitLog } from "@/hooks/useHabitLogs"
 import { computeHabitStats } from "@/hooks/habitStats"
 import type { Task } from "@/types"
 
@@ -25,30 +25,53 @@ function utcDays(count: number): string[] {
   })
 }
 
-function MiniHeatmap({ logDates }: { logDates: Set<string> }) {
+function MiniHeatmap({
+  logDates,
+  onToggle,
+}: {
+  logDates: Set<string>
+  onToggle: (date: string) => void
+}) {
   const days = utcDays(14)
   return (
     <div className="flex gap-0.5" aria-label="14-дневный мини-график">
       {days.map((key) => (
-        <div
+        <button
           key={key}
           title={key}
-          className={`w-3 h-3 rounded-sm ${logDates.has(key) ? "bg-purple-400" : "bg-gray-100"}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggle(key)
+          }}
+          className={`w-3 h-3 rounded-sm transition-colors cursor-pointer ${
+            logDates.has(key) ? "bg-purple-400 hover:bg-purple-300" : "bg-gray-100 hover:bg-purple-200"
+          }`}
+          aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
         />
       ))}
     </div>
   )
 }
 
-function FullHeatmap({ logDates }: { logDates: Set<string> }) {
+function FullHeatmap({
+  logDates,
+  onToggle,
+}: {
+  logDates: Set<string>
+  onToggle: (date: string) => void
+}) {
   const days = utcDays(30)
   return (
     <div className="flex flex-wrap gap-0.5" aria-label="30-дневный график">
       {days.map((key) => (
-        <div
+        <button
           key={key}
           title={key}
-          className={`w-3 h-3 rounded-sm ${logDates.has(key) ? "bg-purple-500" : "bg-gray-100"}`}
+          onClick={() => onToggle(key)}
+          className={`w-3 h-3 rounded-sm transition-colors cursor-pointer ${
+            logDates.has(key) ? "bg-purple-500 hover:bg-purple-400" : "bg-gray-100 hover:bg-purple-200"
+          }`}
+          aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
         />
       ))}
     </div>
@@ -58,11 +81,15 @@ function FullHeatmap({ logDates }: { logDates: Set<string> }) {
 export function HabitCard({ habit }: { habit: Task }) {
   const [expanded, setExpanded] = useState(false)
   const { data: logs = [] } = useHabitLogs(habit.id)
+  const { mutate: toggleLog } = useToggleHabitLog(habit.id)
 
   const logDates = new Set(logs.map((l) => l.date.slice(0, 10)))
   const stats = expanded
     ? computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt))
     : null
+
+  const handleToggle = (date: string) =>
+    toggleLog({ date, isCurrentlyLogged: logDates.has(date) })
 
   return (
     <div className="border border-gray-100 rounded-xl bg-white shadow-sm overflow-hidden">
@@ -85,12 +112,12 @@ export function HabitCard({ habit }: { habit: Task }) {
             )}
           </div>
         </div>
-        <MiniHeatmap logDates={logDates} />
+        <MiniHeatmap logDates={logDates} onToggle={handleToggle} />
       </button>
 
       {expanded && (
         <div className="px-4 pb-4 space-y-3 border-t border-gray-50 pt-3">
-          <FullHeatmap logDates={logDates} />
+          <FullHeatmap logDates={logDates} onToggle={handleToggle} />
 
           <div className="flex items-center gap-4 text-sm">
             {habit.recurrence === "daily" && stats && stats.streak > 0 && (

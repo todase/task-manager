@@ -6,7 +6,8 @@ Personal task manager built with Next.js, deployed on Vercel. Supports projects,
 
 - Tasks with due dates, recurrence (daily/weekly/monthly), subtasks, descriptions, and tags
 - Projects with custom icons (72 options)
-- Archive with completion timestamps, sorted newest-first
+- Archive with completion timestamps, sorted newest-first; expandable per-task reflections
+- Post-completion reflection (time spent, difficulty, mood, free-text notes, optional next-step task)
 - Date filters: Today, This Week, Someday
 - Drag-and-drop reordering
 - PWA (installable, offline-capable)
@@ -22,7 +23,7 @@ Personal task manager built with Next.js, deployed on Vercel. Supports projects,
 | Auth | NextAuth v5 |
 | UI | Tailwind CSS, Lucide React, dnd-kit |
 | Email | Resend |
-| Tests | Vitest + Testing Library (236 tests) |
+| Tests | Vitest + Testing Library (276 tests) |
 | Deploy | Vercel |
 
 ## Local Development
@@ -57,7 +58,7 @@ See [`task-manager-skill/skills/task-manager.md`](task-manager-skill/skills/task
 
 ## Claude Code Plugin
 
-The `task-manager-skill/` directory is a standalone Claude Code plugin. It lets Claude create, list, update, and delete tasks programmatically.
+The `task-manager-skill/` directory is a standalone Claude Code plugin. It lets Claude create, list, update, and delete tasks programmatically, as well as read post-completion reflections from the archive.
 
 ```bash
 # Load the plugin
