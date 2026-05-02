@@ -93,27 +93,29 @@ export function HabitCard({ habit }: { habit: Task }) {
 
   return (
     <div className="border border-gray-100 rounded-xl bg-white shadow-sm overflow-hidden">
-      <button
-        onClick={() => setExpanded((e) => !e)}
-        className="w-full text-left p-4"
-        aria-label={habit.title}
-        aria-expanded={expanded}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <span className="font-medium">{habit.title}</span>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400">
-              {RECURRENCE_LABEL[habit.recurrence ?? ""] ?? habit.recurrence}
-            </span>
-            {expanded ? (
-              <ChevronUp className="w-4 h-4 text-gray-400" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            )}
+      <div className="p-4">
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          className="w-full text-left mb-2"
+          aria-label={habit.title}
+          aria-expanded={expanded}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-medium">{habit.title}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">
+                {RECURRENCE_LABEL[habit.recurrence ?? ""] ?? habit.recurrence}
+              </span>
+              {expanded ? (
+                <ChevronUp className="w-4 h-4 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              )}
+            </div>
           </div>
-        </div>
+        </button>
         <MiniHeatmap logDates={logDates} onToggle={handleToggle} />
-      </button>
+      </div>
 
       {expanded && (
         <div className="px-4 pb-4 space-y-3 border-t border-gray-50 pt-3">
