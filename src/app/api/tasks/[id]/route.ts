@@ -48,10 +48,14 @@ export async function PATCH(
   if (done === true) {
     const existing = await prisma.task.findUnique({ where: { id, userId } })
     if (existing?.recurrence && existing.dueDate) {
+      const now = new Date()
+      const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
       const next = new Date(existing.dueDate)
-      if (existing.recurrence === "daily") next.setDate(next.getDate() + 1)
-      if (existing.recurrence === "weekly") next.setDate(next.getDate() + 7)
-      if (existing.recurrence === "monthly") next.setMonth(next.getMonth() + 1)
+      while (next.getTime() <= todayUTC) {
+        if (existing.recurrence === "daily") next.setUTCDate(next.getUTCDate() + 1)
+        else if (existing.recurrence === "weekly") next.setUTCDate(next.getUTCDate() + 7)
+        else if (existing.recurrence === "monthly") next.setUTCMonth(next.getUTCMonth() + 1)
+      }
 
       const include = {
         project: { select: { id: true, title: true } },
@@ -60,10 +64,7 @@ export async function PATCH(
       } as const
 
       if (existing.isHabit) {
-        const now = new Date()
-        const date = new Date(
-          Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-        )
+        const date = new Date(todayUTC)
         const [, task] = await prisma.$transaction([
           prisma.habitLog.upsert({
             where: { taskId_date: { taskId: id, date } },

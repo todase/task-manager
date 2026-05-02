@@ -88,6 +88,12 @@ describe("computeHabitStats — completion rate", () => {
 })
 
 describe("computeHabitStats — moodTrend", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-04-30T12:00:00.000Z")) // UTC today = 2026-04-30
+  })
+  afterEach(() => vi.useRealTimers())
+
   it("returns last 10 logs with non-null mood in chronological order", () => {
     const logs = [
       makeLog("2026-04-20", "energized"),
@@ -105,5 +111,23 @@ describe("computeHabitStats — moodTrend", () => {
     )
     const { moodTrend } = computeHabitStats(logs, "daily", CREATED_AT)
     expect(moodTrend).toHaveLength(10)
+  })
+
+  it("excludes logs outside the completion rate window for weekly habits", () => {
+    // log from 6 months ago — outside 12-week window
+    const oldLog = makeLog("2025-10-01", "tired")
+    // log from 3 weeks ago — within 12-week window
+    const recentLog = makeLog("2026-04-10", "energized")
+    const { moodTrend } = computeHabitStats([oldLog, recentLog], "weekly", CREATED_AT)
+    expect(moodTrend).toEqual(["energized"])
+  })
+
+  it("excludes logs outside the completion rate window for monthly habits", () => {
+    // log from 13 months ago — outside 12-month window
+    const oldLog = makeLog("2025-03-15", "tired")
+    // log from 2 months ago — within 12-month window
+    const recentLog = makeLog("2026-02-20", "neutral")
+    const { moodTrend } = computeHabitStats([oldLog, recentLog], "monthly", CREATED_AT)
+    expect(moodTrend).toEqual(["neutral"])
   })
 })

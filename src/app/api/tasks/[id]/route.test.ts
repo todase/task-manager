@@ -185,6 +185,34 @@ describe("PATCH /api/tasks/[id]", () => {
     )
   })
 
+  it("advances dueDate past today when dueDate is stale (multiple periods in the past)", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-05-02T12:00:00.000Z"))
+
+    mockAuth.mockResolvedValue(session() as never)
+    mockTask.findUnique.mockResolvedValue({
+      id: "task-1",
+      recurrence: "weekly",
+      dueDate: new Date("2026-04-01T00:00:00.000Z"), // 4+ weeks in the past
+      isHabit: false,
+    } as never)
+    mockTask.update.mockResolvedValue({ ...dbTask, done: false } as never)
+
+    await PATCH(jsonReq("PATCH", { done: true }), params())
+
+    // April 1 + 5 weekly steps → May 6 (first Wednesday after May 2)
+    expect(mockTask.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          dueDate: new Date("2026-05-06T00:00:00.000Z"),
+          done: false,
+        }),
+      })
+    )
+
+    vi.useRealTimers()
+  })
+
   it("returns 400 when isHabit=true and recurrence=null", async () => {
     mockAuth.mockResolvedValue(session() as never)
     const res = await PATCH(

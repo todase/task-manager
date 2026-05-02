@@ -88,9 +88,20 @@ export function computeHabitStats(
     completionRate = total > 0 ? completed / total : 0
   }
 
-  // --- Mood trend: last 10 logs with non-null mood, chronological ---
+  // --- Mood trend: last 10 logs with non-null mood, within the same window as completion rate ---
+  let moodWindowStart: Date | null = null
+  if (recurrence === "daily") {
+    moodWindowStart = new Date(today)
+    moodWindowStart.setUTCDate(moodWindowStart.getUTCDate() - 29)
+  } else if (recurrence === "weekly") {
+    moodWindowStart = getMondayOf(today)
+    moodWindowStart.setUTCDate(moodWindowStart.getUTCDate() - 77)
+  } else if (recurrence === "monthly") {
+    moodWindowStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 11, 1))
+  }
+
   const moodTrend = logs
-    .filter((l) => l.reflection?.mood != null)
+    .filter((l) => l.reflection?.mood != null && (!moodWindowStart || new Date(l.date) >= moodWindowStart))
     .slice(-10)
     .map((l) => l.reflection!.mood as Mood)
 

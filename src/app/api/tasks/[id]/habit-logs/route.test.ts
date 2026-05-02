@@ -152,6 +152,33 @@ describe("POST /api/tasks/[id]/habit-logs", () => {
     expect(mockTransaction).not.toHaveBeenCalled()
   })
 
+  it("advances dueDate past today when dueDate is stale on today's toggle", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-05-02T12:00:00.000Z"))
+
+    mockAuth.mockResolvedValue(session() as never)
+    mockTask.findUnique.mockResolvedValue({
+      id: "task-1",
+      userId: "u1",
+      recurrence: "weekly",
+      dueDate: new Date("2026-04-01T00:00:00.000Z"), // 4+ weeks in the past
+    } as never)
+    mockHabitLog.findUnique.mockResolvedValue(null as never)
+    mockTransaction.mockResolvedValue([] as never)
+
+    await POST(postRequest({ date: "2026-05-02" }), params())
+
+    expect(mockTask.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          dueDate: new Date("2026-05-06T00:00:00.000Z"),
+        }),
+      })
+    )
+
+    vi.useRealTimers()
+  })
+
   it("advances dueDate in $transaction when creating for today with daily recurrence", async () => {
     const now = new Date()
     const todayStr = new Date(

@@ -64,18 +64,17 @@ export async function POST(
   }
 
   const now = new Date()
-  const todayStr = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-  )
-    .toISOString()
-    .slice(0, 10)
+  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  const todayStr = new Date(todayUTC).toISOString().slice(0, 10)
   const isToday = dateStr === todayStr
 
   if (isToday && task.recurrence && task.dueDate) {
     const next = new Date(task.dueDate)
-    if (task.recurrence === "daily") next.setDate(next.getDate() + 1)
-    if (task.recurrence === "weekly") next.setDate(next.getDate() + 7)
-    if (task.recurrence === "monthly") next.setMonth(next.getMonth() + 1)
+    while (next.getTime() <= todayUTC) {
+      if (task.recurrence === "daily") next.setUTCDate(next.getUTCDate() + 1)
+      else if (task.recurrence === "weekly") next.setUTCDate(next.getUTCDate() + 7)
+      else if (task.recurrence === "monthly") next.setUTCMonth(next.getUTCMonth() + 1)
+    }
 
     await prisma.$transaction([
       prisma.habitLog.create({ data: { taskId: id, date } }),
