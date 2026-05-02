@@ -1,0 +1,37 @@
+{
+  "planPath": "docs/superpowers/plans/2026-05-02-habit-tracker-v2.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 1: HabitSection — visual polish & alignment fix",
+      "status": "pending",
+      "description": "**Goal:** Fix streak-badge alignment so all 7-cell columns stay on the same axis, increase cell size to 16×16, update arrow to link to the habit's detail page.\n\n**Files:**\n- Modify: `src/components/habits/HabitSection.tsx`\n- Modify: `src/components/habits/HabitSection.test.tsx`\n\n**Acceptance Criteria:**\n- [ ] Heatmap cells are `w-4 h-4` (16px) with `rounded`\n- [ ] Streak badge is inside a `w-9 text-right` fixed-width slot placed left of the cells\n- [ ] Today's cell has `ring-2 ring-purple-200` highlight\n- [ ] Arrow `›` links to `/habits/${habit.id}` (not `/habits`)\n- [ ] Header label uses `text-purple-600`\n- [ ] All existing HabitSection tests pass; new test verifies arrow href\n\n**Verify:** `npx vitest run src/components/habits/HabitSection.test.tsx`\n\n```json:metadata\n{\"files\": [\"src/components/habits/HabitSection.tsx\", \"src/components/habits/HabitSection.test.tsx\"], \"verifyCommand\": \"npx vitest run src/components/habits/HabitSection.test.tsx\", \"acceptanceCriteria\": [\"Cells w-4 h-4 rounded\", \"Streak in w-9 fixed slot\", \"Today ring-2 ring-purple-200\", \"Arrow links to /habits/[id]\", \"All tests pass\"]}\n```",
+      "activeForm": "Implementing HabitSection visual polish"
+    },
+    {
+      "id": 1,
+      "subject": "Task 2: HabitCard — accordion redesign",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "**Goal:** Collapsed header shows [streak-slot 36px][7-cell mini heatmap][▼]; expanded shows 30-day heatmap + three stat pills; habit name links to detail page.\n\n**Files:**\n- Modify: `src/components/habits/HabitCard.tsx`\n- Modify: `src/components/habits/HabitCard.test.tsx`\n\n**Acceptance Criteria:**\n- [ ] Collapsed: 7 cells mini heatmap, streak in 36px fixed slot\n- [ ] Expanded: 30-day heatmap + stat pills (completion%, streak, mood emoji)\n- [ ] Habit name is a Link to `/habits/[id]`\n- [ ] Expand/collapse on chevron button only\n- [ ] All tests pass\n\n**Verify:** `npx vitest run src/components/habits/HabitCard.test.tsx`\n\n```json:metadata\n{\"files\": [\"src/components/habits/HabitCard.tsx\", \"src/components/habits/HabitCard.test.tsx\"], \"verifyCommand\": \"npx vitest run src/components/habits/HabitCard.test.tsx\", \"acceptanceCriteria\": [\"7-cell mini heatmap in collapsed\", \"30-day heatmap in expanded\", \"Stat pills data-testid present\", \"Name links to /habits/[id]\"]}\n```",
+      "activeForm": "Implementing HabitCard accordion redesign"
+    },
+    {
+      "id": 2,
+      "subject": "Task 3: /habits page — summary bar",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Add summary bar above the habit list showing total active habits, 7-day avg completion rate, and best current streak. Sort habits by completion rate descending.\n\n**Files:**\n- Create: `src/hooks/useAllHabitLogs.ts`\n- Modify: `src/app/habits/page.tsx`\n\n**Acceptance Criteria:**\n- [ ] `useAllHabitLogs(ids)` returns per-habit logs using `useQueries`\n- [ ] Summary bar shows three pills: active count, 7-day %, best streak\n- [ ] Loading state shows `—` in pills\n- [ ] Habits sorted by completion rate descending\n- [ ] Full test suite passes (no regressions)\n\n**Verify:** `npx vitest run`\n\n```json:metadata\n{\"files\": [\"src/hooks/useAllHabitLogs.ts\", \"src/app/habits/page.tsx\"], \"verifyCommand\": \"npx vitest run\", \"acceptanceCriteria\": [\"useAllHabitLogs uses useQueries\", \"Summary bar has 3 pills\", \"Habits sorted by completionRate desc\", \"No test regressions\"]}\n```",
+      "activeForm": "Implementing /habits summary bar"
+    },
+    {
+      "id": 3,
+      "subject": "Task 4: /habits/[id] — detail page with calendar & reflections",
+      "status": "pending",
+      "blockedBy": [2],
+      "description": "**Goal:** Create detail page with stat pills, monthly calendar with navigation, and reflections list; clicking a calendar date scrolls to that day's reflection.\n\n**Files:**\n- Create: `src/components/habits/HabitDetailCalendar.tsx`\n- Create: `src/components/habits/HabitDetailCalendar.test.tsx`\n- Create: `src/app/habits/[id]/page.tsx`\n\n**Acceptance Criteria:**\n- [ ] Calendar renders correct month grid (Mon–Sun)\n- [ ] Done cells purple, missed grey, today has ring, reflection dot amber\n- [ ] ‹ disabled at 90-day boundary, › disabled at current month\n- [ ] Click done+reflection cell scrolls + highlights that reflection entry\n- [ ] Reflections list filters to visible calendar month\n- [ ] onMonthChange prop syncs reflections list to calendar month\n- [ ] Invalid habit id shows error state\n- [ ] All calendar tests pass\n\n**Verify:** `npx vitest run src/components/habits/HabitDetailCalendar.test.tsx`\n\n```json:metadata\n{\"files\": [\"src/components/habits/HabitDetailCalendar.tsx\", \"src/components/habits/HabitDetailCalendar.test.tsx\", \"src/app/habits/[id]/page.tsx\"], \"verifyCommand\": \"npx vitest run src/components/habits/HabitDetailCalendar.test.tsx\", \"acceptanceCriteria\": [\"Month grid Mon-Sun\", \"Done/missed/today/reflection-dot states\", \"Prev disabled at 90-day limit, next at current month\", \"Click scrolls to reflection\", \"Reflections filter by calendar month\"]}\n```",
+      "activeForm": "Implementing /habits/[id] detail page"
+    }
+  ],
+  "lastUpdated": "2026-05-02T00:00:00.000Z"
+}
