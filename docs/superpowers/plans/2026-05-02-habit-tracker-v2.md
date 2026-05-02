@@ -581,8 +581,7 @@ function SummaryBar({ habits, logsByHabitId, isLoading }: SummaryBarProps) {
       if (stats.streak > best) best = stats.streak
 
       const logsIn7d = logs.filter((l) => new Date(l.date) >= sevenDaysAgo)
-      const denom = logsIn7d.some((l) => l.date.slice(0, 10) === todayStr) ? 7 : 6
-      totalRate += Math.min(logsIn7d.length / denom, 1)
+      totalRate += Math.min(logsIn7d.length / 7, 1)
     }
 
     return {
@@ -980,8 +979,8 @@ export function HabitDetailCalendar({ logs, onDateClick, onMonthChange }: Props)
           return (
             <button
               key={cell.date}
-              onClick={() => done && onDateClick?.(cell.date!)}
-              disabled={!done}
+              onClick={() => (done && hasRefl) && onDateClick?.(cell.date!)}
+              disabled={!done || !hasRefl}
               aria-label={ariaLabel}
               className={[
                 "relative aspect-square rounded-lg flex items-center justify-center text-xs font-medium transition-colors",
@@ -1037,7 +1036,7 @@ Expected: all pass
 
 ```tsx
 "use client"
-import { useRef, useMemo, useCallback, useState } from "react"
+import { useRef, useMemo, useCallback, useState, use } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { useHabits } from "@/hooks/useHabits"
@@ -1111,10 +1110,12 @@ function ReflectionEntry({ log, highlighted, refCallback }: ReflectionEntryProps
   )
 }
 
-export default function HabitDetailPage({ params }: { params: { id: string } }) {
+export default function HabitDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  // Next.js 16: params is a Promise in client components — must unwrap with React.use()
+  const { id } = use(params)
   const { data: habits = [], isLoading: habitsLoading } = useHabits()
-  const habit = habits.find((h) => h.id === params.id)
-  const { data: logs = [], isLoading: logsLoading } = useHabitLogs(params.id)
+  const habit = habits.find((h) => h.id === id)
+  const { data: logs = [], isLoading: logsLoading } = useHabitLogs(id)
 
   const [highlightedDate, setHighlightedDate] = useState<string | null>(null)
 
@@ -1143,10 +1144,11 @@ export default function HabitDetailPage({ params }: { params: { id: string } }) 
       : 0
   }, [logs])
 
-  // Reflections filtered by the calendar's currently visible month, reverse chron
+  // Reflections filtered by visible month; only logs that have a reflection (spec: "only entries with a reflection are shown")
   const monthReflections = useMemo(() => {
     return logs
       .filter((l) => {
+        if (!l.reflection) return false
         const d = new Date(l.date)
         return d.getUTCMonth() === calMonth && d.getUTCFullYear() === calYear
       })
