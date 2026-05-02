@@ -23,7 +23,7 @@ Personal task manager built with Next.js, deployed on Vercel. Supports projects,
 | Auth | NextAuth v5 |
 | UI | Tailwind CSS, Lucide React, dnd-kit |
 | Email | Resend |
-| Tests | Vitest + Testing Library (276 tests) |
+| Tests | Vitest + Testing Library (212 tests) |
 | Deploy | Vercel |
 
 ## Local Development

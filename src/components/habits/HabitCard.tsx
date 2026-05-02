@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { useHabitLogs, useToggleHabitLog } from "@/hooks/useHabitLogs"
+import { utcDays } from "@/hooks/habitUtils"
 import { computeHabitStats } from "@/hooks/habitStats"
 import type { Task } from "@/types"
 
@@ -15,14 +16,6 @@ const RECURRENCE_LABEL: Record<string, string> = {
   daily: "ежедневно",
   weekly: "еженедельно",
   monthly: "ежемесячно",
-}
-
-function utcDays(count: number): string[] {
-  const now = new Date()
-  return Array.from({ length: count }, (_, i) => {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - (count - 1 - i)))
-    return d.toISOString().slice(0, 10)
-  })
 }
 
 function MiniHeatmap({
@@ -39,10 +32,7 @@ function MiniHeatmap({
         <button
           key={key}
           title={key}
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggle(key)
-          }}
+          onClick={() => onToggle(key)}
           className={`w-3 h-3 rounded-sm transition-colors cursor-pointer ${
             logDates.has(key) ? "bg-purple-400 hover:bg-purple-300" : "bg-gray-100 hover:bg-purple-200"
           }`}

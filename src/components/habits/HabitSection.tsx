@@ -1,9 +1,11 @@
 "use client"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { ChevronDown, ChevronUp, Flame } from "lucide-react"
 import { useHabitLogs, useToggleHabitLog } from "@/hooks/useHabitLogs"
+import { utcDays } from "@/hooks/habitUtils"
 import { computeHabitStats } from "@/hooks/habitStats"
+import { ReflectionModal } from "@/components/tasks/ReflectionModal"
 import type { Task } from "@/types"
 
 type Props = {
@@ -12,16 +14,10 @@ type Props = {
   onToggle: () => void
 }
 
-function last7UtcDays(): string[] {
-  const now = new Date()
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - (6 - i)))
-    return d.toISOString().slice(0, 10)
-  })
-}
-
 function HabitRow({ habit }: { habit: Task }) {
-  const days = last7UtcDays()
+  const days = utcDays(7)
+  const today = days[days.length - 1]
+  const [showReflection, setShowReflection] = useState(false)
   const { data: logs = [] } = useHabitLogs(habit.id)
   const { mutate: toggleLog } = useToggleHabitLog(habit.id)
   const logDates = new Set(logs.map((l) => l.date.slice(0, 10)))
@@ -30,36 +26,54 @@ function HabitRow({ habit }: { habit: Task }) {
     [logs, habit.recurrence, habit.createdAt]
   )
 
-  return (
-    <div className="flex items-center gap-3 py-2.5">
-      <span className="flex-1 text-sm truncate">{habit.title}</span>
+  function handleCellClick(date: string) {
+    const isCurrentlyLogged = logDates.has(date)
+    toggleLog({ date, isCurrentlyLogged })
+    if (!isCurrentlyLogged && date === today) {
+      setShowReflection(true)
+    }
+  }
 
-      <div className="flex gap-0.5 flex-shrink-0" aria-label="Последние 7 дней">
-        {days.map((key) => (
-          <button
-            key={key}
-            title={key}
-            onClick={() => toggleLog({ date: key, isCurrentlyLogged: logDates.has(key) })}
-            className={`w-3 h-3 rounded-sm transition-colors cursor-pointer ${
-              logDates.has(key)
-                ? "bg-purple-400 hover:bg-purple-300"
-                : "bg-gray-100 hover:bg-purple-200"
-            }`}
-            aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
-          />
-        ))}
+  return (
+    <>
+      <div className="flex items-center gap-3 py-2.5">
+        <span className="flex-1 text-sm truncate">{habit.title}</span>
+
+        <div className="flex gap-0.5 flex-shrink-0" aria-label="Последние 7 дней">
+          {days.map((key) => (
+            <button
+              key={key}
+              title={key}
+              onClick={() => handleCellClick(key)}
+              className={`w-3 h-3 rounded-sm transition-colors cursor-pointer ${
+                logDates.has(key)
+                  ? "bg-purple-400 hover:bg-purple-300"
+                  : "bg-gray-100 hover:bg-purple-200"
+              }`}
+              aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
+            />
+          ))}
+        </div>
+
+        {habit.recurrence === "daily" && stats.streak > 0 && (
+          <span className="text-xs text-orange-500 font-medium flex-shrink-0">
+            🔥{stats.streak}
+          </span>
+        )}
+
+        <Link href="/habits" className="text-xs text-gray-400 hover:text-gray-600 flex-shrink-0">
+          →
+        </Link>
       </div>
 
-      {habit.recurrence === "daily" && stats.streak > 0 && (
-        <span className="text-xs text-orange-500 font-medium flex-shrink-0">
-          🔥{stats.streak}
-        </span>
+      {showReflection && (
+        <ReflectionModal
+          taskId={habit.id}
+          isHabit
+          onClose={() => setShowReflection(false)}
+        />
       )}
-
-      <Link href="/habits" className="text-xs text-gray-400 hover:text-gray-600 flex-shrink-0">
-        →
-      </Link>
-    </div>
+    </>
   )
 }
 

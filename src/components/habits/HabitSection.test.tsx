@@ -14,6 +14,14 @@ vi.mock("next/link", () => ({
   ),
 }))
 
+vi.mock("@/components/tasks/ReflectionModal", () => ({
+  ReflectionModal: ({ onClose }: { onClose: () => void }) => (
+    <div data-testid="reflection-modal">
+      <button onClick={onClose}>Close</button>
+    </div>
+  ),
+}))
+
 const habit = {
   id: "h1",
   title: "Morning run",
@@ -68,5 +76,21 @@ describe("HabitSection", () => {
     render(<HabitSection habits={[habit]} isOpen={true} onToggle={vi.fn()} />)
     const cells = screen.getAllByRole("button", { name: /отметить/ })
     expect(cells).toHaveLength(7)
+  })
+
+  it("shows reflection modal when today's cell is clicked and not yet logged", () => {
+    render(<HabitSection habits={[habit]} isOpen={true} onToggle={vi.fn()} />)
+    // today is the last cell (aria-label contains "отметить выполненным")
+    const cells = screen.getAllByRole("button", { name: /отметить выполненным/ })
+    fireEvent.click(cells[cells.length - 1])
+    expect(screen.getByTestId("reflection-modal")).toBeInTheDocument()
+  })
+
+  it("closes reflection modal on close callback", () => {
+    render(<HabitSection habits={[habit]} isOpen={true} onToggle={vi.fn()} />)
+    const cells = screen.getAllByRole("button", { name: /отметить выполненным/ })
+    fireEvent.click(cells[cells.length - 1])
+    fireEvent.click(screen.getByText("Close"))
+    expect(screen.queryByTestId("reflection-modal")).not.toBeInTheDocument()
   })
 })
