@@ -82,8 +82,8 @@ export default function HabitDetailPage({ params }: { params: Promise<{ id: stri
 
   const [highlightedDate, setHighlightedDate] = useState<string | null>(null)
 
-  const [calYear, setCalYear] = useState(() => new Date().getUTCFullYear())
-  const [calMonth, setCalMonth] = useState(() => new Date().getUTCMonth())
+  const [calYear, setCalYear] = useState(() => { const n = new Date(); return n.getUTCFullYear() })
+  const [calMonth, setCalMonth] = useState(() => { const n = new Date(); return n.getUTCMonth() })
 
   const reflRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
@@ -175,7 +175,7 @@ export default function HabitDetailPage({ params }: { params: Promise<{ id: stri
       {/* Stat pills */}
       {!logsLoading && stats && (
         <div className="flex gap-2">
-          {habit.recurrence === "daily" && (
+          {habit.recurrence === "daily" && stats.streak > 0 && (
             <div className="flex-1 bg-purple-50 border border-purple-100 rounded-xl py-2 text-center">
               <div className="text-lg font-bold text-orange-500">🔥{stats.streak}</div>
               <div className="text-xs text-gray-400">стрик</div>

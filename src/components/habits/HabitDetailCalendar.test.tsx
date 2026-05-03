@@ -44,13 +44,13 @@ describe("HabitDetailCalendar", () => {
 
   it("marks a logged day as done", () => {
     render(<HabitDetailCalendar logs={[makeLog("2026-05-01")]} />)
-    const cell = screen.getByRole("button", { name: /1 мая/i })
+    const cell = screen.getByRole("button", { name: "1 мая" })
     expect(cell).toHaveClass("bg-purple-600")
   })
 
   it("marks today with ring", () => {
     render(<HabitDetailCalendar logs={[]} />)
-    const cell = screen.getByRole("button", { name: /2 мая/i })
+    const cell = screen.getByRole("button", { name: "2 мая" })
     expect(cell).toHaveClass("ring-2")
   })
 
@@ -82,6 +82,25 @@ describe("HabitDetailCalendar", () => {
     expect(prev).toBeDisabled()
   })
 
+  it("renders a missed day as a button (for accessibility)", () => {
+    render(<HabitDetailCalendar logs={[]} />)
+    // May 3 is not today (today = May 2) and not logged → missed day
+    const cell = screen.getByRole("button", { name: "3 мая" })
+    expect(cell).toBeDisabled()
+  })
+
+  it("does not call onDateClick when done cell has no reflection", () => {
+    const onDateClick = vi.fn()
+    render(
+      <HabitDetailCalendar
+        logs={[makeLog("2026-05-01", false)]}
+        onDateClick={onDateClick}
+      />
+    )
+    fireEvent.click(screen.getByRole("button", { name: "1 мая" }))
+    expect(onDateClick).not.toHaveBeenCalled()
+  })
+
   it("calls onDateClick with date string when clicking a done cell", () => {
     const onDateClick = vi.fn()
     render(
@@ -90,7 +109,7 @@ describe("HabitDetailCalendar", () => {
         onDateClick={onDateClick}
       />
     )
-    fireEvent.click(screen.getByRole("button", { name: /1 мая/i }))
+    fireEvent.click(screen.getByRole("button", { name: "1 мая" }))
     expect(onDateClick).toHaveBeenCalledWith("2026-05-01")
   })
 })

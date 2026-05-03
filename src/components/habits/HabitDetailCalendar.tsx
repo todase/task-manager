@@ -162,13 +162,15 @@ export function HabitDetailCalendar({ logs, onDateClick, onMonthChange }: Props)
           }
 
           return (
-            <div
+            <button
               key={cell.date}
+              disabled
+              tabIndex={-1}
               aria-label={ariaLabel}
               className={cellClasses}
             >
               {cell.day}
-            </div>
+            </button>
           )
         })}
       </div>

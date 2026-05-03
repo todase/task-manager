@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react"
 import { useHabits } from "@/hooks/useHabits"
 import { useAllHabitLogs } from "@/hooks/useAllHabitLogs"
 import { computeHabitStats } from "@/hooks/habitStats"
+import { computeHabitRate7d } from "@/hooks/summaryBar"
 import { HabitCard } from "@/components/habits/HabitCard"
 import type { Task, HabitLog } from "@/types"
 
@@ -18,11 +19,6 @@ function SummaryBar({ habits, logsByHabitId, isLoading }: SummaryBarProps) {
   const { avgRate7d, bestStreak } = useMemo(() => {
     if (isLoading || habits.length === 0) return { avgRate7d: null, bestStreak: null }
 
-    const now = new Date()
-    const sevenDaysAgo = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 6)
-    )
-
     let totalRate = 0
     let best = 0
 
@@ -31,8 +27,7 @@ function SummaryBar({ habits, logsByHabitId, isLoading }: SummaryBarProps) {
       const stats = computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt))
       if (stats.streak > best) best = stats.streak
 
-      const logsIn7d = logs.filter((l) => new Date(l.date) >= sevenDaysAgo)
-      totalRate += Math.min(logsIn7d.length / 7, 1)
+      totalRate += computeHabitRate7d(logs, habit.recurrence ?? "")
     }
 
     return {
