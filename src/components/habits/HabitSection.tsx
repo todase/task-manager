@@ -55,11 +55,9 @@ function HabitRow({ habit }: { habit: Task }) {
               onClick={() => handleCellClick(key)}
               className={`w-4 h-4 rounded transition-colors cursor-pointer ${
                 logDates.has(key)
-                  ? key === today
-                    ? "bg-purple-600 ring-2 ring-purple-200"
-                    : "bg-purple-600 hover:bg-purple-500"
+                  ? "bg-purple-600 hover:bg-purple-500"
                   : "bg-purple-100 hover:bg-purple-200"
-              }`}
+              } ${key === today ? "ring-2 ring-purple-200" : ""}`}
               aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
             />
           ))}
