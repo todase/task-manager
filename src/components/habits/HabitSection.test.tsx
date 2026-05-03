@@ -93,4 +93,10 @@ describe("HabitSection", () => {
     fireEvent.click(screen.getByText("Close"))
     expect(screen.queryByTestId("reflection-modal")).not.toBeInTheDocument()
   })
+
+  it("renders arrow link pointing to /habits/<id>", () => {
+    render(<HabitSection habits={[habit]} isOpen={true} onToggle={vi.fn()} />)
+    const link = screen.getByRole("link", { name: "→" })
+    expect(link).toHaveAttribute("href", `/habits/${habit.id}`)
+  })
 })
