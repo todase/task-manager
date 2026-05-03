@@ -16,7 +16,6 @@ type Props = {
 
 function HabitRow({ habit }: { habit: Task }) {
   const days = utcDays(7)
-  const today = days[days.length - 1]
   const [showReflection, setShowReflection] = useState(false)
   const { data: logs = [] } = useHabitLogs(habit.id)
   const { mutate: toggleLog } = useToggleHabitLog(habit.id)
@@ -29,7 +28,11 @@ function HabitRow({ habit }: { habit: Task }) {
   function handleCellClick(date: string) {
     const isCurrentlyLogged = logDates.has(date)
     toggleLog({ date, isCurrentlyLogged })
-    if (!isCurrentlyLogged && date === today) {
+    const now = new Date()
+    const realToday = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    ).toISOString().slice(0, 10)
+    if (!isCurrentlyLogged && date === realToday) {
       setShowReflection(true)
     }
   }

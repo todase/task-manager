@@ -54,6 +54,14 @@ export async function POST(
   const [y, m, d] = dateStr.split("-").map(Number)
   const date = new Date(Date.UTC(y, m - 1, d))
 
+  const now = new Date()
+  const todayMidnight = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  )
+  if (date > todayMidnight) {
+    return NextResponse.json({ error: "Future dates not allowed" }, { status: 400 })
+  }
+
   const existing = await prisma.habitLog.findUnique({
     where: { taskId_date: { taskId: id, date } },
   })
@@ -63,9 +71,8 @@ export async function POST(
     return NextResponse.json({ created: false })
   }
 
-  const now = new Date()
-  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-  const todayStr = new Date(todayUTC).toISOString().slice(0, 10)
+  const todayUTC = todayMidnight.getTime()
+  const todayStr = todayMidnight.toISOString().slice(0, 10)
   const isToday = dateStr === todayStr
 
   if (isToday && task.recurrence && task.dueDate) {

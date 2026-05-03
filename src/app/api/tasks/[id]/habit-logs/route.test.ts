@@ -118,6 +118,18 @@ describe("POST /api/tasks/[id]/habit-logs", () => {
     expect(res.status).toBe(400)
   })
 
+  it("returns 400 when date is in the future", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-05-03T12:00:00.000Z"))
+    mockAuth.mockResolvedValue(session() as never)
+    mockTask.findUnique.mockResolvedValue({ id: "task-1", userId: "u1" } as never)
+    const res = await POST(postRequest({ date: "2026-05-04" }), params())
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/future/i)
+    vi.useRealTimers()
+  })
+
   it("deletes existing log and returns { created: false } when log already exists", async () => {
     mockAuth.mockResolvedValue(session() as never)
     mockTask.findUnique.mockResolvedValue({ id: "task-1", userId: "u1" } as never)

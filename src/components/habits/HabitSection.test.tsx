@@ -93,4 +93,21 @@ describe("HabitSection", () => {
     fireEvent.click(screen.getByText("Close"))
     expect(screen.queryByTestId("reflection-modal")).not.toBeInTheDocument()
   })
+
+  it("does not open reflection modal when clicking yesterday's cell after midnight", () => {
+    // Component renders at 23:59 on May 2 → last cell = "2026-05-02"
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-05-02T23:59:00.000Z"))
+    render(<HabitSection habits={[habit]} isOpen={true} onToggle={vi.fn()} />)
+
+    // Midnight passes — now it's May 3
+    vi.setSystemTime(new Date("2026-05-03T00:01:00.000Z"))
+
+    // Click the last cell (aria-label contains "2026-05-02")
+    const cells = screen.getAllByRole("button", { name: /отметить выполненным/ })
+    fireEvent.click(cells[cells.length - 1])
+
+    expect(screen.queryByTestId("reflection-modal")).not.toBeInTheDocument()
+    vi.useRealTimers()
+  })
 })
