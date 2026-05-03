@@ -131,8 +131,10 @@ export function HabitDetailCalendar({ logs, onDateClick, onMonthChange }: Props)
           const isInteractive = done || isToday
           const cellClasses = [
             "relative aspect-square rounded-lg flex items-center justify-center text-xs font-medium transition-colors",
-            done
+            done && hasRefl
               ? "bg-purple-600 text-white cursor-pointer hover:bg-purple-500"
+              : done
+              ? "bg-purple-600 text-white cursor-default"
               : "bg-gray-100 text-gray-300 cursor-default",
             isToday ? "ring-2 ring-purple-200" : "",
           ]

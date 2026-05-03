@@ -82,9 +82,8 @@ export default function HabitDetailPage({ params }: { params: Promise<{ id: stri
 
   const [highlightedDate, setHighlightedDate] = useState<string | null>(null)
 
-  const nowInit = new Date()
-  const [calYear, setCalYear] = useState(nowInit.getUTCFullYear())
-  const [calMonth, setCalMonth] = useState(nowInit.getUTCMonth())
+  const [calYear, setCalYear] = useState(() => new Date().getUTCFullYear())
+  const [calMonth, setCalMonth] = useState(() => new Date().getUTCMonth())
 
   const reflRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
@@ -103,7 +102,7 @@ export default function HabitDetailPage({ params }: { params: Promise<{ id: stri
     return logsIn90d.length > 0
       ? Math.round((logsIn90d.length / 90) * 100)
       : 0
-  }, [logs, habit])
+  }, [logs])
 
   const monthReflections = useMemo(() => {
     return logs
@@ -125,6 +124,11 @@ export default function HabitDetailPage({ params }: { params: Promise<{ id: stri
     },
     []
   )
+
+  const handleMonthChange = useCallback((y: number, m: number) => {
+    setCalYear(y)
+    setCalMonth(m)
+  }, [])
 
   if (habitsLoading) {
     return (
@@ -200,7 +204,7 @@ export default function HabitDetailPage({ params }: { params: Promise<{ id: stri
       <HabitDetailCalendar
         logs={logs}
         onDateClick={handleDateClick}
-        onMonthChange={(y, m) => { setCalYear(y); setCalMonth(m) }}
+        onMonthChange={handleMonthChange}
       />
 
       {/* Reflections list */}

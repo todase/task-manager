@@ -1,5 +1,6 @@
 import { useQueries } from "@tanstack/react-query"
 import { fetchHabitLogs } from "@/hooks/useHabitLogs"
+import type { HabitLog } from "@/types"
 
 export function useAllHabitLogs(habitIds: string[]) {
   const results = useQueries({
