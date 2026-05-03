@@ -10,6 +10,12 @@ vi.mock("@/hooks/useHabitLogs", () => ({
   useToggleHabitLog: vi.fn().mockReturnValue({ mutate: vi.fn() }),
 }))
 
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+    <a href={href} {...props}>{children}</a>
+  ),
+}))
+
 const TODAY = new Date()
 const todayKey = new Date(
   Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth(), TODAY.getUTCDate())
@@ -45,64 +51,65 @@ describe("HabitCard", () => {
     expect(screen.queryByLabelText("30-дневный график")).not.toBeInTheDocument()
   })
 
-  it("always calls useHabitLogs with habitId to show mini heatmap", () => {
+  it("habit name is a link to /habits/<id>", () => {
     render(<HabitCard habit={habit} />)
-    expect(mockUseHabitLogs).toHaveBeenCalledWith("h1")
+    const link = screen.getByRole("link", { name: "Morning run" })
+    expect(link).toHaveAttribute("href", "/habits/h1")
   })
 
-  it("expands on click and shows heatmap", () => {
+  it("shows 7 mini heatmap cells when collapsed", () => {
     render(<HabitCard habit={habit} />)
-    fireEvent.click(screen.getByText("Morning run"))
+    const cells = screen.getAllByRole("button", { name: /отметить/ })
+    expect(cells).toHaveLength(7)
+  })
+
+  it("expands on chevron click and shows 30-day heatmap", () => {
+    render(<HabitCard habit={habit} />)
+    fireEvent.click(screen.getByRole("button", { name: /развернуть/i }))
     expect(screen.getByLabelText("30-дневный график")).toBeInTheDocument()
   })
 
-  it("calls useHabitLogs with habit id when expanded", () => {
+  it("collapses again on second chevron click", () => {
     render(<HabitCard habit={habit} />)
-    fireEvent.click(screen.getByText("Morning run"))
-    expect(mockUseHabitLogs).toHaveBeenCalledWith("h1")
-  })
-
-  it("collapses again on second click", () => {
-    render(<HabitCard habit={habit} />)
-    fireEvent.click(screen.getByText("Morning run"))
+    fireEvent.click(screen.getByRole("button", { name: /развернуть/i }))
     expect(screen.getByLabelText("30-дневный график")).toBeInTheDocument()
-    fireEvent.click(screen.getByText("Morning run"))
+    fireEvent.click(screen.getByRole("button", { name: /свернуть/i }))
     expect(screen.queryByLabelText("30-дневный график")).not.toBeInTheDocument()
   })
 
-  it("shows streak badge when expanded with log data", () => {
+  it("shows completion rate pill when expanded", () => {
     mockUseHabitLogs.mockReturnValue({
-      data: [{ id: "l1", date: `${todayKey}T00:00:00.000Z` }],
+      data: [{ id: "l1", date: `${todayKey}T00:00:00.000Z`, reflection: null }],
     })
     render(<HabitCard habit={habit} />)
-    fireEvent.click(screen.getByText("Morning run"))
-    expect(screen.getByText(/Серия:/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /развернуть/i }))
+    expect(screen.getByTestId("stat-completion")).toBeInTheDocument()
   })
 
-  it("shows completion rate when expanded", () => {
+  it("shows streak pill for daily habit when expanded with streak", () => {
     mockUseHabitLogs.mockReturnValue({
-      data: [{ id: "l1", date: `${todayKey}T00:00:00.000Z` }],
+      data: [{ id: "l1", date: `${todayKey}T00:00:00.000Z`, reflection: null }],
     })
     render(<HabitCard habit={habit} />)
-    fireEvent.click(screen.getByText("Morning run"))
-    expect(screen.getByText(/Выполнение:/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /развернуть/i }))
+    expect(screen.getByTestId("stat-streak")).toBeInTheDocument()
   })
 
-  it("shows mood trend when logs have mood data", () => {
+  it("does not show streak pill for non-daily recurrence", () => {
+    mockUseHabitLogs.mockReturnValue({
+      data: [{ id: "l1", date: `${todayKey}T00:00:00.000Z`, reflection: null }],
+    })
+    render(<HabitCard habit={{ ...habit, recurrence: "weekly" }} />)
+    fireEvent.click(screen.getByRole("button", { name: /развернуть/i }))
+    expect(screen.queryByTestId("stat-streak")).not.toBeInTheDocument()
+  })
+
+  it("shows mood pill when expanded with mood data", () => {
     mockUseHabitLogs.mockReturnValue({
       data: [{ id: "l1", date: `${todayKey}T00:00:00.000Z`, reflection: { mood: "energized", difficulty: null } }],
     })
     render(<HabitCard habit={habit} />)
-    fireEvent.click(screen.getByText("Morning run"))
-    expect(screen.getByLabelText("Тренд настроения")).toBeInTheDocument()
-  })
-
-  it("does not show streak for non-daily recurrence", () => {
-    mockUseHabitLogs.mockReturnValue({
-      data: [{ id: "l1", date: `${todayKey}T00:00:00.000Z` }],
-    })
-    render(<HabitCard habit={{ ...habit, recurrence: "weekly" }} />)
-    fireEvent.click(screen.getByText("Morning run"))
-    expect(screen.queryByText(/Серия:/)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /развернуть/i }))
+    expect(screen.getByTestId("stat-mood")).toBeInTheDocument()
   })
 })
