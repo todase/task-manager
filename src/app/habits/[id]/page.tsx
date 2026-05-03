@@ -22,16 +22,13 @@ const MONTH_NAMES = [
 type ReflectionEntryProps = {
   log: HabitLog
   highlighted: boolean
+  todayUtc: string
   refCallback: (el: HTMLDivElement | null) => void
 }
 
-function ReflectionEntry({ log, highlighted, refCallback }: ReflectionEntryProps) {
+function ReflectionEntry({ log, highlighted, todayUtc, refCallback }: ReflectionEntryProps) {
   const date = new Date(log.date)
-  const now = new Date()
-  const isToday =
-    date.getUTCDate() === now.getUTCDate() &&
-    date.getUTCMonth() === now.getUTCMonth() &&
-    date.getUTCFullYear() === now.getUTCFullYear()
+  const isToday = log.date.slice(0, 10) === todayUtc
   const dateLabel = isToday
     ? `сегодня`
     : `${date.getUTCDate()} ${MONTH_NAMES[date.getUTCMonth()]}`
@@ -111,8 +108,15 @@ export default function HabitDetailPage({ params }: { params: Promise<{ id: stri
         const d = new Date(l.date)
         return d.getUTCMonth() === calMonth && d.getUTCFullYear() === calYear
       })
-      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .sort((a, b) => b.date.localeCompare(a.date))
   }, [logs, calMonth, calYear])
+
+  const todayUtc = useMemo(() => {
+    const n = new Date()
+    return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))
+      .toISOString()
+      .slice(0, 10)
+  }, [])
 
   const handleDateClick = useCallback(
     (date: string) => {
@@ -220,6 +224,7 @@ export default function HabitDetailPage({ params }: { params: Promise<{ id: stri
               key={log.id}
               log={log}
               highlighted={highlightedDate === log.date.slice(0, 10)}
+              todayUtc={todayUtc}
               refCallback={(el) => {
                 reflRefs.current[log.date.slice(0, 10)] = el
               }}
