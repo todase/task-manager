@@ -16,6 +16,7 @@ type Props = {
 
 function HabitRow({ habit }: { habit: Task }) {
   const days = utcDays(7)
+  const today = days[days.length - 1]
   const [showReflection, setShowReflection] = useState(false)
   const { data: logs = [] } = useHabitLogs(habit.id)
   const { mutate: toggleLog } = useToggleHabitLog(habit.id)
@@ -37,10 +38,18 @@ function HabitRow({ habit }: { habit: Task }) {
     }
   }
 
+  const streakLabel =
+    habit.recurrence === "daily" && stats.streak > 0 ? `🔥${stats.streak}` : ""
+
   return (
     <>
-      <div className="flex items-center gap-3 py-2.5">
+      <div className="flex items-center gap-2 py-2.5">
         <span className="flex-1 text-sm truncate">{habit.title}</span>
+
+        {/* Fixed-width streak slot — keeps cells aligned whether or not streak exists */}
+        <span className="w-9 text-right text-xs font-bold text-orange-500 flex-shrink-0">
+          {streakLabel}
+        </span>
 
         <div className="flex gap-0.5 flex-shrink-0" aria-label="Последние 7 дней">
           {days.map((key) => (
@@ -48,23 +57,20 @@ function HabitRow({ habit }: { habit: Task }) {
               key={key}
               title={key}
               onClick={() => handleCellClick(key)}
-              className={`w-3 h-3 rounded-sm transition-colors cursor-pointer ${
+              className={`w-4 h-4 rounded transition-colors cursor-pointer ${
                 logDates.has(key)
-                  ? "bg-purple-400 hover:bg-purple-300"
-                  : "bg-gray-100 hover:bg-purple-200"
-              }`}
+                  ? "bg-purple-600 hover:bg-purple-500"
+                  : "bg-purple-100 hover:bg-purple-200"
+              } ${key === today ? "ring-2 ring-purple-200" : ""}`}
               aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
             />
           ))}
         </div>
 
-        {habit.recurrence === "daily" && stats.streak > 0 && (
-          <span className="text-xs text-orange-500 font-medium flex-shrink-0">
-            🔥{stats.streak}
-          </span>
-        )}
-
-        <Link href="/habits" className="text-xs text-gray-400 hover:text-gray-600 flex-shrink-0">
+        <Link
+          href={`/habits/${habit.id}`}
+          className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+        >
           →
         </Link>
       </div>
@@ -90,7 +96,7 @@ export function HabitSection({ habits, isOpen, onToggle }: Props) {
         className="flex items-center gap-2 w-full text-left px-3 py-2 rounded-xl bg-white shadow-sm hover:shadow transition-shadow"
       >
         <Flame className="w-4 h-4 text-purple-500 flex-shrink-0" />
-        <span className="text-sm font-medium text-gray-700 flex-1">Привычки</span>
+        <span className="text-sm font-medium text-purple-600 flex-1">Привычки</span>
         <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-600">
           {habits.length}
         </span>

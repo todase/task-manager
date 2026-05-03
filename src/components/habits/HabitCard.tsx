@@ -1,5 +1,6 @@
 "use client"
-import { useState } from "react"
+import { useState, useMemo } from "react"
+import Link from "next/link"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { useHabitLogs, useToggleHabitLog } from "@/hooks/useHabitLogs"
 import { utcDays } from "@/hooks/habitUtils"
@@ -12,125 +13,130 @@ const MOOD_EMOJI: Record<string, string> = {
   tired: "😴",
 }
 
-const RECURRENCE_LABEL: Record<string, string> = {
-  daily: "ежедневно",
-  weekly: "еженедельно",
-  monthly: "ежемесячно",
-}
-
-function MiniHeatmap({
-  logDates,
-  onToggle,
-}: {
-  logDates: Set<string>
-  onToggle: (date: string) => void
-}) {
-  const days = utcDays(14)
-  return (
-    <div className="flex gap-0.5" aria-label="14-дневный мини-график">
-      {days.map((key) => (
-        <button
-          key={key}
-          title={key}
-          onClick={() => onToggle(key)}
-          className={`w-3 h-3 rounded-sm transition-colors cursor-pointer ${
-            logDates.has(key) ? "bg-purple-400 hover:bg-purple-300" : "bg-gray-100 hover:bg-purple-200"
-          }`}
-          aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
-        />
-      ))}
-    </div>
-  )
-}
-
-function FullHeatmap({
-  logDates,
-  onToggle,
-}: {
-  logDates: Set<string>
-  onToggle: (date: string) => void
-}) {
-  const days = utcDays(30)
-  return (
-    <div className="flex flex-wrap gap-0.5" aria-label="30-дневный график">
-      {days.map((key) => (
-        <button
-          key={key}
-          title={key}
-          onClick={() => onToggle(key)}
-          className={`w-3 h-3 rounded-sm transition-colors cursor-pointer ${
-            logDates.has(key) ? "bg-purple-500 hover:bg-purple-400" : "bg-gray-100 hover:bg-purple-200"
-          }`}
-          aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
-        />
-      ))}
-    </div>
-  )
-}
-
 export function HabitCard({ habit }: { habit: Task }) {
   const [expanded, setExpanded] = useState(false)
   const { data: logs = [] } = useHabitLogs(habit.id)
   const { mutate: toggleLog } = useToggleHabitLog(habit.id)
 
   const logDates = new Set(logs.map((l) => l.date.slice(0, 10)))
-  const stats = expanded
-    ? computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt))
-    : null
+  const stats = useMemo(
+    () => computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt)),
+    [logs, habit.recurrence, habit.createdAt]
+  )
 
   const handleToggle = (date: string) =>
     toggleLog({ date, isCurrentlyLogged: logDates.has(date) })
 
+  const miniDays = utcDays(7)
+  const fullDays = utcDays(30)
+  const today = miniDays[miniDays.length - 1]
+  const streakLabel =
+    habit.recurrence === "daily" && stats.streak > 0 ? `🔥${stats.streak}` : ""
+  const moodEmoji =
+    stats.moodTrend.length > 0
+      ? MOOD_EMOJI[stats.moodTrend[stats.moodTrend.length - 1]] ?? null
+      : null
+
   return (
     <div className="border border-gray-100 rounded-xl bg-white shadow-sm overflow-hidden">
-      <div className="p-4">
+      {/* Header row */}
+      <div className="flex items-center gap-2 px-4 py-3">
+        <Link
+          href={`/habits/${habit.id}`}
+          className="flex-1 font-medium text-sm truncate hover:text-purple-600 transition-colors"
+        >
+          {habit.title}
+        </Link>
+
+        {/* Fixed-width streak slot */}
+        <span className="w-9 text-right text-xs font-bold text-orange-500 flex-shrink-0">
+          {streakLabel}
+        </span>
+
+        {/* 7-cell mini heatmap */}
+        <div className="flex gap-0.5 flex-shrink-0" aria-label="Последние 7 дней">
+          {miniDays.map((key) => (
+            <button
+              key={key}
+              title={key}
+              onClick={() => handleToggle(key)}
+              className={`w-4 h-4 rounded transition-colors cursor-pointer ${
+                logDates.has(key)
+                  ? "bg-purple-600 hover:bg-purple-500"
+                  : "bg-purple-100 hover:bg-purple-200"
+              } ${key === today ? "ring-2 ring-purple-200" : ""}`}
+              aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
+            />
+          ))}
+        </div>
+
+        {/* Expand/collapse toggle */}
         <button
           onClick={() => setExpanded((e) => !e)}
-          className="w-full text-left mb-2"
-          aria-label={habit.title}
+          aria-label={expanded ? "Свернуть" : "Развернуть"}
           aria-expanded={expanded}
+          className="text-gray-400 hover:text-gray-600 flex-shrink-0"
         >
-          <div className="flex items-center justify-between">
-            <span className="font-medium">{habit.title}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">
-                {RECURRENCE_LABEL[habit.recurrence ?? ""] ?? habit.recurrence}
-              </span>
-              {expanded ? (
-                <ChevronUp className="w-4 h-4 text-gray-400" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400" />
-              )}
-            </div>
-          </div>
+          {expanded ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
         </button>
-        <MiniHeatmap logDates={logDates} onToggle={handleToggle} />
       </div>
 
+      {/* Expanded content */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t border-gray-50 pt-3">
-          <FullHeatmap logDates={logDates} onToggle={handleToggle} />
-
-          <div className="flex items-center gap-4 text-sm">
-            {habit.recurrence === "daily" && stats && stats.streak > 0 && (
-              <span className="text-orange-500">🔥 Серия: {stats.streak} дн.</span>
-            )}
-            {stats && (
-              <span className="text-gray-600">
-                Выполнение: {Math.round(stats.completionRate * 100)}%
-              </span>
-            )}
+        <div className="border-t border-gray-50 px-4 pt-3 pb-4 space-y-3">
+          {/* 30-day full heatmap */}
+          <div className="flex flex-wrap gap-0.5" aria-label="30-дневный график">
+            {fullDays.map((key) => (
+              <button
+                key={key}
+                title={key}
+                onClick={() => handleToggle(key)}
+                className={`w-4 h-4 rounded transition-colors cursor-pointer ${
+                  logDates.has(key)
+                    ? "bg-purple-600 hover:bg-purple-500"
+                    : "bg-purple-100 hover:bg-purple-200"
+                } ${key === today ? "ring-2 ring-purple-200" : ""}`}
+                aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
+              />
+            ))}
           </div>
 
-          {stats && stats.moodTrend.length > 0 && (
-            <div className="flex gap-1" aria-label="Тренд настроения">
-              {stats.moodTrend.map((mood, i) => (
-                <span key={i} title={mood}>
-                  {MOOD_EMOJI[mood] ?? mood}
-                </span>
-              ))}
+          {/* Stat pills */}
+          <div className="flex gap-2">
+            <div
+              data-testid="stat-completion"
+              className="flex-1 bg-purple-50 border border-purple-100 rounded-lg py-1.5 text-center"
+            >
+              <div className="text-base font-bold text-purple-600">
+                {Math.round(stats.completionRate * 100)}%
+              </div>
+              <div className="text-xs text-gray-400">за 30 дней</div>
             </div>
-          )}
+
+            {habit.recurrence === "daily" && stats.streak > 0 && (
+              <div
+                data-testid="stat-streak"
+                className="flex-1 bg-purple-50 border border-purple-100 rounded-lg py-1.5 text-center"
+              >
+                <div className="text-base font-bold text-orange-500">🔥{stats.streak}</div>
+                <div className="text-xs text-gray-400">стрик</div>
+              </div>
+            )}
+
+            {moodEmoji && (
+              <div
+                data-testid="stat-mood"
+                className="flex-1 bg-purple-50 border border-purple-100 rounded-lg py-1.5 text-center"
+              >
+                <div className="text-base font-bold">{moodEmoji}</div>
+                <div className="text-xs text-gray-400">настроение</div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
