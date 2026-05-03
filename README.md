@@ -23,7 +23,7 @@ Personal task manager built with Next.js, deployed on Vercel. Supports projects,
 | Auth | NextAuth v5 |
 | UI | Tailwind CSS, Lucide React, dnd-kit |
 | Email | Resend |
-| Tests | Vitest + Testing Library (333 tests) |
+| Tests | Vitest + Testing Library (351 tests) |
 | Deploy | Vercel |
 
 ## Local Development
@@ -74,6 +74,6 @@ Then in any Claude Code session: `/task-manager`
 ## Tests
 
 ```bash
-npm test              # run all 333 tests
+npm test              # run all 351 tests
 npm test -- --watch   # watch mode
 ```
