@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
   const { token, password } = await req.json()
 
-  if (!token || !password || typeof password !== "string" || password.length < 8) {
+  if (!token || !password || typeof password !== "string" || password.length < 8 || password.length > 72) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 })
   }
 

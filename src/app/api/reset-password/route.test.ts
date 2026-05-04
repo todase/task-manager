@@ -47,6 +47,11 @@ describe("POST /api/reset-password", () => {
     expect(res.status).toBe(400)
   })
 
+  it("returns 400 for password longer than 72 chars", async () => {
+    const res = await POST(jsonReq({ token: "t", password: "a".repeat(73) }))
+    expect(res.status).toBe(400)
+  })
+
   it("returns 400 for unknown token", async () => {
     mockPrt.findUnique.mockResolvedValue(null as never)
     const res = await POST(jsonReq({ token: "bad", password: "newpassword" }))

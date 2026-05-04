@@ -58,6 +58,11 @@ describe("POST /api/register", () => {
     expect(res.status).toBe(400)
   })
 
+  it("returns 400 for password longer than 72 chars", async () => {
+    const res = await POST(jsonReq({ email: "a@b.com", password: "a".repeat(73) }))
+    expect(res.status).toBe(400)
+  })
+
   it("returns 200 when email already exists (prevents enumeration)", async () => {
     mockUser.findUnique.mockResolvedValue({ id: "u1", email: "a@b.com" } as never)
     const res = await POST(jsonReq({ email: "a@b.com", password: "secret123" }))
