@@ -5,14 +5,16 @@ Personal task manager built with Next.js, deployed on Vercel. Supports projects,
 ## Features
 
 - Tasks with due dates, recurrence (daily/weekly/monthly), subtasks, descriptions, and tags
+- Habit tracker — recurring tasks tracked as habits with heatmap, streak, completion rate, and detail page
 - Projects with custom icons (72 options)
 - Archive with completion timestamps, sorted newest-first; expandable per-task reflections
 - Post-completion reflection (time spent, difficulty, mood, free-text notes, optional next-step task)
 - Date filters: Today, This Week, Someday
-- Drag-and-drop reordering
-- PWA (installable, offline-capable)
+- Drag-and-drop reordering and drag-to-project assignment
+- PWA (installable, offline-capable with optimistic mutations queued during offline)
 - Auth: email/password with email verification, password reset, Google OAuth
 - API key access for Claude Code via the `task-manager-skill` plugin
+- CI: GitHub Actions runs lint → typecheck → test → build on every PR and push to main
 
 ## Stack
 
@@ -23,7 +25,7 @@ Personal task manager built with Next.js, deployed on Vercel. Supports projects,
 | Auth | NextAuth v5 |
 | UI | Tailwind CSS, Lucide React, dnd-kit |
 | Email | Resend |
-| Tests | Vitest + Testing Library (360 tests) |
+| Tests | Vitest + Testing Library (364 tests) |
 | Deploy | Vercel |
 
 ## Local Development
@@ -74,6 +76,8 @@ Then in any Claude Code session: `/task-manager`
 ## Tests
 
 ```bash
-npm test              # run all 360 tests
+npm test              # run all 364 tests
 npm test -- --watch   # watch mode
+npm run typecheck     # tsc --noEmit
+npm run lint          # ESLint
 ```
