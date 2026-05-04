@@ -6,7 +6,7 @@ import { GET, POST } from "./route"
 vi.mock("@/auth")
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    task: { findUnique: vi.fn(), update: vi.fn() },
+    task: { findFirst: vi.fn(), update: vi.fn() },
     habitLog: { findMany: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), create: vi.fn() },
     $transaction: vi.fn(),
   },
@@ -36,21 +36,22 @@ describe("GET /api/tasks/[id]/habit-logs", () => {
 
   it("returns 403 when task belongs to another user", async () => {
     mockAuth.mockResolvedValue(session("u1") as never)
-    mockTask.findUnique.mockResolvedValue({ id: "task-1", userId: "u2" } as never)
+    // findFirst({ id, userId: "u1" }) returns null for a task owned by "u2"
+    mockTask.findFirst.mockResolvedValue(null as never)
     const res = await GET(new Request("http://localhost/api/tasks/task-1/habit-logs"), params())
     expect(res.status).toBe(403)
   })
 
   it("returns 403 when task not found", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue(null as never)
+    mockTask.findFirst.mockResolvedValue(null as never)
     const res = await GET(new Request("http://localhost/api/tasks/task-1/habit-logs"), params())
     expect(res.status).toBe(403)
   })
 
   it("returns logs for last 90 days with reflection data", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({ id: "task-1", userId: "u1" } as never)
+    mockTask.findFirst.mockResolvedValue({ id: "task-1", userId: "u1" } as never)
     const mockLogs = [
       {
         id: "log-1",
@@ -92,28 +93,29 @@ describe("POST /api/tasks/[id]/habit-logs", () => {
 
   it("returns 403 when task not found", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue(null as never)
+    mockTask.findFirst.mockResolvedValue(null as never)
     const res = await POST(postRequest({ date: "2026-05-01" }), params())
     expect(res.status).toBe(403)
   })
 
   it("returns 403 when task belongs to another user", async () => {
     mockAuth.mockResolvedValue(session("u1") as never)
-    mockTask.findUnique.mockResolvedValue({ id: "task-1", userId: "u2" } as never)
+    // findFirst({ id, userId: "u1" }) returns null for a task owned by "u2"
+    mockTask.findFirst.mockResolvedValue(null as never)
     const res = await POST(postRequest({ date: "2026-05-01" }), params())
     expect(res.status).toBe(403)
   })
 
   it("returns 400 when date is missing", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({ id: "task-1", userId: "u1" } as never)
+    mockTask.findFirst.mockResolvedValue({ id: "task-1", userId: "u1" } as never)
     const res = await POST(postRequest({}), params())
     expect(res.status).toBe(400)
   })
 
   it("returns 400 when date is not in YYYY-MM-DD format", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({ id: "task-1", userId: "u1" } as never)
+    mockTask.findFirst.mockResolvedValue({ id: "task-1", userId: "u1" } as never)
     const res = await POST(postRequest({ date: "01-05-2026" }), params())
     expect(res.status).toBe(400)
   })
@@ -122,7 +124,7 @@ describe("POST /api/tasks/[id]/habit-logs", () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date("2026-05-03T12:00:00.000Z"))
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({ id: "task-1", userId: "u1" } as never)
+    mockTask.findFirst.mockResolvedValue({ id: "task-1", userId: "u1" } as never)
     const res = await POST(postRequest({ date: "2026-05-04" }), params())
     expect(res.status).toBe(400)
     const body = await res.json()
@@ -132,7 +134,7 @@ describe("POST /api/tasks/[id]/habit-logs", () => {
 
   it("deletes existing log and returns { created: false } when log already exists", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({ id: "task-1", userId: "u1" } as never)
+    mockTask.findFirst.mockResolvedValue({ id: "task-1", userId: "u1" } as never)
     mockHabitLog.findUnique.mockResolvedValue({ id: "log-99", taskId: "task-1" } as never)
     mockHabitLog.delete.mockResolvedValue({} as never)
 
@@ -145,7 +147,7 @@ describe("POST /api/tasks/[id]/habit-logs", () => {
 
   it("creates log and returns { created: true } for a past date without recurrence", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({
+    mockTask.findFirst.mockResolvedValue({
       id: "task-1",
       userId: "u1",
       recurrence: null,
@@ -169,7 +171,7 @@ describe("POST /api/tasks/[id]/habit-logs", () => {
     vi.setSystemTime(new Date("2026-05-02T12:00:00.000Z"))
 
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({
+    mockTask.findFirst.mockResolvedValue({
       id: "task-1",
       userId: "u1",
       recurrence: "weekly",
@@ -196,7 +198,7 @@ describe("POST /api/tasks/[id]/habit-logs", () => {
     vi.setSystemTime(new Date("2026-05-04T12:00:00.000Z"))
 
     mockAuth.mockResolvedValue(session("u1") as never)
-    mockTask.findUnique.mockResolvedValue({
+    mockTask.findFirst.mockResolvedValue({
       id: "task-1",
       userId: "u1",
       recurrence: "daily",
@@ -227,7 +229,7 @@ describe("POST /api/tasks/[id]/habit-logs", () => {
     const dueDate = new Date("2026-05-02T00:00:00.000Z")
 
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({
+    mockTask.findFirst.mockResolvedValue({
       id: "task-1",
       userId: "u1",
       recurrence: "daily",

@@ -18,5 +18,10 @@ export function clientIp(req: Request): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown"
 }
 
-// Shared singleton — per-process (resets on cold start)
+// Shared singleton — per-process in-memory store.
+// Two important limits to be aware of:
+// 1. Cold starts reset all counters (Vercel serverless).
+// 2. Concurrent function instances each maintain their own store — on Vercel, N instances
+//    each allow the full quota, so effective limit is N × maxRequests, not maxRequests.
+// Acceptable for a single-developer app; replace with Redis for stronger guarantees.
 export const rateLimited = createRateLimiter()

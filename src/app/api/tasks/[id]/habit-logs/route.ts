@@ -12,8 +12,8 @@ export async function GET(
   }
 
   const { id } = await params
-  const task = await prisma.task.findUnique({ where: { id } })
-  if (!task || task.userId !== userId) {
+  const task = await prisma.task.findFirst({ where: { id, userId } })
+  if (!task) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
@@ -40,8 +40,8 @@ export async function POST(
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { id } = await params
-  const task = await prisma.task.findUnique({ where: { id } })
-  if (!task || task.userId !== userId) {
+  const task = await prisma.task.findFirst({ where: { id, userId } })
+  if (!task) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
