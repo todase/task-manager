@@ -70,8 +70,7 @@ const validUser = {
 beforeEach(() => vi.clearAllMocks())
 
 describe("authorize — rate limiting", () => {
-  it("allows the 10th attempt (rate limit not yet hit)", async () => {
-    mockRateLimited.mockReturnValue(false)
+  it("does not call rateLimited on successful login (successes don't consume slots)", async () => {
     mockUser.findUnique.mockResolvedValue(validUser as never)
     mockCompare.mockResolvedValue(true as never)
 
@@ -79,23 +78,50 @@ describe("authorize — rate limiting", () => {
       { email: "a@b.com", password: "secret" },
       makeRequest("1.2.3.4")
     )
+
     expect(result).not.toBeNull()
+    expect(mockRateLimited).not.toHaveBeenCalled()
   })
 
-  it("blocks when rate limit is exceeded (returns null)", async () => {
-    mockRateLimited.mockReturnValue(true)
+  it("records failure when user is not found", async () => {
+    mockUser.findUnique.mockResolvedValue(null as never)
 
     const result = await capturedAuthorize(
-      { email: "a@b.com", password: "secret" },
+      { email: "no@b.com", password: "pw" },
       makeRequest("1.2.3.4")
     )
+
     expect(result).toBeNull()
-    // DB must NOT be queried when rate limited
-    expect(mockUser.findUnique).not.toHaveBeenCalled()
+    expect(mockRateLimited).toHaveBeenCalledWith("login:1.2.3.4", 10, 15 * 60 * 1000)
   })
 
-  it("uses clientIp to build the rate-limit key", async () => {
-    mockRateLimited.mockReturnValue(false)
+  it("records failure when password is wrong", async () => {
+    mockUser.findUnique.mockResolvedValue(validUser as never)
+    mockCompare.mockResolvedValue(false as never)
+
+    const result = await capturedAuthorize(
+      { email: "a@b.com", password: "wrong" },
+      makeRequest("1.2.3.4")
+    )
+
+    expect(result).toBeNull()
+    expect(mockRateLimited).toHaveBeenCalledWith("login:1.2.3.4", 10, 15 * 60 * 1000)
+  })
+
+  it("returns null when IP is already rate-limited (on a failed attempt)", async () => {
+    mockRateLimited.mockReturnValue(true)
+    mockUser.findUnique.mockResolvedValue(validUser as never)
+    mockCompare.mockResolvedValue(false as never)
+
+    const result = await capturedAuthorize(
+      { email: "a@b.com", password: "wrong" },
+      makeRequest("1.2.3.4")
+    )
+
+    expect(result).toBeNull()
+  })
+
+  it("uses clientIp to build the rate-limit key on failure", async () => {
     mockClientIp.mockReturnValue("5.6.7.8")
     mockUser.findUnique.mockResolvedValue(null as never)
 
@@ -106,7 +132,6 @@ describe("authorize — rate limiting", () => {
 
   it("falls back to 'unknown' key when no x-forwarded-for header", async () => {
     mockClientIp.mockReturnValue("unknown")
-    mockRateLimited.mockReturnValue(false)
     mockUser.findUnique.mockResolvedValue(null as never)
 
     await capturedAuthorize({ email: "x@y.com", password: "pw" }, makeRequest())
@@ -117,7 +142,6 @@ describe("authorize — rate limiting", () => {
 
 describe("authorize — existing behaviour", () => {
   it("returns null when user not found", async () => {
-    mockRateLimited.mockReturnValue(false)
     mockUser.findUnique.mockResolvedValue(null as never)
 
     const result = await capturedAuthorize(
@@ -128,7 +152,6 @@ describe("authorize — existing behaviour", () => {
   })
 
   it("returns null when password does not match", async () => {
-    mockRateLimited.mockReturnValue(false)
     mockUser.findUnique.mockResolvedValue(validUser as never)
     mockCompare.mockResolvedValue(false as never)
 
@@ -140,7 +163,6 @@ describe("authorize — existing behaviour", () => {
   })
 
   it("returns user object on valid credentials", async () => {
-    mockRateLimited.mockReturnValue(false)
     mockUser.findUnique.mockResolvedValue(validUser as never)
     mockCompare.mockResolvedValue(true as never)
 

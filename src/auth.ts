@@ -17,18 +17,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: {},
       },
       authorize: async (credentials, request) => {
-        if (rateLimited(`login:${clientIp(request)}`, 10, 15 * 60 * 1000)) return null
+        const key = `login:${clientIp(request)}`
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
         })
-        if (!user || !user.password) return null
+        if (!user || !user.password) {
+          rateLimited(key, 10, 15 * 60 * 1000)
+          return null
+        }
 
         const isValid = await bcrypt.compare(
           credentials.password as string,
           user.password
         )
-        if (!isValid) return null
+        if (!isValid) {
+          rateLimited(key, 10, 15 * 60 * 1000)
+          return null
+        }
 
         return { id: user.id, email: user.email, emailVerified: user.emailVerified }
       },
