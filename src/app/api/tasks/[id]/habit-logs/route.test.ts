@@ -191,6 +191,32 @@ describe("POST /api/tasks/[id]/habit-logs", () => {
     vi.useRealTimers()
   })
 
+  it("scopes dueDate update to owner userId in transaction", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-05-04T12:00:00.000Z"))
+
+    mockAuth.mockResolvedValue(session("u1") as never)
+    mockTask.findUnique.mockResolvedValue({
+      id: "task-1",
+      userId: "u1",
+      recurrence: "daily",
+      dueDate: new Date("2026-05-03T00:00:00.000Z"),
+    } as never)
+    mockHabitLog.findUnique.mockResolvedValue(null as never)
+    mockTask.update.mockResolvedValue({} as never)
+    mockTransaction.mockResolvedValue([] as never)
+
+    await POST(postRequest({ date: "2026-05-04" }), params())
+
+    expect(mockTask.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "task-1", userId: "u1" },
+      })
+    )
+
+    vi.useRealTimers()
+  })
+
   it("advances dueDate in $transaction when creating for today with daily recurrence", async () => {
     const now = new Date()
     const todayStr = new Date(

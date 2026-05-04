@@ -85,7 +85,7 @@ export async function POST(
 
     await prisma.$transaction([
       prisma.habitLog.create({ data: { taskId: id, date } }),
-      prisma.task.update({ where: { id }, data: { dueDate: next, done: false } }),
+      prisma.task.update({ where: { id, userId }, data: { dueDate: next, done: false } }),
     ])
   } else {
     await prisma.habitLog.create({ data: { taskId: id, date } })

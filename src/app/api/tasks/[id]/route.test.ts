@@ -8,6 +8,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     task: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
@@ -80,10 +81,22 @@ describe("PATCH /api/tasks/[id]", () => {
     expect(res.status).toBe(200)
   })
 
+  it("uses findFirst with userId when checking recurring task on done=true", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockTask.findFirst.mockResolvedValue(null as never)
+    mockTask.update.mockResolvedValue({ ...dbTask, done: true } as never)
+
+    await PATCH(jsonReq("PATCH", { done: true }), params())
+
+    expect(mockTask.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ userId: "u1" }) })
+    )
+  })
+
   it("advances date for recurring task marked done", async () => {
     mockAuth.mockResolvedValue(session() as never)
     const dueDate = new Date("2026-04-01T00:00:00.000Z")
-    mockTask.findUnique.mockResolvedValue({
+    mockTask.findFirst.mockResolvedValue({
       id: "task-1",
       recurrence: "weekly",
       dueDate,
@@ -144,7 +157,7 @@ describe("PATCH /api/tasks/[id]", () => {
 
   it("sets completedAt when marking done=true (non-recurring)", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({ id: "task-1", recurrence: null, dueDate: null } as never)
+    mockTask.findFirst.mockResolvedValue({ id: "task-1", recurrence: null, dueDate: null } as never)
     mockTask.update.mockResolvedValue({ ...dbTask, done: true, completedAt: new Date() } as never)
 
     await PATCH(jsonReq("PATCH", { done: true }), params())
@@ -158,7 +171,7 @@ describe("PATCH /api/tasks/[id]", () => {
 
   it("clears completedAt when marking done=false", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({ id: "task-1", recurrence: null, dueDate: null } as never)
+    mockTask.findFirst.mockResolvedValue({ id: "task-1", recurrence: null, dueDate: null } as never)
     mockTask.update.mockResolvedValue({ ...dbTask, done: false, completedAt: null } as never)
 
     await PATCH(jsonReq("PATCH", { done: false }), params())
@@ -173,7 +186,7 @@ describe("PATCH /api/tasks/[id]", () => {
   it("does not set completedAt when advancing recurring task date", async () => {
     mockAuth.mockResolvedValue(session() as never)
     const dueDate = new Date("2026-04-01T00:00:00.000Z")
-    mockTask.findUnique.mockResolvedValue({ id: "task-1", recurrence: "daily", dueDate } as never)
+    mockTask.findFirst.mockResolvedValue({ id: "task-1", recurrence: "daily", dueDate } as never)
     mockTask.update.mockResolvedValue({ ...dbTask, dueDate: new Date("2026-04-02"), done: false } as never)
 
     await PATCH(jsonReq("PATCH", { done: true }), params())
@@ -190,7 +203,7 @@ describe("PATCH /api/tasks/[id]", () => {
     vi.setSystemTime(new Date("2026-05-02T12:00:00.000Z"))
 
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({
+    mockTask.findFirst.mockResolvedValue({
       id: "task-1",
       recurrence: "weekly",
       dueDate: new Date("2026-04-01T00:00:00.000Z"), // 4+ weeks in the past
@@ -225,7 +238,7 @@ describe("PATCH /api/tasks/[id]", () => {
   it("upserts HabitLog and shifts dueDate in transaction for habit done", async () => {
     mockAuth.mockResolvedValue(session() as never)
     const dueDate = new Date("2026-04-01T00:00:00.000Z")
-    mockTask.findUnique.mockResolvedValue({
+    mockTask.findFirst.mockResolvedValue({
       id: "task-1",
       recurrence: "daily",
       dueDate,
@@ -247,7 +260,7 @@ describe("PATCH /api/tasks/[id]", () => {
 
   it("does not upsert HabitLog for non-habit recurring task done", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockTask.findUnique.mockResolvedValue({
+    mockTask.findFirst.mockResolvedValue({
       id: "task-1",
       recurrence: "daily",
       dueDate: new Date("2026-04-01"),
