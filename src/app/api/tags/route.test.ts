@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 import { GET, POST } from "./route"
 
 vi.mock("@/auth")
@@ -112,5 +113,31 @@ describe("POST /api/tags", () => {
     expect(mockTag.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ name: "bug" }) })
     )
+  })
+
+  it("returns 409 when tag name already exists (P2002)", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const p2002 = new Prisma.PrismaClientKnownRequestError("Unique constraint", {
+      code: "P2002",
+      clientVersion: "0.0.0",
+    })
+    mockTag.create.mockRejectedValue(p2002)
+
+    const res = await POST(jsonReq({ name: "duplicate" }))
+    const body = await res.json()
+
+    expect(res.status).toBe(409)
+    expect(body).toEqual({ error: "Tag already exists" })
+  })
+
+  it("rethrows non-P2002 prisma errors", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const dbError = new Prisma.PrismaClientKnownRequestError("Connection lost", {
+      code: "P1001",
+      clientVersion: "0.0.0",
+    })
+    mockTag.create.mockRejectedValue(dbError)
+
+    await expect(POST(jsonReq({ name: "anytag" }))).rejects.toThrow("Connection lost")
   })
 })

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getUserId } from "@/lib/api-auth"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 
 export const dynamic = "force-dynamic"
 
@@ -28,12 +29,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Name required" }, { status: 400 })
   }
 
-  const tag = await prisma.tag.create({
-    data: {
-      name: name.trim(),
-      color: color ?? "#6b7280",
-      userId,
-    },
-  })
-  return NextResponse.json(tag)
+  try {
+    const tag = await prisma.tag.create({
+      data: {
+        name: name.trim(),
+        color: color ?? "#6b7280",
+        userId,
+      },
+    })
+    return NextResponse.json(tag)
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return NextResponse.json({ error: "Tag already exists" }, { status: 409 })
+    }
+    throw e
+  }
 }
