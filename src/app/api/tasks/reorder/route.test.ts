@@ -6,7 +6,7 @@ import { POST } from "./route"
 vi.mock("@/auth")
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    task: { update: vi.fn() },
+    task: { updateMany: vi.fn() },
     $transaction: vi.fn(),
   },
 }))
@@ -83,13 +83,12 @@ describe("POST /api/tasks/reorder", () => {
     expect(res.status).toBe(200)
     expect(body.success).toBe(true)
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1)
-    // Should have called task.update for each item
-    expect(mockPrisma.task.update).toHaveBeenCalledTimes(2)
-    expect(mockPrisma.task.update).toHaveBeenCalledWith({
+    expect(mockPrisma.task.updateMany).toHaveBeenCalledTimes(2)
+    expect(mockPrisma.task.updateMany).toHaveBeenCalledWith({
       where: { id: "task-1", userId: "u1" },
       data: { order: 0 },
     })
-    expect(mockPrisma.task.update).toHaveBeenCalledWith({
+    expect(mockPrisma.task.updateMany).toHaveBeenCalledWith({
       where: { id: "task-2", userId: "u1" },
       data: { order: 1 },
     })

@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
   await prisma.$transaction(
     items.map(({ id, order }) =>
-      prisma.task.update({
+      prisma.task.updateMany({
         where: { id, userId },
         data: { order },
       })
