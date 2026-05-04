@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useTaskMutations } from "./useTaskMutations"
 import type { Task } from "@/types"
 
-vi.mock("@/lib/mutationQueue", () => ({ remapMutationQueue: vi.fn() }))
+vi.mock("@/lib/tempIdMap", () => ({ registerTempId: vi.fn(), resolveUrl: (u: string) => u, resolveId: (id: string) => id, clearTempIds: vi.fn() }))
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {

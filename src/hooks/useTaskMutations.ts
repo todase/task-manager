@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { withPriorityScores, type CreateTaskInput, type TaskFilters } from "./taskUtils"
-import { remapMutationQueue } from "@/lib/mutationQueue"
+import { registerTempId } from "@/lib/tempIdMap"
 import { apiFetch } from "@/lib/apiFetch"
 import type { Task, Subtask, Project, Tag } from "@/types"
 
@@ -53,9 +53,9 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
       })
       return { snap, tempId }
     },
-    onSuccess: async (serverTask, _, ctx) => {
+    onSuccess: (serverTask, _, ctx) => {
       if (!ctx) return
-      await remapMutationQueue(ctx.tempId, serverTask.id)
+      registerTempId(ctx.tempId, serverTask.id)
       qc.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) =>
         old?.map((t) =>
           t.id === ctx.tempId
