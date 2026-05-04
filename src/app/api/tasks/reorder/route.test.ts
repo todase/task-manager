@@ -38,6 +38,37 @@ describe("POST /api/tasks/reorder", () => {
     expect(res.status).toBe(401)
   })
 
+  it("returns 400 when body is not a valid JSON array", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const res = await POST(
+      new Request("http://localhost/api/tasks/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "not-json",
+      })
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it("returns 400 when body is not an array", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const res = await POST(jsonReq({ id: "task-1", order: 0 }))
+    expect(res.status).toBe(400)
+  })
+
+  it("returns 400 when array exceeds 500 items", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const items = Array.from({ length: 501 }, (_, i) => ({ id: `task-${i}`, order: i }))
+    const res = await POST(jsonReq(items))
+    expect(res.status).toBe(400)
+  })
+
+  it("returns 400 when items have invalid shape", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const res = await POST(jsonReq([{ id: 123, order: "bad" }]))
+    expect(res.status).toBe(400)
+  })
+
   it("runs a transaction with one update per item", async () => {
     mockAuth.mockResolvedValue(session() as never)
     mockPrisma.$transaction.mockResolvedValue([] as never)
