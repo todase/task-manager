@@ -152,6 +152,7 @@ export function SwipeableRow({ children, onSubtasks, onDelete, subtasksLabel = "
         className="relative"
         style={{
           transform: `translateX(${offsetX}px)`,
+          // eslint-disable-next-line react-hooks/refs
           transition: isDraggingRef.current ? "none" : "transform 200ms ease-out",
         }}
         onTouchStart={handleTouchStart}

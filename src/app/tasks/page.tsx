@@ -61,6 +61,7 @@ export default function TasksPage() {
 
   useEffect(() => {
     if (!searchMode) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDebouncedQuery("")
       return
     }

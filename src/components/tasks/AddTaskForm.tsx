@@ -52,18 +52,6 @@ export function AddTaskForm({
     }
   }, [isModalOpen])
 
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && isModalOpen) closeModal()
-    }
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [isModalOpen]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    setDueDate(defaultDueDate ?? "")
-  }, [defaultDueDate])
-
   function closeModal() {
     setIsModalOpen(false)
     setTitle("")
@@ -77,6 +65,19 @@ export function AddTaskForm({
     setSelectedProjectId(null)
     setShowProjectDropdown(false)
   }
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && isModalOpen) closeModal()
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [isModalOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDueDate(defaultDueDate ?? "")
+  }, [defaultDueDate])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

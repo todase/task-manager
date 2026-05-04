@@ -5,9 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { OfflineBanner } from "./OfflineBanner"
 
 function makeWrapper(qc = new QueryClient()) {
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={qc}>{children}</QueryClientProvider>
-  )
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+  }
+  return Wrapper
 }
 
 describe("OfflineBanner", () => {

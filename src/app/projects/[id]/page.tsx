@@ -23,16 +23,17 @@ export default function ProjectPage() {
     if (status === "unauthenticated") router.push("/login")
   }, [status, router])
 
-  useEffect(() => {
-    if (status === "authenticated") fetchProject()
-  }, [status])
-
   async function fetchProject() {
     const res = await fetch(`/api/projects/${projectId}`)
     const data = await res.json()
     setProjectTitle(data.title)
     setTasks(data.tasks)
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (status === "authenticated") fetchProject()
+  }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function addTask(e: React.FormEvent) {
     e.preventDefault()
