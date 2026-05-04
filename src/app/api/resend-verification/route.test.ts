@@ -3,6 +3,11 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { POST } from "./route"
 
+vi.mock("@/lib/rateLimit", () => ({
+  rateLimited: vi.fn(() => false),
+  clientIp: vi.fn(() => "1.2.3.4"),
+}))
+
 vi.mock("@/auth")
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -28,6 +33,14 @@ function session(id = "u1") {
 beforeEach(() => vi.clearAllMocks())
 
 describe("POST /api/resend-verification", () => {
+  it("returns 429 when rate limited", async () => {
+    const { rateLimited } = await import("@/lib/rateLimit")
+    mockAuth.mockResolvedValue(session() as never)
+    vi.mocked(rateLimited).mockReturnValueOnce(true)
+    const res = await POST()
+    expect(res.status).toBe(429)
+  })
+
   it("returns 401 without session", async () => {
     mockAuth.mockResolvedValue(null as never)
     const res = await POST()

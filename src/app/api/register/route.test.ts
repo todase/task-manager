@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { prisma } from "@/lib/prisma"
 import { POST } from "./route"
 
+vi.mock("@/lib/rateLimit", () => ({
+  rateLimited: vi.fn(() => false),
+  clientIp: vi.fn(() => "1.2.3.4"),
+}))
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: {
@@ -36,6 +41,13 @@ function jsonReq(body: unknown) {
 beforeEach(() => vi.clearAllMocks())
 
 describe("POST /api/register", () => {
+  it("returns 429 when rate limited", async () => {
+    const { rateLimited } = await import("@/lib/rateLimit")
+    vi.mocked(rateLimited).mockReturnValueOnce(true)
+    const res = await POST(jsonReq({ email: "a@b.com", password: "secret123" }))
+    expect(res.status).toBe(429)
+  })
+
   it("returns 400 for invalid email", async () => {
     const res = await POST(jsonReq({ email: "notanemail", password: "secret123" }))
     expect(res.status).toBe(400)

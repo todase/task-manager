@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { prisma } from "@/lib/prisma"
 import { POST } from "./route"
 
+vi.mock("@/lib/rateLimit", () => ({
+  rateLimited: vi.fn(() => false),
+  clientIp: vi.fn(() => "1.2.3.4"),
+}))
+
 vi.mock("@/lib/prisma", () => ({
   prisma: { user: { findUnique: vi.fn() } },
 }))
@@ -25,6 +30,13 @@ function jsonReq(body: unknown) {
 beforeEach(() => vi.clearAllMocks())
 
 describe("POST /api/forgot-password", () => {
+  it("returns 429 when rate limited", async () => {
+    const { rateLimited } = await import("@/lib/rateLimit")
+    vi.mocked(rateLimited).mockReturnValueOnce(true)
+    const res = await POST(jsonReq({ email: "a@b.com" }))
+    expect(res.status).toBe(429)
+  })
+
   it("returns 200 when email not found (prevents enumeration)", async () => {
     mockUser.findUnique.mockResolvedValue(null as never)
     const res = await POST(jsonReq({ email: "ghost@b.com" }))

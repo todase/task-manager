@@ -3,8 +3,13 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { createVerificationToken } from "@/lib/tokens"
 import { sendVerificationEmail } from "@/lib/email"
+import { rateLimited, clientIp } from "@/lib/rateLimit"
 
 export async function POST(req: Request) {
+  if (rateLimited(`register:${clientIp(req)}`, 10, 15 * 60 * 1000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": "900" } })
+  }
+
   const { email, password } = await req.json()
 
   if (!email || typeof email !== "string" || !email.includes("@")) {

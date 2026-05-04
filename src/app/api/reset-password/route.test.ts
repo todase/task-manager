@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { prisma } from "@/lib/prisma"
 import { POST } from "./route"
 
+vi.mock("@/lib/rateLimit", () => ({
+  rateLimited: vi.fn(() => false),
+  clientIp: vi.fn(() => "1.2.3.4"),
+}))
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     passwordResetToken: {
@@ -30,6 +35,13 @@ function jsonReq(body: unknown) {
 beforeEach(() => vi.clearAllMocks())
 
 describe("POST /api/reset-password", () => {
+  it("returns 429 when rate limited", async () => {
+    const { rateLimited } = await import("@/lib/rateLimit")
+    vi.mocked(rateLimited).mockReturnValueOnce(true)
+    const res = await POST(jsonReq({ token: "t", password: "newpassword" }))
+    expect(res.status).toBe(429)
+  })
+
   it("returns 400 for password shorter than 8 chars", async () => {
     const res = await POST(jsonReq({ token: "t", password: "short" }))
     expect(res.status).toBe(400)
