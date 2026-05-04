@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { useHabitLogs, useToggleHabitLog } from "@/hooks/useHabitLogs"
 import { utcDays } from "@/hooks/habitUtils"
+import { useUTCDate } from "@/hooks/useUTCDate"
 import { computeHabitStats } from "@/hooks/habitStats"
 import type { Task } from "@/types"
 
@@ -27,6 +28,7 @@ export function HabitCard({ habit }: { habit: Task }) {
   const handleToggle = (date: string) =>
     toggleLog({ date, isCurrentlyLogged: logDates.has(date) })
 
+  useUTCDate()
   const miniDays = utcDays(7)
   const fullDays = utcDays(30)
   const today = miniDays[miniDays.length - 1]
