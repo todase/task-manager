@@ -180,9 +180,13 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
     onMutate: async (newTasks) => {
       await qc.cancelQueries({ queryKey: ["tasks"] })
       const snap = snapshot(qc)
-      qc.setQueriesData<Task[]>({ queryKey: ["tasks"] }, () =>
-        withPriorityScores(newTasks.map((t, i) => ({ ...t, order: i })))
-      )
+      qc.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {
+        if (!old) return old
+        const oldIds = new Set(old.map((t) => t.id))
+        return withPriorityScores(
+          newTasks.filter((t) => oldIds.has(t.id)).map((t, i) => ({ ...t, order: i }))
+        )
+      })
       return { snap }
     },
     onError: (_, __, ctx) => { if (ctx) restore(qc, ctx.snap) },
