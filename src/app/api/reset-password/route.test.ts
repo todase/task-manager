@@ -49,7 +49,9 @@ describe("POST /api/reset-password", () => {
 
   it("returns 400 for password longer than 72 chars", async () => {
     const res = await POST(jsonReq({ token: "t", password: "a".repeat(73) }))
+    const body = await res.json()
     expect(res.status).toBe(400)
+    expect(body.error).toBe("Password must be 8–72 characters")
   })
 
   it("returns 400 for unknown token", async () => {

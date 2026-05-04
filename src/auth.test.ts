@@ -67,7 +67,7 @@ const validUser = {
   emailVerified: new Date(),
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => vi.resetAllMocks())
 
 describe("authorize — rate limiting", () => {
   it("does not call rateLimited on successful login (successes don't consume slots)", async () => {
@@ -108,17 +108,14 @@ describe("authorize — rate limiting", () => {
     expect(mockRateLimited).toHaveBeenCalledWith("login:1.2.3.4", 10, 15 * 60 * 1000)
   })
 
-  it("returns null when IP is already rate-limited (on a failed attempt)", async () => {
+  it("throws TooManyRequests when IP is already rate-limited (on a failed attempt)", async () => {
     mockRateLimited.mockReturnValue(true)
     mockUser.findUnique.mockResolvedValue(validUser as never)
     mockCompare.mockResolvedValue(false as never)
 
-    const result = await capturedAuthorize(
-      { email: "a@b.com", password: "wrong" },
-      makeRequest("1.2.3.4")
-    )
-
-    expect(result).toBeNull()
+    await expect(
+      capturedAuthorize({ email: "a@b.com", password: "wrong" }, makeRequest("1.2.3.4"))
+    ).rejects.toThrow("TooManyRequests")
   })
 
   it("uses clientIp to build the rate-limit key on failure", async () => {

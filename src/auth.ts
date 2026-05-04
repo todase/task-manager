@@ -23,7 +23,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: credentials.email as string },
         })
         if (!user || !user.password) {
-          rateLimited(key, 10, 15 * 60 * 1000)
+          if (rateLimited(key, 10, 15 * 60 * 1000)) throw new Error("TooManyRequests")
           return null
         }
 
@@ -32,7 +32,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user.password
         )
         if (!isValid) {
-          rateLimited(key, 10, 15 * 60 * 1000)
+          if (rateLimited(key, 10, 15 * 60 * 1000)) throw new Error("TooManyRequests")
           return null
         }
 

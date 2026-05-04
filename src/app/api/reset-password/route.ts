@@ -10,8 +10,11 @@ export async function POST(req: Request) {
 
   const { token, password } = await req.json()
 
-  if (!token || !password || typeof password !== "string" || password.length < 8 || password.length > 72) {
+  if (!token || !password || typeof password !== "string") {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+  }
+  if (password.length < 8 || password.length > 72) {
+    return NextResponse.json({ error: "Password must be 8–72 characters" }, { status: 400 })
   }
 
   const record = await prisma.passwordResetToken.findUnique({ where: { token } })

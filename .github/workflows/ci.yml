@@ -32,6 +32,10 @@ jobs:
         run: npm test
 
       - name: Build
+        # DATABASE_URL is a placeholder — no Postgres service is running.
+        # Next.js build succeeds as long as no route handler or server component
+        # executes a Prisma query at build time. If that changes, add a
+        # services: postgres: block and run `npx prisma migrate deploy` before this step.
         run: npm run build
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ci"
