@@ -30,7 +30,9 @@ model Task {
   recurrence  String?
   description String?
   order       Int       @default(0)
-  isHabit     Boolean   @default(false)
+  isHabit          Boolean   @default(false)
+  estimatedMinutes Int?
+  weeklyTarget     Int?
   userId      String
   user        User      @relation(fields: [userId], references: [id])
   projectId   String?

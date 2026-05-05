@@ -45,6 +45,7 @@ export function useTaskMutations(_filters: TaskFilters = {}) {
         id: tempId, title: input.title, done: false,
         dueDate: input.dueDate ?? null, recurrence: input.recurrence ?? null,
         description: null, order: 0, isHabit: input.isHabit ?? false,
+        estimatedMinutes: input.estimatedMinutes ?? null, weeklyTarget: input.weeklyTarget ?? null,
         createdAt: new Date().toISOString(), project, subtasks: [], tags: [], priorityScore: 1,
       }
       qc.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) => {

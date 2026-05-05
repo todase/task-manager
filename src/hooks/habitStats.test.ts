@@ -139,3 +139,34 @@ describe("computeHabitStats — moodTrend", () => {
     expect(moodTrend).toEqual(["neutral"])
   })
 })
+
+describe("computeHabitStats — weeklyTarget", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-04-30T12:00:00.000Z")) // Thursday
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it("counts week as complete when logs >= weeklyTarget", () => {
+    // Created Apr 27 (Monday of current week) → only 1 week in window
+    const createdThisWeek = new Date("2026-04-27T00:00:00.000Z")
+    const logs = [makeLog("2026-04-27"), makeLog("2026-04-28"), makeLog("2026-04-29")]
+    const { completionRate } = computeHabitStats(logs, "weekly", createdThisWeek, 3)
+    expect(completionRate).toBeCloseTo(1.0)
+  })
+
+  it("does not count week as complete when logs < weeklyTarget", () => {
+    const twoWeeksAgo = new Date("2026-04-16T00:00:00.000Z")
+    // Week 1 (Apr 14–20): 1 log, Week 2 (Apr 21–27): 3 logs. target = 3 → 1 complete out of 2
+    const logs = [makeLog("2026-04-15"), makeLog("2026-04-21"), makeLog("2026-04-22"), makeLog("2026-04-23")]
+    const { completionRate } = computeHabitStats(logs, "weekly", twoWeeksAgo, 3)
+    expect(completionRate).toBeCloseTo(0.5)
+  })
+
+  it("defaults to target=1 when weeklyTarget omitted (backward compat)", () => {
+    const twoWeeksAgo = new Date("2026-04-16T00:00:00.000Z")
+    const logs = [makeLog("2026-04-20"), makeLog("2026-04-27")]
+    const { completionRate } = computeHabitStats(logs, "weekly", twoWeeksAgo)
+    expect(completionRate).toBeCloseTo(1.0)
+  })
+})

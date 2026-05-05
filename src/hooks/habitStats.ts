@@ -21,18 +21,19 @@ function getMondayOf(d: Date): Date {
 export function computeHabitStats(
   logs: HabitLog[],
   recurrence: string,
-  createdAt: Date
+  createdAt: Date,
+  weeklyTarget?: number
 ): HabitStats {
   const now = new Date()
   const today = utcMidnight(now)
   const createdDay = utcMidnight(createdAt)
+  const target = weeklyTarget ?? 1
 
   // --- Streak (daily only) ---
   let streak = 0
   if (recurrence === "daily") {
     const logDates = new Set(logs.map((l) => l.date.slice(0, 10)))
     const cursor = new Date(today)
-    // If today not logged yet, allow streak to count from yesterday
     if (!logDates.has(cursor.toISOString().slice(0, 10))) {
       cursor.setUTCDate(cursor.getUTCDate() - 1)
     }
@@ -47,13 +48,12 @@ export function computeHabitStats(
 
   if (recurrence === "daily") {
     const windowStart = new Date(today)
-    windowStart.setUTCDate(windowStart.getUTCDate() - 29) // 30-day window
+    windowStart.setUTCDate(windowStart.getUTCDate() - 29)
     const effectiveStart = createdDay > windowStart ? createdDay : windowStart
     const logsInWindow = logs.filter((l) => new Date(l.date) >= effectiveStart)
     const logged = logsInWindow.length
     const todayStr = today.toISOString().slice(0, 10)
     const totalDays = Math.round((today.getTime() - effectiveStart.getTime()) / 86_400_000)
-    // Only count today in denominator if it has been logged (avoid penalising mid-day checks)
     const todayLogged = logsInWindow.some((l) => l.date.slice(0, 10) === todayStr)
     const expectedDays = todayLogged ? totalDays + 1 : totalDays
     completionRate = expectedDays > 0 ? logged / expectedDays : 0
@@ -68,22 +68,20 @@ export function computeHabitStats(
       const wEnd = new Date(wStart)
       wEnd.setUTCDate(wEnd.getUTCDate() + 7)
       total++
-      if (logs.some((l) => { const d = new Date(l.date); return d >= wStart && d < wEnd })) {
-        completed++
-      }
+      const logsInWeek = logs.filter((l) => {
+        const d = new Date(l.date)
+        return d >= wStart && d < wEnd
+      }).length
+      if (logsInWeek >= target) completed++
     }
     completionRate = total > 0 ? completed / total : 0
   } else if (recurrence === "monthly") {
     let completed = 0
     let total = 0
     for (let i = 0; i < 12; i++) {
-      const mStart = new Date(
-        Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - i, 1)
-      )
+      const mStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - i, 1))
       if (mStart < createdDay) break
-      const mEnd = new Date(
-        Date.UTC(mStart.getUTCFullYear(), mStart.getUTCMonth() + 1, 1)
-      )
+      const mEnd = new Date(Date.UTC(mStart.getUTCFullYear(), mStart.getUTCMonth() + 1, 1))
       total++
       if (logs.some((l) => { const d = new Date(l.date); return d >= mStart && d < mEnd })) {
         completed++
@@ -92,7 +90,7 @@ export function computeHabitStats(
     completionRate = total > 0 ? completed / total : 0
   }
 
-  // --- Mood trend: last 10 logs with non-null mood, within the same window as completion rate ---
+  // --- Mood trend ---
   let moodWindowStart: Date | null = null
   if (recurrence === "daily") {
     moodWindowStart = new Date(today)

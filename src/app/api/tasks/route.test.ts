@@ -46,6 +46,9 @@ const dbTask = {
   recurrence: null,
   description: null,
   order: 0,
+  isHabit: false,
+  estimatedMinutes: null,
+  weeklyTarget: null,
   project: null,
   subtasks: [],
   tags: [{ tag: { id: "tag-1", name: "bug", color: "#60a5fa" } }],
@@ -230,6 +233,69 @@ describe("POST /api/tasks", () => {
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.isHabit).toBe(true)
+  })
+
+  it("persists estimatedMinutes and weeklyTarget in POST", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockPrisma.$transaction.mockImplementation(async (cb: unknown) =>
+      (cb as (tx: typeof prisma) => Promise<unknown>)(prisma)
+    )
+    mockPrisma.task.updateMany.mockResolvedValue({ count: 0 } as never)
+    mockPrisma.task.create.mockResolvedValue({
+      ...dbTask,
+      recurrence: "weekly",
+      estimatedMinutes: 30,
+      weeklyTarget: 3,
+      tags: [],
+    } as never)
+
+    const res = await POST(
+      jsonReq("http://localhost/api/tasks", "POST", {
+        title: "Run",
+        recurrence: "weekly",
+        isHabit: true,
+        estimatedMinutes: 30,
+        weeklyTarget: 3,
+      })
+    )
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.estimatedMinutes).toBe(30)
+    expect(body.weeklyTarget).toBe(3)
+  })
+
+  it("ignores weeklyTarget when recurrence is not weekly in POST", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockPrisma.$transaction.mockImplementation(async (cb: unknown) =>
+      (cb as (tx: typeof prisma) => Promise<unknown>)(prisma)
+    )
+    mockPrisma.task.updateMany.mockResolvedValue({ count: 0 } as never)
+    mockPrisma.task.create.mockResolvedValue({ ...dbTask, recurrence: "daily", tags: [] } as never)
+
+    await POST(
+      jsonReq("http://localhost/api/tasks", "POST", {
+        title: "Daily",
+        recurrence: "daily",
+        weeklyTarget: 3,
+      })
+    )
+    expect(mockPrisma.task.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.objectContaining({ weeklyTarget: expect.anything() }),
+      })
+    )
+  })
+
+  it("returns 400 for weeklyTarget out of range in POST", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const res = await POST(
+      jsonReq("http://localhost/api/tasks", "POST", {
+        title: "Bad",
+        recurrence: "weekly",
+        weeklyTarget: 8,
+      })
+    )
+    expect(res.status).toBe(400)
   })
 })
 

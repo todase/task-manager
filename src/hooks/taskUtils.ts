@@ -14,6 +14,8 @@ export type CreateTaskInput = {
   projectId?: string
   tagIds?: string[]
   isHabit?: boolean
+  estimatedMinutes?: number
+  weeklyTarget?: number
 }
 
 export function buildTasksUrl(filters: TaskFilters): string {
