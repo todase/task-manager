@@ -21,8 +21,8 @@ export function HabitCard({ habit }: { habit: Task }) {
 
   const logDates = new Set(logs.map((l) => l.date.slice(0, 10)))
   const stats = useMemo(
-    () => computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt)),
-    [logs, habit.recurrence, habit.createdAt]
+    () => computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt), habit.weeklyTarget ?? undefined),
+    [logs, habit.recurrence, habit.createdAt, habit.weeklyTarget]
   )
 
   const handleToggle = (date: string) =>
@@ -39,6 +39,34 @@ export function HabitCard({ habit }: { habit: Task }) {
       ? MOOD_EMOJI[stats.moodTrend[stats.moodTrend.length - 1]] ?? null
       : null
 
+  const showWeeklyCounters = (habit.weeklyTarget ?? 0) > 1
+  const target = habit.weeklyTarget ?? 1
+
+  // Current-week log count for mini heatmap counter
+  const currentWeekCount = useMemo(() => {
+    if (!showWeeklyCounters) return null
+    return miniDays.filter((d) => logDates.has(d)).length
+  }, [miniDays, logDates, showWeeklyCounters])
+
+  // 30-day grid grouped into rows of 7
+  const weekRows = useMemo(() => {
+    if (!showWeeklyCounters) return null
+    const rows: { days: string[]; count: number }[] = []
+    for (let i = 0; i < fullDays.length; i += 7) {
+      const rowDays = fullDays.slice(i, i + 7)
+      const count = rowDays.filter((d) => logDates.has(d)).length
+      rows.push({ days: rowDays, count })
+    }
+    return rows
+  }, [fullDays, logDates, showWeeklyCounters])
+
+  function weekCounterLabel(count: number, isCurrent: boolean): { text: string; cls: string } {
+    if (isCurrent) return { text: count > 0 ? `${count}…` : "", cls: "text-gray-400" }
+    if (count >= target) return { text: `✓${target}`, cls: "text-green-600 font-semibold" }
+    if (count > 0) return { text: `${count}/${target}`, cls: "text-amber-500" }
+    return { text: `0/${target}`, cls: "text-red-400" }
+  }
+
   return (
     <div className="border border-gray-100 rounded-xl bg-white shadow-sm overflow-hidden">
       {/* Header row */}
@@ -50,7 +78,6 @@ export function HabitCard({ habit }: { habit: Task }) {
           {habit.title}
         </Link>
 
-        {/* Fixed-width streak slot */}
         <span className="w-9 text-right text-xs font-bold text-orange-500 flex-shrink-0">
           {streakLabel}
         </span>
@@ -72,40 +99,78 @@ export function HabitCard({ habit }: { habit: Task }) {
           ))}
         </div>
 
-        {/* Expand/collapse toggle */}
+        {/* Weekly counter for current week */}
+        {showWeeklyCounters && currentWeekCount !== null && (
+          <span
+            className={`text-xs font-medium flex-shrink-0 min-w-[24px] text-center ${
+              currentWeekCount >= target
+                ? "text-green-600"
+                : currentWeekCount > 0
+                ? "text-amber-500"
+                : "text-gray-300"
+            }`}
+            aria-label={`текущая неделя: ${currentWeekCount} из ${target}`}
+          >
+            {currentWeekCount >= target ? `✓${target}` : currentWeekCount > 0 ? `${currentWeekCount}/${target}` : ""}
+          </span>
+        )}
+
         <button
           onClick={() => setExpanded((e) => !e)}
           aria-label={expanded ? "Свернуть" : "Развернуть"}
           aria-expanded={expanded}
           className="text-gray-400 hover:text-gray-600 flex-shrink-0"
         >
-          {expanded ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
+          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
       </div>
 
       {/* Expanded content */}
       {expanded && (
         <div className="border-t border-gray-50 px-4 pt-3 pb-4 space-y-3">
-          {/* 30-day full heatmap */}
-          <div className="flex flex-wrap gap-0.5" aria-label="30-дневный график">
-            {fullDays.map((key) => (
-              <button
-                key={key}
-                title={key}
-                onClick={() => handleToggle(key)}
-                className={`w-4 h-4 rounded transition-colors cursor-pointer ${
-                  logDates.has(key)
-                    ? "bg-purple-600 hover:bg-purple-500"
-                    : "bg-purple-100 hover:bg-purple-200"
-                } ${key === today ? "ring-2 ring-purple-200" : ""}`}
-                aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
-              />
-            ))}
-          </div>
+          {/* 30-day heatmap */}
+          {showWeeklyCounters && weekRows ? (
+            <div className="flex flex-col gap-1" aria-label="30-дневный график">
+              {weekRows.map(({ days, count }, rowIdx) => {
+                const isCurrent = rowIdx === weekRows.length - 1
+                const { text, cls } = weekCounterLabel(count, isCurrent)
+                return (
+                  <div key={rowIdx} className="flex items-center gap-0.5">
+                    {days.map((key) => (
+                      <button
+                        key={key}
+                        title={key}
+                        onClick={() => handleToggle(key)}
+                        className={`w-4 h-4 rounded transition-colors cursor-pointer ${
+                          logDates.has(key)
+                            ? "bg-purple-600 hover:bg-purple-500"
+                            : "bg-purple-100 hover:bg-purple-200"
+                        } ${key === today ? "ring-2 ring-purple-200" : ""}`}
+                        aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
+                      />
+                    ))}
+                    <span className={`ml-1 text-xs ${cls}`}>{text}</span>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-0.5" aria-label="30-дневный график">
+              {fullDays.map((key) => (
+                <button
+                  key={key}
+                  title={key}
+                  onClick={() => handleToggle(key)}
+                  className={`w-4 h-4 rounded transition-colors cursor-pointer ${
+                    logDates.has(key)
+                      ? "bg-purple-600 hover:bg-purple-500"
+                      : "bg-purple-100 hover:bg-purple-200"
+                  } ${key === today ? "ring-2 ring-purple-200" : ""}`}
+                  aria-label={`${key}: ${logDates.has(key) ? "отметить невыполненным" : "отметить выполненным"}`}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Stat pills */}
           <div className="flex gap-2">

@@ -29,6 +29,8 @@ const habit = {
   done: false,
   recurrence: "daily",
   isHabit: true,
+  estimatedMinutes: null,
+  weeklyTarget: null,
   createdAt: "2026-01-01T00:00:00.000Z",
   dueDate: null,
   description: null,
@@ -111,5 +113,44 @@ describe("HabitCard", () => {
     render(<HabitCard habit={habit} />)
     fireEvent.click(screen.getByRole("button", { name: /развернуть/i }))
     expect(screen.getByTestId("stat-mood")).toBeInTheDocument()
+  })
+})
+
+describe("HabitCard — weekly target counter", () => {
+  beforeEach(() => {
+    mockUseHabitLogs.mockReturnValue({ data: [] })
+  })
+  afterEach(cleanup)
+
+  it("does not show weekly counter for daily habits", () => {
+    render(<HabitCard habit={habit} />)
+    expect(screen.queryByLabelText(/текущая неделя/i)).not.toBeInTheDocument()
+  })
+
+  it("does not show weekly counter when weeklyTarget is 1", () => {
+    render(<HabitCard habit={{ ...habit, recurrence: "weekly", weeklyTarget: 1 }} />)
+    expect(screen.queryByLabelText(/текущая неделя/i)).not.toBeInTheDocument()
+  })
+
+  it("shows weekly counter when weeklyTarget > 1", () => {
+    render(<HabitCard habit={{ ...habit, recurrence: "weekly", weeklyTarget: 3 }} />)
+    expect(screen.getByLabelText(/текущая неделя: 0 из 3/i)).toBeInTheDocument()
+  })
+
+  it("shows 1/3 counter when one log exists in the mini 7-day window", () => {
+    mockUseHabitLogs.mockReturnValue({
+      data: [{ id: "1", taskId: "h1", date: `${todayKey}T00:00:00.000Z`, reflection: null }],
+    })
+    render(<HabitCard habit={{ ...habit, recurrence: "weekly", weeklyTarget: 3 }} />)
+    expect(screen.getByLabelText(/текущая неделя: 1 из 3/i)).toBeInTheDocument()
+  })
+
+  it("shows grouped 30-day grid when weeklyTarget > 1 and expanded", () => {
+    render(<HabitCard habit={{ ...habit, recurrence: "weekly", weeklyTarget: 3 }} />)
+    fireEvent.click(screen.getByRole("button", { name: /развернуть/i }))
+    const grid = screen.getByLabelText("30-дневный график")
+    expect(grid).toBeInTheDocument()
+    // Should have multiple row divs (not a flat wrap)
+    expect(grid.children.length).toBeGreaterThan(1)
   })
 })
