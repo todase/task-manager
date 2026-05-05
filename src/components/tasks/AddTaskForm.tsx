@@ -336,9 +336,9 @@ export function AddTaskForm({
                       setIsHabit((v) => !v)
                       if (!isHabit) setRecurrence("daily")
                     }}
-                    className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 relative ${isHabit ? "bg-purple-500" : "bg-gray-200"}`}
+                    className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 relative p-0 ${isHabit ? "bg-purple-500" : "bg-gray-200"}`}
                   >
-                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${isHabit ? "translate-x-4" : "translate-x-0.5"}`} />
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${isHabit ? "translate-x-[1.125rem]" : ""}`} />
                   </button>
                 </div>
 
