@@ -22,8 +22,8 @@ function HabitRow({ habit }: { habit: Task }) {
   const { mutate: toggleLog } = useToggleHabitLog(habit.id)
   const logDates = new Set(logs.map((l) => l.date.slice(0, 10)))
   const stats = useMemo(
-    () => computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt)),
-    [logs, habit.recurrence, habit.createdAt]
+    () => computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt), habit.weeklyTarget ?? undefined),
+    [logs, habit.recurrence, habit.createdAt, habit.weeklyTarget]
   )
 
   function handleCellClick(date: string) {
@@ -79,6 +79,7 @@ function HabitRow({ habit }: { habit: Task }) {
         <ReflectionModal
           taskId={habit.id}
           isHabit
+          estimatedMinutes={habit.estimatedMinutes ?? null}
           onClose={() => setShowReflection(false)}
         />
       )}

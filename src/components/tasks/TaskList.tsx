@@ -106,6 +106,7 @@ export function TaskList({
         <ReflectionModal
           taskId={reflectionTaskId}
           isHabit={tasks.find((t) => t.id === reflectionTaskId)?.isHabit ?? false}
+          estimatedMinutes={tasks.find((t) => t.id === reflectionTaskId)?.estimatedMinutes ?? null}
           onClose={() => setReflectionTaskId(null)}
         />
       )}

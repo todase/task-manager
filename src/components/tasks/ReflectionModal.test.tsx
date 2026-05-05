@@ -103,4 +103,29 @@ describe("ReflectionModal", () => {
     expect(body.difficulty).toBe(1)
     expect(body.mood).toBe("energized")
   })
+
+  it("renders single time input when estimatedMinutes is not provided", () => {
+    render(<ReflectionModal taskId="task-1" onClose={onClose} />)
+    expect(screen.getByLabelText("мин")).toBeInTheDocument()
+    expect(screen.queryByLabelText("план мин")).not.toBeInTheDocument()
+  })
+
+  it("renders plan/fact layout when estimatedMinutes is provided", () => {
+    render(<ReflectionModal taskId="task-1" onClose={onClose} estimatedMinutes={30} />)
+    expect(screen.getByLabelText("план мин")).toBeInTheDocument()
+    expect(screen.getByLabelText("факт мин")).toBeInTheDocument()
+    expect(screen.queryByLabelText("мин")).not.toBeInTheDocument()
+  })
+
+  it("shows green diff when actual < estimated", () => {
+    render(<ReflectionModal taskId="task-1" onClose={onClose} estimatedMinutes={30} />)
+    fireEvent.change(screen.getByLabelText("факт мин"), { target: { value: "25" } })
+    expect(screen.getByText("−5 мин")).toBeInTheDocument()
+  })
+
+  it("shows orange diff when actual > estimated", () => {
+    render(<ReflectionModal taskId="task-1" onClose={onClose} estimatedMinutes={30} />)
+    fireEvent.change(screen.getByLabelText("факт мин"), { target: { value: "45" } })
+    expect(screen.getByText("+15 мин")).toBeInTheDocument()
+  })
 })

@@ -8,6 +8,7 @@ interface ReflectionModalProps {
   taskId: string
   onClose: () => void
   isHabit?: boolean
+  estimatedMinutes?: number | null
 }
 
 const DIFFICULTY_OPTIONS: [1 | 2 | 3, string, string][] = [
@@ -22,7 +23,7 @@ const MOOD_OPTIONS: ["energized" | "neutral" | "tired", string][] = [
   ["tired", "устал"],
 ]
 
-export function ReflectionModal({ taskId, onClose, isHabit = false }: ReflectionModalProps) {
+export function ReflectionModal({ taskId, onClose, isHabit = false, estimatedMinutes }: ReflectionModalProps) {
   const [notes, setNotes] = useState("")
   const [timeMinutes, setTimeMinutes] = useState("")
   const [difficulty, setDifficulty] = useState<1 | 2 | 3 | null>(null)
@@ -80,19 +81,59 @@ export function ReflectionModal({ taskId, onClose, isHabit = false }: Reflection
           className="w-full border border-gray-200 rounded-lg p-2 text-sm text-gray-700 resize-none outline-none focus:border-blue-400"
         />
 
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            value={timeMinutes}
-            onChange={(e) => setTimeMinutes(e.target.value)}
-            placeholder="0"
-            min={0}
-            max={1440}
-            aria-label="мин"
-            className="w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-400"
-          />
-          <span className="text-sm text-gray-500">мин</span>
-        </div>
+        {estimatedMinutes != null ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-xs text-gray-400">план</span>
+              <input
+                type="number"
+                readOnly
+                value={estimatedMinutes}
+                aria-label="план мин"
+                className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-gray-50 text-gray-400 outline-none text-center"
+              />
+            </div>
+            <span className="text-gray-300 text-base self-end mb-1.5">→</span>
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-xs text-gray-400">факт</span>
+              <input
+                type="number"
+                value={timeMinutes}
+                onChange={(e) => setTimeMinutes(e.target.value)}
+                min={0}
+                max={1440}
+                aria-label="факт мин"
+                className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-400 text-center"
+              />
+            </div>
+            <span className="text-sm text-gray-500 self-end mb-1.5">мин</span>
+            {timeMinutes !== "" && Number.isFinite(Number(timeMinutes)) && (
+              <span
+                className={`text-sm font-medium self-end mb-1.5 ${
+                  Number(timeMinutes) <= estimatedMinutes ? "text-green-600" : "text-orange-500"
+                }`}
+              >
+                {Number(timeMinutes) <= estimatedMinutes
+                  ? `−${estimatedMinutes - Number(timeMinutes)} мин`
+                  : `+${Number(timeMinutes) - estimatedMinutes} мин`}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={timeMinutes}
+              onChange={(e) => setTimeMinutes(e.target.value)}
+              placeholder="0"
+              min={0}
+              max={1440}
+              aria-label="мин"
+              className="w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-blue-400"
+            />
+            <span className="text-sm text-gray-500">мин</span>
+          </div>
+        )}
 
         <div className="flex gap-2">
           {DIFFICULTY_OPTIONS.map(([val, emoji, label]) => (
