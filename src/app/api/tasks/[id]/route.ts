@@ -12,7 +12,7 @@ export async function PATCH(
   }
 
   const { id } = await params
-  const { tagIds, done, title, dueDate, recurrence, projectId, description, isHabit } =
+  const { tagIds, done, title, dueDate, recurrence, projectId, description, isHabit, estimatedMinutes, weeklyTarget } =
     await req.json()
 
   if (recurrence !== undefined && recurrence !== null) {
@@ -111,6 +111,20 @@ export async function PATCH(
   }
   if (description !== undefined) data.description = description
   if (isHabit !== undefined) data.isHabit = isHabit
+  if (estimatedMinutes !== undefined) {
+    data.estimatedMinutes = estimatedMinutes != null ? estimatedMinutes : null
+  }
+  if (weeklyTarget !== undefined && weeklyTarget !== null) {
+    if (!Number.isInteger(weeklyTarget) || weeklyTarget < 1 || weeklyTarget > 7) {
+      return NextResponse.json({ error: "weeklyTarget must be 1–7" }, { status: 400 })
+    }
+  }
+  if (weeklyTarget !== undefined) {
+    data.weeklyTarget = weeklyTarget
+  }
+  if (recurrence !== undefined && recurrence !== "weekly") {
+    data.weeklyTarget = null
+  }
   if (Array.isArray(tagIds)) {
     if (tagIds.length > 0) {
       const ownedCount = await prisma.tag.count({

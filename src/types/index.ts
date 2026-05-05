@@ -21,6 +21,8 @@ export type Task = {
   description: string | null
   order: number
   isHabit: boolean
+  estimatedMinutes: number | null
+  weeklyTarget: number | null
   createdAt: string
   project: { id: string; title: string; icon: string } | null
   subtasks: Subtask[]

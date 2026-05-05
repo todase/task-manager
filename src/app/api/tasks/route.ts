@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { title, projectId, dueDate, recurrence, tagIds, isHabit } = await req.json()
+  const { title, projectId, dueDate, recurrence, tagIds, isHabit, estimatedMinutes, weeklyTarget } = await req.json()
 
   if (!title || typeof title !== "string" || !title.trim()) {
     return NextResponse.json({ error: "title is required" }, { status: 400 })
@@ -83,6 +83,12 @@ export async function POST(req: Request) {
       { error: "isHabit requires recurrence" },
       { status: 400 }
     )
+  }
+
+  if (weeklyTarget !== undefined && weeklyTarget !== null) {
+    if (!Number.isInteger(weeklyTarget) || weeklyTarget < 1 || weeklyTarget > 7) {
+      return NextResponse.json({ error: "weeklyTarget must be 1–7" }, { status: 400 })
+    }
   }
 
   if (projectId) {
@@ -119,6 +125,8 @@ export async function POST(req: Request) {
         ...(dueDate && { dueDate: new Date(dueDate) }),
         ...(recurrence && { recurrence }),
         ...(isHabit === true && { isHabit: true }),
+        ...(estimatedMinutes != null && typeof estimatedMinutes === "number" && { estimatedMinutes }),
+        ...(weeklyTarget != null && recurrence === "weekly" && { weeklyTarget }),
         ...(Array.isArray(tagIds) && tagIds.length > 0 && {
           tags: { create: tagIds.map((tagId: string) => ({ tagId })) },
         }),
