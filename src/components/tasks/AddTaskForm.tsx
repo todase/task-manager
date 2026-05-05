@@ -40,10 +40,17 @@ export function AddTaskForm({
 
   const isOnline = useOnlineStatus()
   const titleInputRef = useRef<HTMLInputElement>(null)
+  const dateInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isModalOpen) setTimeout(() => titleInputRef.current?.focus(), 50)
   }, [isModalOpen])
+
+  useEffect(() => {
+    if (showDatePicker) {
+      try { dateInputRef.current?.showPicker() } catch {}
+    }
+  }, [showDatePicker])
 
   function closeModal() {
     setIsModalOpen(false)
@@ -255,6 +262,7 @@ export function AddTaskForm({
               {/* Date picker */}
               {showDatePicker && (
                 <input
+                  ref={dateInputRef}
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
