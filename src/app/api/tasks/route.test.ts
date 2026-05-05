@@ -237,7 +237,9 @@ describe("POST /api/tasks", () => {
 
   it("persists estimatedMinutes and weeklyTarget in POST", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockPrisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => fn(mockPrisma))
+    mockPrisma.$transaction.mockImplementation(async (cb: unknown) =>
+      (cb as (tx: typeof prisma) => Promise<unknown>)(prisma)
+    )
     mockPrisma.task.updateMany.mockResolvedValue({ count: 0 } as never)
     mockPrisma.task.create.mockResolvedValue({
       ...dbTask,
@@ -264,7 +266,9 @@ describe("POST /api/tasks", () => {
 
   it("ignores weeklyTarget when recurrence is not weekly in POST", async () => {
     mockAuth.mockResolvedValue(session() as never)
-    mockPrisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => fn(mockPrisma))
+    mockPrisma.$transaction.mockImplementation(async (cb: unknown) =>
+      (cb as (tx: typeof prisma) => Promise<unknown>)(prisma)
+    )
     mockPrisma.task.updateMany.mockResolvedValue({ count: 0 } as never)
     mockPrisma.task.create.mockResolvedValue({ ...dbTask, recurrence: "daily", tags: [] } as never)
 

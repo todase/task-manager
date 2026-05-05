@@ -137,7 +137,7 @@ describe("HabitCard — weekly target counter", () => {
     expect(screen.getByLabelText(/текущая неделя: 0 из 3/i)).toBeInTheDocument()
   })
 
-  it("shows 1/3 counter when one log exists in the mini 7-day window", () => {
+  it("shows 1/3 counter when one log exists in the current calendar week", () => {
     mockUseHabitLogs.mockReturnValue({
       data: [{ id: "1", taskId: "h1", date: `${todayKey}T00:00:00.000Z`, reflection: null }],
     })

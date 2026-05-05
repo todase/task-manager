@@ -258,6 +258,52 @@ describe("PATCH /api/tasks/[id]", () => {
     )
   })
 
+  it("returns 400 for weeklyTarget out of range in PATCH", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    const res = await PATCH(jsonReq("PATCH", { recurrence: "weekly", weeklyTarget: 8 }), params())
+    expect(res.status).toBe(400)
+  })
+
+  it("saves weeklyTarget when recurrence is weekly in same request", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockTask.update.mockResolvedValue({ ...dbTask, recurrence: "weekly", weeklyTarget: 3 } as never)
+
+    await PATCH(jsonReq("PATCH", { recurrence: "weekly", weeklyTarget: 3 }), params())
+
+    expect(mockTask.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ weeklyTarget: 3 }),
+      })
+    )
+  })
+
+  it("ignores weeklyTarget when existing recurrence is not weekly", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockTask.findFirst.mockResolvedValue({ id: "task-1", recurrence: "daily" } as never)
+    mockTask.update.mockResolvedValue({ ...dbTask, recurrence: "daily" } as never)
+
+    await PATCH(jsonReq("PATCH", { weeklyTarget: 3 }), params())
+
+    expect(mockTask.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.objectContaining({ weeklyTarget: expect.anything() }),
+      })
+    )
+  })
+
+  it("clears estimatedMinutes when null is sent in PATCH", async () => {
+    mockAuth.mockResolvedValue(session() as never)
+    mockTask.update.mockResolvedValue({ ...dbTask, estimatedMinutes: null } as never)
+
+    await PATCH(jsonReq("PATCH", { estimatedMinutes: null }), params())
+
+    expect(mockTask.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ estimatedMinutes: null }),
+      })
+    )
+  })
+
   it("does not upsert HabitLog for non-habit recurring task done", async () => {
     mockAuth.mockResolvedValue(session() as never)
     mockTask.findFirst.mockResolvedValue({

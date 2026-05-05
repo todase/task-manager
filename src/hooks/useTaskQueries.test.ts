@@ -9,7 +9,9 @@ import type { Task } from "@/types"
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {
     id: "1", title: "Test", done: false, dueDate: null, recurrence: null,
-    description: null, order: 0, isHabit: false, createdAt: "2026-01-01T00:00:00.000Z",
+    description: null, order: 0, isHabit: false,
+    estimatedMinutes: null, weeklyTarget: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
     project: null, subtasks: [], tags: [], priorityScore: 1,
     ...overrides,
   }

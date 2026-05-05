@@ -38,6 +38,8 @@ const makeTask = (overrides: Partial<Task> = {}): Task => ({
   description: null,
   order: 0,
   isHabit: false,
+  estimatedMinutes: null,
+  weeklyTarget: null,
   createdAt: "2026-01-01T00:00:00.000Z",
   project: null,
   subtasks: [],

@@ -114,13 +114,22 @@ export async function PATCH(
   if (estimatedMinutes !== undefined) {
     data.estimatedMinutes = estimatedMinutes != null ? estimatedMinutes : null
   }
-  if (weeklyTarget !== undefined && weeklyTarget !== null) {
-    if (!Number.isInteger(weeklyTarget) || weeklyTarget < 1 || weeklyTarget > 7) {
-      return NextResponse.json({ error: "weeklyTarget must be 1–7" }, { status: 400 })
-    }
-  }
   if (weeklyTarget !== undefined) {
-    data.weeklyTarget = weeklyTarget
+    if (weeklyTarget !== null) {
+      if (!Number.isInteger(weeklyTarget) || weeklyTarget < 1 || weeklyTarget > 7) {
+        return NextResponse.json({ error: "weeklyTarget must be 1–7" }, { status: 400 })
+      }
+    }
+    // Only persist weeklyTarget when the effective recurrence is "weekly".
+    // If recurrence isn't changing in this request, fetch the stored value.
+    const effectiveRecurrence =
+      recurrence !== undefined
+        ? recurrence
+        : (await prisma.task.findFirst({ where: { id, userId }, select: { recurrence: true } }))
+            ?.recurrence
+    if (effectiveRecurrence === "weekly") {
+      data.weeklyTarget = weeklyTarget
+    }
   }
   if (recurrence !== undefined && recurrence !== "weekly") {
     data.weeklyTarget = null

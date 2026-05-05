@@ -8,6 +8,13 @@ import { useUTCDate } from "@/hooks/useUTCDate"
 import { computeHabitStats } from "@/hooks/habitStats"
 import type { Task } from "@/types"
 
+function weekCounterLabel(count: number, isCurrent: boolean, target: number): { text: string; cls: string } {
+  if (isCurrent) return { text: count > 0 ? `${count}…` : "", cls: "text-gray-400" }
+  if (count >= target) return { text: `✓${target}`, cls: "text-green-600 font-semibold" }
+  if (count > 0) return { text: `${count}/${target}`, cls: "text-amber-500" }
+  return { text: `0/${target}`, cls: "text-red-400" }
+}
+
 const MOOD_EMOJI: Record<string, string> = {
   energized: "⚡",
   neutral: "😐",
@@ -42,11 +49,19 @@ export function HabitCard({ habit }: { habit: Task }) {
   const showWeeklyCounters = (habit.weeklyTarget ?? 0) > 1
   const target = habit.weeklyTarget ?? 1
 
-  // Current-week log count for mini heatmap counter
+  // Count logs in the current Mon–Sun calendar week
   const currentWeekCount = useMemo(() => {
     if (!showWeeklyCounters) return null
-    return miniDays.filter((d) => logDates.has(d)).length
-  }, [miniDays, logDates, showWeeklyCounters])
+    const todayDate = new Date(today + "T00:00:00.000Z")
+    const mondayOffset = (todayDate.getUTCDay() + 6) % 7 // days since Monday
+    let count = 0
+    for (let i = 0; i <= mondayOffset; i++) {
+      const d = new Date(todayDate)
+      d.setUTCDate(d.getUTCDate() - mondayOffset + i)
+      if (logDates.has(d.toISOString().slice(0, 10))) count++
+    }
+    return count
+  }, [today, logDates, showWeeklyCounters])
 
   // 30-day grid grouped into rows of 7
   const weekRows = useMemo(() => {
@@ -59,13 +74,6 @@ export function HabitCard({ habit }: { habit: Task }) {
     }
     return rows
   }, [fullDays, logDates, showWeeklyCounters])
-
-  function weekCounterLabel(count: number, isCurrent: boolean): { text: string; cls: string } {
-    if (isCurrent) return { text: count > 0 ? `${count}…` : "", cls: "text-gray-400" }
-    if (count >= target) return { text: `✓${target}`, cls: "text-green-600 font-semibold" }
-    if (count > 0) return { text: `${count}/${target}`, cls: "text-amber-500" }
-    return { text: `0/${target}`, cls: "text-red-400" }
-  }
 
   return (
     <div className="border border-gray-100 rounded-xl bg-white shadow-sm overflow-hidden">
@@ -133,7 +141,7 @@ export function HabitCard({ habit }: { habit: Task }) {
             <div className="flex flex-col gap-1" aria-label="30-дневный график">
               {weekRows.map(({ days, count }, rowIdx) => {
                 const isCurrent = rowIdx === weekRows.length - 1
-                const { text, cls } = weekCounterLabel(count, isCurrent)
+                const { text, cls } = weekCounterLabel(count, isCurrent, target)
                 return (
                   <div key={rowIdx} className="flex items-center gap-0.5">
                     {days.map((key) => (

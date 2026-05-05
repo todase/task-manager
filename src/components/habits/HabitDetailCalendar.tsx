@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, Fragment } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import type { HabitLog } from "@/types"
 
@@ -193,16 +193,15 @@ export function HabitDetailCalendar({ logs, weeklyTarget, onDateClick, onMonthCh
             }
 
             return (
-              <>
+              <Fragment key={`row-${rowIdx}-counter`}>
                 {cellEl}
                 <div
-                  key={`counter-${rowIdx}`}
                   className={`flex items-center justify-center text-xs ${counterClass}`}
                   aria-label={`неделя ${rowIdx + 1}: ${counterText}`}
                 >
                   {counterText}
                 </div>
-              </>
+              </Fragment>
             )
           }
 
