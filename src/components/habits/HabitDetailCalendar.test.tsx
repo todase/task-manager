@@ -113,3 +113,45 @@ describe("HabitDetailCalendar", () => {
     expect(onDateClick).toHaveBeenCalledWith("2026-05-01")
   })
 })
+
+describe("HabitDetailCalendar — weekly target counters", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    // Saturday 2026-05-02: May starts on Fri, so row 0 is Apr 28(Mon)–May 3(Sun)
+    vi.setSystemTime(new Date("2026-05-02T12:00:00.000Z"))
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    cleanup()
+  })
+
+  it("does not render counter column when weeklyTarget is not set", () => {
+    render(<HabitDetailCalendar logs={[]} />)
+    expect(screen.queryByLabelText(/неделя 1/i)).not.toBeInTheDocument()
+  })
+
+  it("does not render counter column when weeklyTarget is 1", () => {
+    render(<HabitDetailCalendar logs={[]} weeklyTarget={1} />)
+    expect(screen.queryByLabelText(/неделя 1/i)).not.toBeInTheDocument()
+  })
+
+  it("renders current week counter when week has logs and target is 3", () => {
+    // May 2026: row 0 = cells[0..6], where May 1 (Fri) is at index 4.
+    // May 1 and May 2 are in row 0 which contains today (May 2) → current week
+    const logs = [
+      makeLog("2026-05-01"),
+      makeLog("2026-05-02"),
+    ]
+    render(<HabitDetailCalendar logs={logs} weeklyTarget={3} />)
+    // 2 logs in current (incomplete) week → "2…"
+    expect(screen.getByLabelText(/неделя 1: 2…/i)).toBeInTheDocument()
+  })
+
+  it("renders 0/3 for past week with no logs", () => {
+    // Navigate to previous month (April) so May 2 is not in view
+    render(<HabitDetailCalendar logs={[]} weeklyTarget={3} />)
+    fireEvent.click(screen.getByRole("button", { name: /предыдущий месяц/i }))
+    // April week 1 (Mar 30–Apr 5): no logs, past week → 0/3
+    expect(screen.getByLabelText(/неделя 1: 0\/3/i)).toBeInTheDocument()
+  })
+})

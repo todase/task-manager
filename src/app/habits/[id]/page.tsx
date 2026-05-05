@@ -86,7 +86,7 @@ export default function HabitDetailPage({ params }: { params: Promise<{ id: stri
 
   const stats = useMemo(() => {
     if (!habit) return null
-    return computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt))
+    return computeHabitStats(logs, habit.recurrence ?? "", new Date(habit.createdAt), habit.weeklyTarget ?? undefined)
   }, [logs, habit])
 
   const stats90 = useMemo(() => {
@@ -207,6 +207,7 @@ export default function HabitDetailPage({ params }: { params: Promise<{ id: stri
       {/* Calendar */}
       <HabitDetailCalendar
         logs={logs}
+        weeklyTarget={habit.weeklyTarget ?? undefined}
         onDateClick={handleDateClick}
         onMonthChange={handleMonthChange}
       />
