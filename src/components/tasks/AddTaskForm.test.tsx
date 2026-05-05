@@ -171,23 +171,70 @@ describe("AddTaskForm", () => {
     expect(container.querySelector('input[type="date"]')).toBeInTheDocument()
   })
 
-  it("shows recurrence select when repeat button is clicked", () => {
+  it("habit block is visible when modal opens", () => {
     render(<AddTaskForm {...defaultProps} />)
     openModal()
-    fireEvent.click(screen.getByRole("button", { name: /повтор/i }))
-    expect(screen.getByRole("combobox")).toBeInTheDocument()
+    expect(screen.getByRole("switch", { name: /включить привычку/i })).toBeInTheDocument()
+    expect(screen.getByText("Привычка")).toBeInTheDocument()
   })
 
-  it("includes recurrence in submit payload", async () => {
+  it("enabling habit shows period buttons", () => {
+    render(<AddTaskForm {...defaultProps} />)
+    openModal()
+    fireEvent.click(screen.getByRole("switch", { name: /включить привычку/i }))
+    expect(screen.getByRole("button", { name: "День" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Неделя" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Месяц" })).toBeInTheDocument()
+  })
+
+  it("selecting Неделя shows weekly target counter", () => {
+    render(<AddTaskForm {...defaultProps} />)
+    openModal()
+    fireEvent.click(screen.getByRole("switch", { name: /включить привычку/i }))
+    fireEvent.click(screen.getByRole("button", { name: "Неделя" }))
+    expect(screen.getByRole("button", { name: /уменьшить/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /увеличить/i })).toBeInTheDocument()
+  })
+
+  it("+ button increments weeklyTarget up to 7", () => {
+    render(<AddTaskForm {...defaultProps} />)
+    openModal()
+    fireEvent.click(screen.getByRole("switch", { name: /включить привычку/i }))
+    fireEvent.click(screen.getByRole("button", { name: "Неделя" }))
+    const plus = screen.getByRole("button", { name: /увеличить/i })
+    // default is 3; click + 5 times → capped at 7
+    fireEvent.click(plus)
+    fireEvent.click(plus)
+    fireEvent.click(plus)
+    fireEvent.click(plus)
+    fireEvent.click(plus)
+    expect(screen.getByText("7")).toBeInTheDocument()
+  })
+
+  it("submit with habit includes isHabit, recurrence, weeklyTarget", async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     render(<AddTaskForm {...defaultProps} onSubmit={onSubmit} />)
     openModal()
-    fireEvent.click(screen.getByRole("button", { name: /повтор/i }))
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "weekly" } })
-    fireEvent.change(screen.getAllByRole("textbox")[0], { target: { value: "Weekly task" } })
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Morning run" } })
+    fireEvent.click(screen.getByRole("switch", { name: /включить привычку/i }))
+    fireEvent.click(screen.getByRole("button", { name: "Неделя" }))
     fireEvent.click(screen.getByRole("button", { name: /создать задачу/i }))
     await waitFor(() =>
-      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ recurrence: "weekly" }))
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ isHabit: true, recurrence: "weekly", weeklyTarget: 3 })
+      )
+    )
+  })
+
+  it("submit with estimatedMinutes includes it in payload", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined)
+    render(<AddTaskForm {...defaultProps} onSubmit={onSubmit} />)
+    openModal()
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Task" } })
+    fireEvent.change(screen.getByRole("spinbutton", { name: /ожидаемое время/i }), { target: { value: "30" } })
+    fireEvent.click(screen.getByRole("button", { name: /создать задачу/i }))
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ estimatedMinutes: 30 }))
     )
   })
 
